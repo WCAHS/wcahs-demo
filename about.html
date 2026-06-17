@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - WCAHS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: { 50: '#f6f7f4', 100: '#e8ebe3', 200: '#d2d8c8', 300: '#b3bea3', 400: '#93a27e', 500: '#758762', 600: '#5c6b4e', 700: '#48543e', 800: '#3b4434', 900: '#33392e' },
+            amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+            warm: { 50: '#fdf8f3', 100: '#f9ede0', 200: '#f2d9bf' }
+          },
+          fontFamily: { display: ['Playfair Display', 'serif'], body: ['Nunito', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .bg-sage-50 { background-color: #f6f7f4 !important; }
+    .bg-sage-100 { background-color: #e8ebe3 !important; }
+    .bg-sage-200 { background-color: #d2d8c8 !important; }
+    .bg-sage-600 { background-color: #5c6b4e !important; }
+    .bg-sage-700 { background-color: #48543e !important; }
+    .bg-sage-800 { background-color: #3b4434 !important; }
+    .bg-sage-900 { background-color: #33392e !important; }
+    .text-sage-100 { color: #e8ebe3 !important; }
+    .text-sage-200 { color: #d2d8c8 !important; }
+    .text-sage-300 { color: #b3bea3 !important; }
+    .text-sage-400 { color: #93a27e !important; }
+    .text-sage-600 { color: #5c6b4e !important; }
+    .text-sage-700 { color: #48543e !important; }
+    .text-sage-800 { color: #3b4434 !important; }
+    .border-sage-500 { border-color: #758762 !important; }
+    .border-sage-700 { border-color: #48543e !important; }
+    .bg-warm-50 { background-color: #fdf8f3 !important; }
+    .hover\:bg-sage-700:hover { background-color: #48543e !important; }
+    .hover\:text-sage-700:hover { color: #48543e !important; }
+    .hover\:text-sage-800:hover { color: #3b4434 !important; }
+    .hover\:bg-sage-100:hover { background-color: #e8ebe3 !important; }
+  </style>
+</head>
+<body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
+
+  <!-- Nav -->
+  <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo.png" alt="WCAHS Logo" class="h-12">
+      </a>
+      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+        <a href="index.html" class="text-gray-600 hover:text-sage-700 transition">Home</a>
+        <a href="pets.html" class="text-gray-600 hover:text-sage-700 transition">Adopt</a>
+        <a href="events.html" class="text-gray-600 hover:text-sage-700 transition">Events</a>
+        <a href="lost-found.html" class="text-gray-600 hover:text-sage-700 transition">Lost & Found</a>
+        <a href="contact.html" class="text-gray-600 hover:text-sage-700 transition">Contact</a>
+        <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donate</a>
+      </div>
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+      <a href="index.html" class="block py-2 text-gray-600">Home</a>
+      <a href="pets.html" class="block py-2 text-gray-600">Adopt</a>
+      <a href="events.html" class="block py-2 text-gray-600">Events</a>
+      <a href="lost-found.html" class="block py-2 text-gray-600">Lost & Found</a>
+      <a href="contact.html" class="block py-2 text-gray-600">Contact</a>
+      <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donate</a>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="bg-sage-700 py-16 relative overflow-hidden">
+    <img src="images/cats/cat_06.png" alt="" style="position:absolute; bottom:-5px; right:50px; height:115px; opacity:0.08; filter:invert(1);">
+    <img src="images/dogs/dog_12.png" alt="" style="position:absolute; bottom:-5px; left:50px; height:105px; opacity:0.07; filter:invert(1);">
+    <img src="images/paws/paw_02.png" alt="" style="position:absolute; top:12px; left:25%; height:30px; opacity:0.05; filter:invert(1); transform:rotate(10deg);">
+    <div class="max-w-6xl mx-auto px-4 text-center relative z-10">
+      <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-3">About WCAHS</h1>
+      <p class="text-sage-200 text-lg">The voice for those who cannot speak for themselves</p>
+    </div>
+  </section>
+
+  <!-- Mission -->
+  <section class="max-w-4xl mx-auto px-4 py-20">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <div>
+        <div class="rounded-2xl overflow-hidden shadow-lg">
+          <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&h=500&fit=crop" alt="Foster families with animals" class="w-full h-80 object-cover">
+        </div>
+      </div>
+      <div>
+        <h2 class="font-display text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
+        <p class="text-gray-600 leading-relaxed mb-4">
+          The Waseca County Animal Humane Society is a <strong>No-Kill 501(c)(3) nonprofit</strong> composed of individuals from our community and beyond, who have come together to be the voice for those who cannot speak for themselves.
+        </p>
+        <p class="text-gray-600 leading-relaxed mb-4">
+          We independently serve southern Minnesota through community funding &mdash; we do not receive county support. Every dollar comes from people like you who believe every animal deserves a chance.
+        </p>
+        <p class="text-gray-600 leading-relaxed">
+          Rather than maintaining a traditional shelter, <strong>all our animals live in foster homes</strong> where they receive personalized attention, socialization, and love while they wait for their forever families.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How We're Different -->
+  <section class="bg-white py-20 relative overflow-hidden">
+    <img src="images/dogs/dog_10.png" alt="" style="position:absolute; bottom:-10px; left:-10px; height:130px; opacity:0.04;">
+    <img src="images/cats/cat_13.png" alt="" style="position:absolute; top:30px; right:20px; height:90px; opacity:0.03;">
+    <img src="images/paws/paw_03.png" alt="" style="position:absolute; bottom:40px; right:40%; height:45px; opacity:0.03; transform:rotate(-20deg);">
+    <div class="max-w-6xl mx-auto px-4 relative z-10">
+      <h2 class="font-display text-3xl font-bold text-gray-900 mb-12 text-center">Why Foster-Based?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-sage-50 rounded-2xl p-8">
+          <div class="w-14 h-14 bg-sage-200 rounded-xl flex items-center justify-center mb-5">
+            <svg class="w-7 h-7 text-sage-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Home Environment</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Animals recover and thrive in a real home, not a kennel. Foster families provide the individual attention each animal needs.</p>
+        </div>
+        <div class="bg-amber-50 rounded-2xl p-8">
+          <div class="w-14 h-14 bg-amber-200 rounded-xl flex items-center justify-center mb-5">
+            <svg class="w-7 h-7 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Better Matches</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Foster families know each animal's personality, quirks, and needs &mdash; so we can match you with the perfect companion.</p>
+        </div>
+        <div class="bg-sage-50 rounded-2xl p-8">
+          <div class="w-14 h-14 bg-sage-200 rounded-xl flex items-center justify-center mb-5">
+            <svg class="w-7 h-7 text-sage-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Lower Costs</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Without building overhead, more of every donated dollar goes directly to veterinary care, food, and supplies for the animals.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Programs -->
+  <section class="max-w-6xl mx-auto px-4 py-20 relative">
+    <img src="images/dogs/dog_07.png" alt="" style="position:absolute; top:20px; right:-15px; height:110px; opacity:0.04;">
+    <img src="images/paws/paw_01.png" alt="" style="position:absolute; bottom:30px; left:10px; height:55px; opacity:0.03; transform:rotate(10deg);">
+    <h2 class="font-display text-3xl font-bold text-gray-900 mb-12 text-center">Our Programs</h2>
+
+    <div class="space-y-8">
+      <div class="bg-white rounded-2xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row gap-8 items-center">
+        <div class="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
+          <svg class="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-xl text-gray-900 mb-2">Pets for Seniors</h3>
+          <p class="text-gray-600 leading-relaxed">Qualifying senior adopters receive <strong>50% off adoption fees</strong>. We believe companionship is essential at every age, and no one should miss out because of cost. Contact us to learn about eligibility.</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row gap-8 items-center">
+        <div class="w-20 h-20 bg-sage-100 rounded-2xl flex items-center justify-center shrink-0">
+          <svg class="w-10 h-10 text-sage-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-xl text-gray-900 mb-2">Barn Cat Program</h3>
+          <p class="text-gray-600 leading-relaxed">Spayed/neutered, vaccinated cats available to farm families for a donation. These cats may not be suited for indoor life but thrive with a purpose &mdash; keeping barns and farms free of mice while enjoying outdoor living.</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-8 md:p-10 shadow-sm flex flex-col md:flex-row gap-8 items-center">
+        <div class="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
+          <svg class="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-xl text-gray-900 mb-2">Foster Program</h3>
+          <p class="text-gray-600 leading-relaxed">We're always looking for foster families. You provide the love and a safe space &mdash; we cover food, supplies, and vet care. Fostering saves lives and helps animals become their best selves before adoption.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Resources -->
+  <section class="bg-white py-20">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="font-display text-3xl font-bold text-gray-900 mb-12 text-center">Resources</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="#" class="block bg-sage-50 hover:bg-sage-100 rounded-xl p-6 transition">
+          <h3 class="font-bold text-lg text-sage-800 mb-1">Fostering FAQ</h3>
+          <p class="text-gray-500 text-sm">Everything you need to know about becoming a foster family.</p>
+        </a>
+        <a href="#" class="block bg-sage-50 hover:bg-sage-100 rounded-xl p-6 transition">
+          <h3 class="font-bold text-lg text-sage-800 mb-1">I Found a Stray</h3>
+          <p class="text-gray-500 text-sm">Steps to take if you've found a stray animal in Waseca County.</p>
+        </a>
+        <a href="#" class="block bg-sage-50 hover:bg-sage-100 rounded-xl p-6 transition">
+          <h3 class="font-bold text-lg text-sage-800 mb-1">Lost Dogs MN</h3>
+          <p class="text-gray-500 text-sm">Statewide lost dog reporting and search network.</p>
+        </a>
+        <a href="#" class="block bg-sage-50 hover:bg-sage-100 rounded-xl p-6 transition">
+          <h3 class="font-bold text-lg text-sage-800 mb-1">SE-MN Lost/Found Pets</h3>
+          <p class="text-gray-500 text-sm">Regional Facebook group for lost and found animals.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-sage-900 text-sage-200 py-16">
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div>
+        <img src="images/logo.png" alt="WCAHS" class="h-10 mb-4 brightness-200">
+        <p class="text-sm leading-relaxed text-sage-300">A No-Kill 501(c)(3) nonprofit serving southern Minnesota.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="pets.html" class="hover:text-white transition">Adoptable Pets</a></li>
+          <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
+          <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
+          <li><a href="contact.html#donate" class="hover:text-white transition">Donate</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm">
+          <li>Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
+      &copy; 2026 Waseca County Animal Humane Society. All rights reserved.
+      <span style="display:block; margin-top:6px; opacity:0.6;">Website designed by Riley Poe</span>
+    </div>
+  </footer>
+
+<script src="loader.js"></script>
+</div></body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adoptable Pets - WCAHS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: { 50: '#f6f7f4', 100: '#e8ebe3', 200: '#d2d8c8', 300: '#b3bea3', 400: '#93a27e', 500: '#758762', 600: '#5c6b4e', 700: '#48543e', 800: '#3b4434', 900: '#33392e' },
+            amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+            warm: { 50: '#fdf8f3', 100: '#f9ede0', 200: '#f2d9bf' }
+          },
+          fontFamily: { display: ['Playfair Display', 'serif'], body: ['Nunito', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+    .pet-card .p-7 { min-height: 325px; }
+    .filter-btn.active { background-color: #5c6b4e; color: white; }
+    .bg-sage-50 { background-color: #f6f7f4 !important; }
+    .bg-sage-100 { background-color: #e8ebe3 !important; }
+    .bg-sage-500 { background-color: #758762 !important; }
+    .bg-sage-600 { background-color: #5c6b4e !important; }
+    .bg-sage-700 { background-color: #48543e !important; }
+    .bg-sage-800 { background-color: #3b4434 !important; }
+    .bg-sage-900 { background-color: #33392e !important; }
+    .text-sage-100 { color: #e8ebe3 !important; }
+    .text-sage-200 { color: #d2d8c8 !important; }
+    .text-sage-300 { color: #b3bea3 !important; }
+    .text-sage-400 { color: #93a27e !important; }
+    .text-sage-600 { color: #5c6b4e !important; }
+    .text-sage-700 { color: #48543e !important; }
+    .text-sage-800 { color: #3b4434 !important; }
+    .border-sage-300 { border-color: #b3bea3 !important; }
+    .border-sage-500 { border-color: #758762 !important; }
+    .border-sage-600 { border-color: #5c6b4e !important; }
+    .border-sage-700 { border-color: #48543e !important; }
+    .bg-warm-50 { background-color: #fdf8f3 !important; }
+    .hover\:bg-sage-700:hover { background-color: #48543e !important; }
+    .hover\:text-sage-700:hover { color: #48543e !important; }
+    .hover\:text-sage-800:hover { color: #3b4434 !important; }
+    .hover\:border-sage-600:hover { border-color: #5c6b4e !important; }
+  </style>
+</head>
+<body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
+
+  <!-- Nav -->
+  <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo.png" alt="WCAHS Logo" class="h-12">
+      </a>
+      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+        <a href="index.html" class="text-gray-600 hover:text-sage-700 transition">Home</a>
+        <a href="pets.html" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">Adopt</a>
+        <a href="events.html" class="text-gray-600 hover:text-sage-700 transition">Events</a>
+        <a href="lost-found.html" class="text-gray-600 hover:text-sage-700 transition">Lost & Found</a>
+        <a href="about.html" class="text-gray-600 hover:text-sage-700 transition">About</a>
+        <a href="contact.html" class="text-gray-600 hover:text-sage-700 transition">Contact</a>
+        <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donate</a>
+      </div>
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+      <a href="index.html" class="block py-2 text-gray-600">Home</a>
+      <a href="pets.html" class="block py-2 font-semibold text-sage-700">Adopt</a>
+      <a href="events.html" class="block py-2 text-gray-600">Events</a>
+      <a href="lost-found.html" class="block py-2 text-gray-600">Lost & Found</a>
+      <a href="about.html" class="block py-2 text-gray-600">About</a>
+      <a href="contact.html" class="block py-2 text-gray-600">Contact</a>
+      <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donate</a>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="bg-sage-700 py-16 relative overflow-hidden">
+    <img src="images/dogs/dog_03.png" alt="" style="position:absolute; bottom:-5px; right:40px; height:120px; opacity:0.08; filter:invert(1);">
+    <img src="images/cats/cat_01.png" alt="" style="position:absolute; bottom:-5px; left:40px; height:110px; opacity:0.07; filter:invert(1);">
+    <img src="images/paws/paw_05.png" alt="" style="position:absolute; top:10px; right:20%; height:35px; opacity:0.06; filter:invert(1); transform:rotate(-20deg);">
+    <div class="max-w-6xl mx-auto px-4 text-center relative z-10">
+      <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-3">Adoptable Pets</h1>
+      <p class="text-sage-200 text-lg">All our animals are spayed/neutered, vaccinated, and living in foster homes</p>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <div class="max-w-6xl mx-auto px-4 pt-10">
+    <div class="flex flex-wrap gap-3 justify-center">
+      <button onclick="filterPets('all')" class="filter-btn active px-6 py-2 rounded-full border-2 border-sage-600 font-semibold text-sm transition">All</button>
+      <button onclick="filterPets('dog')" class="filter-btn px-6 py-2 rounded-full border-2 border-sage-300 text-sage-700 font-semibold text-sm hover:border-sage-600 transition">Dogs</button>
+      <button onclick="filterPets('cat')" class="filter-btn px-6 py-2 rounded-full border-2 border-sage-300 text-sage-700 font-semibold text-sm hover:border-sage-600 transition">Cats</button>
+    </div>
+  </div>
+
+  <!-- Pet Grid -->
+  <section class="max-w-6xl mx-auto px-4 py-10 pb-20">
+    <div id="petGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+      <!-- Pet 1 - Buster -->
+      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="dog">
+        <div class="h-72 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop" alt="Buster" class="w-full h-full object-cover">
+        </div>
+        <div class="p-7 flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-xl text-gray-900">Buster</h3>
+            <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">Kid-Friendly</span>
+          </div>
+          <p class="text-gray-500 text-sm">2 yr old &bull; Male &bull; Lab Mix</p>
+          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">A goofy, loyal guy who loves belly rubs and long walks. Great with kids and other dogs. Fully house-trained.</p>
+          <a href="pet-buster.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Buster &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Pet 2 - Maple -->
+      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="cat">
+        <div class="h-72 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=600&h=400&fit=crop" alt="Maple" class="w-full h-full object-cover">
+        </div>
+        <div class="p-7 flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-xl text-gray-900">Maple</h3>
+            <span class="bg-sage-100 text-sage-700 text-xs font-bold px-3 py-1 rounded-full">Independent</span>
+          </div>
+          <p class="text-gray-500 text-sm">3 yr old &bull; Female &bull; Tabby</p>
+          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">Sweet and independent. Loves sunny windowsills and gentle chin scratches. Does well as an only cat.</p>
+          <a href="pet-maple.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Maple &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Pet 3 - Penny -->
+      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="dog">
+        <div class="h-72 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1505628346881-b72b27e84530?w=600&h=400&fit=crop" alt="Penny" class="w-full h-full object-cover">
+        </div>
+        <div class="p-7 flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-xl text-gray-900">Penny</h3>
+            <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">Couch Buddy</span>
+          </div>
+          <p class="text-gray-500 text-sm">5 yr old &bull; Female &bull; Beagle</p>
+          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">A calm, cuddly companion. Perfect for a quiet home. Loves to nap next to you on the couch.</p>
+          <a href="pet-penny.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Penny &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Pet 4 - Shadow -->
+      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="cat">
+        <div class="h-72 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=600&h=400&fit=crop" alt="Shadow" class="w-full h-full object-cover">
+        </div>
+        <div class="p-7 flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-xl text-gray-900">Shadow</h3>
+            <span class="bg-sage-100 text-sage-700 text-xs font-bold px-3 py-1 rounded-full">Playful</span>
+          </div>
+          <p class="text-gray-500 text-sm">1 yr old &bull; Male &bull; Black Domestic Shorthair</p>
+          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">Playful and curious. Loves feather toys and will follow you around the house. Gets along with other cats.</p>
+          <a href="pet-shadow.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Shadow &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Pet 5 - Duke -->
+      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="dog">
+        <div class="h-72 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1558788353-f76d92427f16?w=600&h=400&fit=crop" alt="Duke" class="w-full h-full object-cover">
+        </div>
+        <div class="p-7 flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-xl text-gray-900">Duke</h3>
+            <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">Well-Trained</span>
+          </div>
+          <p class="text-gray-500 text-sm">4 yr old &bull; Male &bull; Shepherd Mix</p>
+          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">Smart, loyal, and well-trained. Knows sit, stay, and shake. Needs a yard to burn off energy.</p>
+          <a href="pet-duke.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Duke &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Pet 6 - Daisy -->
+      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="cat">
+        <div class="h-72 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=600&h=400&fit=crop" alt="Daisy" class="w-full h-full object-cover">
+        </div>
+        <div class="p-7 flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-xl text-gray-900">Daisy</h3>
+            <span class="bg-sage-100 text-sage-700 text-xs font-bold px-3 py-1 rounded-full">Lap Cat</span>
+          </div>
+          <p class="text-gray-500 text-sm">2 yr old &bull; Female &bull; Orange Tabby</p>
+          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">The sweetest lap cat you'll ever meet. Purrs like a motorboat. Loves everyone she meets.</p>
+          <a href="pet-daisy.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Daisy &rarr;</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Sponsor an Animal -->
+  <section class="bg-white py-16">
+    <div class="max-w-4xl mx-auto px-4">
+      <div class="bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl p-10 md:p-14 text-white flex flex-col md:flex-row items-center gap-8">
+        <div class="flex-1">
+          <h2 class="font-display text-3xl font-bold mb-3">Sponsor an Animal</h2>
+          <p class="text-amber-100 leading-relaxed mb-6">Not ready to adopt? You can still make a difference. Sponsor an animal's care — help cover food, vet bills, and supplies while they wait for their forever home.</p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white text-amber-700 font-bold px-6 py-3 rounded-full transition hover:bg-amber-50">$25/month</button>
+            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">$50/month</button>
+            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">Custom</button>
+          </div>
+        </div>
+        <div class="shrink-0">
+          <div class="w-32 h-32 bg-white/20 rounded-2xl flex items-center justify-center">
+            <svg class="w-16 h-16 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Adoption Application CTA -->
+  <section id="apply" class="bg-sage-800 py-16 relative overflow-hidden">
+    <img src="images/dogs/dog_06.png" alt="" style="position:absolute; bottom:0; left:20px; height:100px; opacity:0.06; filter:invert(1);">
+    <img src="images/paws/paw_04.png" alt="" style="position:absolute; top:15px; right:60px; height:40px; opacity:0.05; filter:invert(1); transform:rotate(-10deg);">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      <h2 class="font-display text-3xl font-bold text-white mb-4">Ready to Apply?</h2>
+      <p class="text-sage-200 text-lg mb-8">Our application process helps us match you with the perfect pet. All adoption decisions are made by our board to ensure the best outcome for every animal.</p>
+      <div class="bg-white/10 backdrop-blur rounded-2xl p-8 text-left max-w-lg mx-auto">
+        <h3 class="text-white font-bold text-lg mb-4">Requirements</h3>
+        <ul class="space-y-3 text-sage-200 text-sm">
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Existing pets must be current on vaccinations
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Existing pets must be spayed/neutered
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Pets must live primarily indoors
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Background check required
+          </li>
+        </ul>
+      </div>
+      <a href="contact.html" class="mt-8 inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-4 rounded-full text-lg transition shadow-lg">Start Application</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-sage-900 text-sage-200 py-16">
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div>
+        <img src="images/logo.png" alt="WCAHS" class="h-10 mb-4 brightness-200">
+        <p class="text-sm leading-relaxed text-sage-300">A No-Kill 501(c)(3) nonprofit serving southern Minnesota.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="pets.html" class="hover:text-white transition">Adoptable Pets</a></li>
+          <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
+          <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
+          <li><a href="contact.html#donate" class="hover:text-white transition">Donate</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm">
+          <li>Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
+      &copy; 2026 Waseca County Animal Humane Society. All rights reserved.
+      <span style="display:block; margin-top:6px; opacity:0.6;">Website designed by Riley Poe</span>
+    </div>
+  </footer>
+
+  <script>
+    function filterPets(type) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.querySelectorAll('.pet-card').forEach(card => {
+        if (type === 'all' || card.dataset.type === type) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
+
+<script src="loader.js"></script>
+</div></body>
+</html>

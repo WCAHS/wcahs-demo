@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penny - Adoptable Dog - WCAHS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: { 50: '#f6f7f4', 100: '#e8ebe3', 200: '#d2d8c8', 300: '#b3bea3', 400: '#93a27e', 500: '#758762', 600: '#5c6b4e', 700: '#48543e', 800: '#3b4434', 900: '#33392e' },
+            amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+            warm: { 50: '#fdf8f3', 100: '#f9ede0', 200: '#f2d9bf' }
+          },
+          fontFamily: { display: ['Playfair Display', 'serif'], body: ['Nunito', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .bg-sage-50 { background-color: #f6f7f4 !important; }
+    .bg-sage-100 { background-color: #e8ebe3 !important; }
+    .bg-sage-600 { background-color: #5c6b4e !important; }
+    .bg-sage-700 { background-color: #48543e !important; }
+    .bg-sage-800 { background-color: #3b4434 !important; }
+    .bg-sage-900 { background-color: #33392e !important; }
+    .text-sage-100 { color: #e8ebe3 !important; }
+    .text-sage-200 { color: #d2d8c8 !important; }
+    .text-sage-300 { color: #b3bea3 !important; }
+    .text-sage-400 { color: #93a27e !important; }
+    .text-sage-600 { color: #5c6b4e !important; }
+    .text-sage-700 { color: #48543e !important; }
+    .text-sage-800 { color: #3b4434 !important; }
+    .border-sage-500 { border-color: #758762 !important; }
+    .border-sage-700 { border-color: #48543e !important; }
+    .bg-warm-50 { background-color: #fdf8f3 !important; }
+    .hover\:bg-sage-700:hover { background-color: #48543e !important; }
+    .hover\:text-sage-700:hover { color: #48543e !important; }
+    .thumb-btn { transition: all 0.2s ease; }
+    .thumb-btn:hover, .thumb-btn.active { ring: 2px solid #5c6b4e; opacity: 1; }
+    .thumb-btn.active { outline: 3px solid #5c6b4e; outline-offset: 2px; }
+  </style>
+</head>
+<body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
+
+  <!-- Nav -->
+  <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <img src="images/logo.png" alt="WCAHS Logo" class="h-12">
+      </a>
+      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+        <a href="index.html" class="text-gray-600 hover:text-sage-700 transition">Home</a>
+        <a href="pets.html" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">Adopt</a>
+        <a href="events.html" class="text-gray-600 hover:text-sage-700 transition">Events</a>
+        <a href="lost-found.html" class="text-gray-600 hover:text-sage-700 transition">Lost & Found</a>
+        <a href="about.html" class="text-gray-600 hover:text-sage-700 transition">About</a>
+        <a href="contact.html" class="text-gray-600 hover:text-sage-700 transition">Contact</a>
+        <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donate</a>
+      </div>
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+      <a href="index.html" class="block py-2 text-gray-600">Home</a>
+      <a href="pets.html" class="block py-2 font-semibold text-sage-700">Adopt</a>
+      <a href="events.html" class="block py-2 text-gray-600">Events</a>
+      <a href="lost-found.html" class="block py-2 text-gray-600">Lost & Found</a>
+      <a href="about.html" class="block py-2 text-gray-600">About</a>
+      <a href="contact.html" class="block py-2 text-gray-600">Contact</a>
+      <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donate</a>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <div class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex items-center gap-2 text-sm text-gray-400">
+      <a href="pets.html" class="hover:text-sage-700 transition">&larr; All Adoptable Pets</a>
+    </div>
+  </div>
+
+  <!-- Pet Detail -->
+  <section class="max-w-6xl mx-auto px-4 pb-20">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+      <!-- Photo Gallery -->
+      <div>
+        <div class="rounded-2xl overflow-hidden shadow-lg mb-4">
+          <img id="mainPhoto" src="https://images.unsplash.com/photo-1551717743-49959800b1f6?w=800&h=600&fit=crop" alt="Penny" class="w-full h-80 md:h-[440px] object-cover">
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+          <button onclick="setPhoto(this, 'https://images.unsplash.com/photo-1551717743-49959800b1f6?w=800&h=600&fit=crop')" class="thumb-btn active rounded-xl overflow-hidden opacity-100">
+            <img src="https://images.unsplash.com/photo-1551717743-49959800b1f6?w=200&h=150&fit=crop" alt="" class="w-full h-20 object-cover">
+          </button>
+          <button onclick="setPhoto(this, 'https://images.unsplash.com/photo-1586671267731-da2cf3ceeb80?w=800&h=600&fit=crop')" class="thumb-btn rounded-xl overflow-hidden opacity-60">
+            <img src="https://images.unsplash.com/photo-1586671267731-da2cf3ceeb80?w=200&h=150&fit=crop" alt="" class="w-full h-20 object-cover">
+          </button>
+          <button onclick="setPhoto(this, 'https://images.unsplash.com/photo-1612195583950-b8fd34c87093?w=800&h=600&fit=crop')" class="thumb-btn rounded-xl overflow-hidden opacity-60">
+            <img src="https://images.unsplash.com/photo-1612195583950-b8fd34c87093?w=200&h=150&fit=crop" alt="" class="w-full h-20 object-cover">
+          </button>
+          <button onclick="setPhoto(this, 'https://images.unsplash.com/photo-1600804340584-c7db2eacf0bf?w=800&h=600&fit=crop')" class="thumb-btn rounded-xl overflow-hidden opacity-60">
+            <img src="https://images.unsplash.com/photo-1600804340584-c7db2eacf0bf?w=200&h=150&fit=crop" alt="" class="w-full h-20 object-cover">
+          </button>
+        </div>
+      </div>
+
+      <!-- Pet Info -->
+      <div>
+        <div class="flex items-start justify-between mb-2">
+          <h1 class="font-display text-4xl font-bold text-gray-900">Penny</h1>
+          <span class="bg-amber-100 text-amber-700 text-sm font-bold px-4 py-1.5 rounded-full mt-2">Couch Buddy</span>
+        </div>
+        <p class="text-gray-500 text-lg mb-6">5 yr old &bull; Female &bull; Beagle &bull; ~25 lbs</p>
+
+        <!-- Quick Details -->
+        <div class="grid grid-cols-2 gap-3 mb-8">
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Spayed/Neutered</p>
+            <p class="font-bold text-sage-700">Yes</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Size</p>
+            <p class="font-bold text-sage-700">Medium (~25 lbs)</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Microchipped</p>
+            <p class="font-bold text-sage-700">Yes</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">House-Trained</p>
+            <p class="font-bold text-sage-700">Yes</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Crate-Trained</p>
+            <p class="font-bold text-sage-700">Yes</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Good With Dogs</p>
+            <p class="font-bold text-sage-700">Yes</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Good With Cats</p>
+            <p class="font-bold text-sage-700">Yes</p>
+          </div>
+          <div class="bg-white rounded-xl p-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Energy Level</p>
+            <p class="font-bold text-sage-700">Low</p>
+          </div>
+        </div>
+
+        <!-- Apply Button -->
+        <a href="contact.html" class="block text-center bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg mb-4">Apply to Adopt Penny</a>
+        <a href="contact.html#donate" class="block text-center border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold py-3 rounded-xl transition text-sm">Sponsor Penny's Care</a>
+      </div>
+
+    </div>
+
+    <!-- About / Story -->
+    <div class="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <div class="lg:col-span-2 space-y-8">
+        <!-- About -->
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+          <h2 class="font-display text-2xl font-bold text-gray-900 mb-4">About Penny</h2>
+          <div class="text-gray-600 leading-relaxed space-y-4">
+            <p>Penny is a sweet, mellow 5-year-old Beagle who has perfected the art of doing absolutely nothing — and she does it beautifully. She's the kind of dog who finds the softest spot on the couch, curls up into a perfect little donut, and sighs contentedly like she's lived there her whole life. If you're looking for a hiking partner, Penny is not your girl. If you're looking for the world's best nap companion, she's your soulmate.</p>
+            <p>Despite her low-key nature, Penny does enjoy short, leisurely walks around the block. She'll sniff every mailbox post and fire hydrant with the dedication of a seasoned detective, but she's perfectly happy to head back inside after 15 minutes. She knows basic commands, walks nicely on a leash, and has never met a lap she didn't want to sit in.</p>
+            <p>Penny would do well in just about any home — apartment, house, with kids, without kids, with other pets, as a solo dog. She's incredibly adaptable and easygoing. Her only real preference is a couch, and ideally a human willing to share it.</p>
+          </div>
+        </div>
+
+        <!-- Background / History -->
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+          <h2 class="font-display text-2xl font-bold text-gray-900 mb-4">Background</h2>
+          <div class="text-gray-600 leading-relaxed space-y-4">
+            <p>Penny was found as a stray wandering along County Road 4 in March 2026 by a concerned motorist. She was thin, had no collar, and no microchip. Despite being on her own, she walked right up to the person who found her, tail wagging, and hopped into their car without hesitation.</p>
+            <p>She was brought to WCAHS where she was given a full veterinary workup, spayed, vaccinated, and placed into foster care. No one ever came to claim her. Based on her demeanor and manners, it's clear someone once loved her — she's house-trained, gentle with handling, and knows how to sit and shake. Whatever her story was before, she's ready for her next chapter.</p>
+          </div>
+        </div>
+
+        <!-- Health -->
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+          <h2 class="font-display text-2xl font-bold text-gray-900 mb-4">Health Information</h2>
+          <div class="text-gray-600 leading-relaxed space-y-3">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-sage-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <p>Spayed, up to date on all vaccinations including rabies and bordetella</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-sage-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <p>Microchipped</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-sage-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <p>Heartworm negative, on monthly preventative</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <p><strong>Slightly overweight:</strong> Currently 25 lbs, ideal weight is around 22 lbs. She's on a vet-approved diet plan and has already lost 2 lbs in foster care. Her adopter will receive the feeding schedule and recommended food brand.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+
+        <!-- Foster Parent Notes -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border-l-4" style="border-color: #93a27e;">
+          <h3 class="font-bold text-gray-900 mb-1">From Her Foster Family</h3>
+          <p class="text-xs text-gray-400 mb-4">Tom & Jan, fostering since March 2026</p>
+          <div class="text-gray-600 text-sm leading-relaxed space-y-3">
+            <p>"Penny is genuinely the easiest dog we've ever fostered. She sleeps about 18 hours a day, enjoys a short walk in the morning, and then it's back to the couch. She's basically a cat in a dog's body."</p>
+            <p>"The only time she barks is when the mailman comes, and even then it's more of a half-hearted 'boof' like she feels obligated. She gives up after two barks and goes back to sleep."</p>
+            <p>"She has these big soulful beagle eyes that could convince you to share your dinner. Don't fall for it — she's on a diet. But wow, she's persuasive."</p>
+          </div>
+        </div>
+
+        <!-- Adoption Details -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm">
+          <h3 class="font-bold text-gray-900 mb-4">Adoption Details</h3>
+          <ul class="text-sm text-gray-600 space-y-3">
+            <li class="flex justify-between">
+              <span class="text-gray-400">Adoption Fee</span>
+              <span class="font-bold">$200</span>
+            </li>
+            <li class="flex justify-between">
+              <span class="text-gray-400">Includes</span>
+              <span class="font-bold text-right">Spay, vaccines,<br>microchip, deworming</span>
+            </li>
+            <li class="flex justify-between">
+              <span class="text-gray-400">Location</span>
+              <span class="font-bold">Waseca, MN</span>
+            </li>
+            <li class="flex justify-between">
+              <span class="text-gray-400">ID</span>
+              <span class="font-bold text-gray-400">#WCAHS-2026-038</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Share -->
+        <div class="bg-sage-50 rounded-2xl p-6 text-center">
+          <h3 class="font-bold text-gray-900 mb-2">Help Penny Find a Home</h3>
+          <p class="text-gray-500 text-sm mb-4">Share her profile with someone who might be a match</p>
+          <div class="flex justify-center gap-3">
+            <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!')" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-full transition">Copy Link</button>
+            <a href="https://facebook.com/WasecaCAHS/" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-full transition">Facebook</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- More Pets -->
+  <section class="bg-white py-16">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="font-display text-2xl font-bold text-gray-900 mb-8 text-center">More Adoptable Pets</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <a href="pet-duke.html" class="bg-warm-50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+          <img src="https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=400&h=250&fit=crop" alt="Duke" class="w-full h-44 object-cover">
+          <div class="p-4">
+            <h3 class="font-bold text-gray-900">Duke</h3>
+            <p class="text-gray-500 text-sm">4 yr old &bull; Shepherd Mix</p>
+          </div>
+        </a>
+        <a href="pet-daisy.html" class="bg-warm-50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+          <img src="https://images.unsplash.com/photo-1615497001839-b0a0eac3274c?w=400&h=250&fit=crop" alt="Daisy" class="w-full h-44 object-cover">
+          <div class="p-4">
+            <h3 class="font-bold text-gray-900">Daisy</h3>
+            <p class="text-gray-500 text-sm">2 yr old &bull; Orange Tabby</p>
+          </div>
+        </a>
+        <a href="pet-buster.html" class="bg-warm-50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+          <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=250&fit=crop" alt="Buster" class="w-full h-44 object-cover">
+          <div class="p-4">
+            <h3 class="font-bold text-gray-900">Buster</h3>
+            <p class="text-gray-500 text-sm">2 yr old &bull; Lab Mix</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-sage-900 text-sage-200 py-16">
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div>
+        <img src="images/logo.png" alt="WCAHS" class="h-10 mb-4 brightness-200">
+        <p class="text-sm leading-relaxed text-sage-300">A No-Kill 501(c)(3) nonprofit serving southern Minnesota.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="pets.html" class="hover:text-white transition">Adoptable Pets</a></li>
+          <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
+          <li><a href="events.html" class="hover:text-white transition">Events</a></li>
+          <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm">
+          <li>Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
+      &copy; 2026 Waseca County Animal Humane Society. All rights reserved.
+      <span style="display:block; margin-top:6px; opacity:0.6;">Website designed by Riley Poe</span>
+    </div>
+  </footer>
+
+  <script>
+    function setPhoto(btn, url) {
+      document.getElementById('mainPhoto').src = url;
+      document.querySelectorAll('.thumb-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.classList.add('opacity-60');
+      });
+      btn.classList.add('active');
+      btn.classList.remove('opacity-60');
+    }
+  </script>
+  <script src="loader.js"></script>
+</div></body>
+</html>
