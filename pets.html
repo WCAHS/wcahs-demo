@@ -26,7 +26,7 @@
     .font-display { font-family: 'Playfair Display', serif; }
     .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
-    .pet-card .p-7 { min-height: 325px; }
+    .pet-card .card-body { min-height: 325px; }
     .filter-btn.active { background-color: #5c6b4e; color: white; }
     .bg-sage-50 { background-color: #f6f7f4 !important; }
     .bg-sage-100 { background-color: #e8ebe3 !important; }
@@ -51,6 +51,8 @@
     .hover\:text-sage-700:hover { color: #48543e !important; }
     .hover\:text-sage-800:hover { color: #3b4434 !important; }
     .hover\:border-sage-600:hover { border-color: #5c6b4e !important; }
+    .icon-active { opacity: 0.7; }
+    .icon-inactive { opacity: 0.15; }
   </style>
 </head>
 <body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
@@ -98,115 +100,30 @@
 
   <!-- Filters -->
   <div class="max-w-6xl mx-auto px-4 pt-10">
-    <div class="flex flex-wrap gap-3 justify-center">
+    <div id="filterBar" class="flex flex-wrap gap-3 justify-center">
       <button onclick="filterPets('all')" class="filter-btn active px-6 py-2 rounded-full border-2 border-sage-600 font-semibold text-sm transition">All</button>
-      <button onclick="filterPets('dog')" class="filter-btn px-6 py-2 rounded-full border-2 border-sage-300 text-sage-700 font-semibold text-sm hover:border-sage-600 transition">Dogs</button>
-      <button onclick="filterPets('cat')" class="filter-btn px-6 py-2 rounded-full border-2 border-sage-300 text-sage-700 font-semibold text-sm hover:border-sage-600 transition">Cats</button>
     </div>
   </div>
 
   <!-- Pet Grid -->
   <section class="max-w-6xl mx-auto px-4 py-10 pb-20">
     <div id="petGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-
-      <!-- Pet 1 - Buster -->
-      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="dog">
-        <div class="h-72 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop" alt="Buster" class="w-full h-full object-cover">
-        </div>
-        <div class="p-7 flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Buster</h3>
-            <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">Kid-Friendly</span>
-          </div>
-          <p class="text-gray-500 text-sm">2 yr old &bull; Male &bull; Lab Mix</p>
-          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">A goofy, loyal guy who loves belly rubs and long walks. Great with kids and other dogs. Fully house-trained.</p>
-          <a href="pet-buster.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Buster &rarr;</a>
-        </div>
-      </div>
-
-      <!-- Pet 2 - Maple -->
-      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="cat">
-        <div class="h-72 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=600&h=400&fit=crop" alt="Maple" class="w-full h-full object-cover">
-        </div>
-        <div class="p-7 flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Maple</h3>
-            <span class="bg-sage-100 text-sage-700 text-xs font-bold px-3 py-1 rounded-full">Independent</span>
-          </div>
-          <p class="text-gray-500 text-sm">3 yr old &bull; Female &bull; Tabby</p>
-          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">Sweet and independent. Loves sunny windowsills and gentle chin scratches. Does well as an only cat.</p>
-          <a href="pet-maple.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Maple &rarr;</a>
-        </div>
-      </div>
-
-      <!-- Pet 3 - Penny -->
-      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="dog">
-        <div class="h-72 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1505628346881-b72b27e84530?w=600&h=400&fit=crop" alt="Penny" class="w-full h-full object-cover">
-        </div>
-        <div class="p-7 flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Penny</h3>
-            <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">Couch Buddy</span>
-          </div>
-          <p class="text-gray-500 text-sm">5 yr old &bull; Female &bull; Beagle</p>
-          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">A calm, cuddly companion. Perfect for a quiet home. Loves to nap next to you on the couch.</p>
-          <a href="pet-penny.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Penny &rarr;</a>
-        </div>
-      </div>
-
-      <!-- Pet 4 - Shadow -->
-      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="cat">
-        <div class="h-72 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=600&h=400&fit=crop" alt="Shadow" class="w-full h-full object-cover">
-        </div>
-        <div class="p-7 flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Shadow</h3>
-            <span class="bg-sage-100 text-sage-700 text-xs font-bold px-3 py-1 rounded-full">Playful</span>
-          </div>
-          <p class="text-gray-500 text-sm">1 yr old &bull; Male &bull; Black Domestic Shorthair</p>
-          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">Playful and curious. Loves feather toys and will follow you around the house. Gets along with other cats.</p>
-          <a href="pet-shadow.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Shadow &rarr;</a>
-        </div>
-      </div>
-
-      <!-- Pet 5 - Duke -->
-      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="dog">
-        <div class="h-72 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1558788353-f76d92427f16?w=600&h=400&fit=crop" alt="Duke" class="w-full h-full object-cover">
-        </div>
-        <div class="p-7 flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Duke</h3>
-            <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">Well-Trained</span>
-          </div>
-          <p class="text-gray-500 text-sm">4 yr old &bull; Male &bull; Shepherd Mix</p>
-          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">Smart, loyal, and well-trained. Knows sit, stay, and shake. Needs a yard to burn off energy.</p>
-          <a href="pet-duke.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Duke &rarr;</a>
-        </div>
-      </div>
-
-      <!-- Pet 6 - Daisy -->
-      <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="cat">
-        <div class="h-72 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=600&h=400&fit=crop" alt="Daisy" class="w-full h-full object-cover">
-        </div>
-        <div class="p-7 flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Daisy</h3>
-            <span class="bg-sage-100 text-sage-700 text-xs font-bold px-3 py-1 rounded-full">Lap Cat</span>
-          </div>
-          <p class="text-gray-500 text-sm">2 yr old &bull; Female &bull; Orange Tabby</p>
-          <p class="text-gray-600 mt-3 text-sm leading-relaxed ">The sweetest lap cat you'll ever meet. Purrs like a motorboat. Loves everyone she meets.</p>
-          <a href="pet-daisy.html" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition">Meet Daisy &rarr;</a>
-        </div>
-      </div>
-
+      <!-- Populated by JS -->
+    </div>
+    <div id="noPets" class="hidden text-center py-16">
+      <p class="text-gray-400 text-lg">No adoptable pets right now — check back soon!</p>
     </div>
   </section>
+
+  <!-- Icon Legend -->
+  <div class="max-w-6xl mx-auto px-4 pb-10">
+    <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
+      <div class="flex items-center gap-2"><img src="images/icons/dog-friendly.png" class="h-5 w-auto opacity-50" alt="">Dog-Friendly</div>
+      <div class="flex items-center gap-2"><img src="images/icons/cat-friendly.png" class="h-5 w-auto opacity-50" alt="">Cat-Friendly</div>
+      <div class="flex items-center gap-2"><img src="images/icons/kid-friendly.png" class="h-5 w-auto opacity-50" alt="">Kid-Friendly</div>
+      <div class="flex items-center gap-2"><img src="images/icons/litter-trained.png" class="h-5 w-auto opacity-50" alt="">Housetrained</div>
+    </div>
+  </div>
 
   <!-- Sponsor an Animal -->
   <section class="bg-white py-16">
@@ -294,17 +211,95 @@
   </footer>
 
   <script>
+    let allAnimals = [];
+
+    function buildIcons(animal) {
+      const attrs = animal.attributes || [];
+      const icons = [
+        { key: 'Good with Dogs', src: 'images/icons/dog-friendly.png', alt: 'Dog-Friendly' },
+        { key: 'Good with Cats', src: 'images/icons/cat-friendly.png', alt: 'Cat-Friendly' },
+        { key: 'Good with Kids', src: 'images/icons/kid-friendly.png', alt: 'Kid-Friendly' },
+        { key: ['Housetrained', 'Litter Box Trained'], src: 'images/icons/litter-trained.png', alt: 'Housetrained' },
+      ];
+      return icons.map(i => {
+        const keys = Array.isArray(i.key) ? i.key : [i.key];
+        const active = keys.some(k => attrs.includes(k));
+        const style = active ? 'icon-active' : 'icon-inactive';
+        return `<img src="${i.src}" class="h-8 w-auto inline-block ${style}" alt="${i.alt}" title="${i.alt}">`;
+      }).join('');
+    }
+
+    function buildCard(animal) {
+      const iconsHtml = buildIcons(animal);
+
+      const desc = animal.description
+        ? animal.description.substring(0, 150) + (animal.description.length > 150 ? '...' : '')
+        : '';
+
+      const weight = animal.weight ? ` &bull; ${animal.weight} lbs` : '';
+
+      return `
+        <div class="pet-card bg-white rounded-2xl overflow-hidden shadow-md card-hover flex flex-col" data-type="${animal.type.toLowerCase()}">
+          <div class="h-72 overflow-hidden">
+            <img src="${animal.cover_photo || 'images/placeholder.svg'}" alt="${animal.name || 'Pet'}" class="w-full h-full object-cover" loading="lazy">
+          </div>
+          <div class="card-body p-7 flex flex-col flex-1">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-bold text-xl text-gray-900">${animal.name || 'Unknown'}</h3>
+              <div class="flex items-center gap-3">${iconsHtml}</div>
+            </div>
+            <p class="text-gray-500 text-sm">${[animal.age_display ? animal.age_display + ' old' : '', animal.sex, animal.breed].filter(Boolean).join(' &bull; ')}${weight}</p>
+            <p class="text-gray-600 mt-3 text-sm leading-relaxed">${desc || `<span class="text-gray-400 italic">More details about ${animal.name} coming soon!</span>`}</p>
+            <a href="pet.html?id=${animal.id}" class="mt-auto pt-5 block text-center bg-sage-600 hover:bg-sage-700 text-white font-semibold py-3 rounded-xl transition text-sm">Meet ${animal.name} &rarr;</a>
+          </div>
+        </div>`;
+    }
+
+    function buildFilters(animals) {
+      const types = [...new Set(animals.map(a => a.type))].sort();
+      const bar = document.getElementById('filterBar');
+      types.forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn px-6 py-2 rounded-full border-2 border-sage-300 text-sage-700 font-semibold text-sm hover:border-sage-600 transition';
+        btn.textContent = type + 's';
+        btn.onclick = function() { filterPets(type.toLowerCase()); };
+        bar.appendChild(btn);
+      });
+    }
+
+    function renderPets(animals) {
+      const grid = document.getElementById('petGrid');
+      const noPets = document.getElementById('noPets');
+      if (animals.length === 0) {
+        grid.innerHTML = '';
+        noPets.classList.remove('hidden');
+        return;
+      }
+      noPets.classList.add('hidden');
+      grid.innerHTML = animals.map(buildCard).join('');
+    }
+
     function filterPets(type) {
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
-      document.querySelectorAll('.pet-card').forEach(card => {
-        if (type === 'all' || card.dataset.type === type) {
-          card.style.display = '';
-        } else {
-          card.style.display = 'none';
-        }
-      });
+      if (type === 'all') {
+        renderPets(allAnimals);
+      } else {
+        renderPets(allAnimals.filter(a => a.type.toLowerCase() === type));
+      }
     }
+
+    // Load data
+    fetch('data/animals.json')
+      .then(r => r.json())
+      .then(data => {
+        allAnimals = data.animals || [];
+        buildFilters(allAnimals);
+        renderPets(allAnimals);
+      })
+      .catch(() => {
+        document.getElementById('noPets').classList.remove('hidden');
+      });
   </script>
 
 <script src="loader.js"></script>

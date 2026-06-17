@@ -1,0 +1,100 @@
+{
+  "last_sync": "2026-06-17T21:12:36.438499Z",
+  "count": 3,
+  "animals": [
+    {
+      "id": "213195578",
+      "shelterluv_id": "1",
+      "name": "Dash",
+      "type": "Dog",
+      "breed": "Husky/Retriever, Labrador",
+      "sex": "Male",
+      "age": 7,
+      "age_display": "7 mo",
+      "size": "Large (60-99)",
+      "weight": "35.1",
+      "color": "Silver/Black",
+      "altered": "Yes",
+      "microchipped": true,
+      "description": "",
+      "cover_photo": "images/pets/213195578_c5516906dc93.jpg",
+      "photos": [
+        "images/pets/213195578_c5516906dc93.jpg"
+      ],
+      "attributes": [
+        "Good with Cats",
+        "Good with Dogs",
+        "Good with Kids"
+      ],
+      "adoption_fee": 500,
+      "adoption_fee_name": "puppy",
+      "in_foster": false,
+      "foster_name": "",
+      "status": "Available In-Shelter",
+      "location": "Vet Clinic"
+    },
+    {
+      "id": "213198579",
+      "shelterluv_id": "3",
+      "name": "Phoenix",
+      "type": "Cat",
+      "breed": "Domestic Medium Hair",
+      "sex": "Female",
+      "age": 15,
+      "age_display": "1 yr 3 mo",
+      "size": "",
+      "weight": "6",
+      "color": "Calico",
+      "altered": "Yes",
+      "microchipped": true,
+      "description": "",
+      "cover_photo": "images/pets/213198579_bcece1622ee5.jpg",
+      "photos": [
+        "images/pets/213198579_bcece1622ee5.jpg",
+        "images/pets/213198579_c8de05d214fd.jpg"
+      ],
+      "attributes": [
+        "Good with Cats",
+        "Litter Box Trained"
+      ],
+      "adoption_fee": 75,
+      "adoption_fee_name": "Adult Cat",
+      "in_foster": true,
+      "foster_name": "Lynn Polhman",
+      "status": "Available In-Foster",
+      "location": ""
+    },
+    {
+      "id": "213198847",
+      "shelterluv_id": "4",
+      "name": "Sally",
+      "type": "Dog",
+      "breed": "Canario, Presa/Bullmastiff",
+      "sex": "Female",
+      "age": 8,
+      "age_display": "8 mo",
+      "size": "Large (60-99)",
+      "weight": "40",
+      "color": "Tan",
+      "altered": "Yes",
+      "microchipped": true,
+      "description": "",
+      "cover_photo": "images/pets/213198847_b13e6c66b8eb.jpg",
+      "photos": [
+        "images/pets/213198847_b13e6c66b8eb.jpg",
+        "images/pets/213198847_fa2058da4ba2.jpg"
+      ],
+      "attributes": [
+        "Good with Dogs",
+        "Good with Kids",
+        "Housetrained"
+      ],
+      "adoption_fee": 350,
+      "adoption_fee_name": "Young Dog",
+      "in_foster": false,
+      "foster_name": "",
+      "status": "Available In-Shelter",
+      "location": "Foster Home "
+    }
+  ]
+}
