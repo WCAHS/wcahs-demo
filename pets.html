@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="favicon.png">
   <title>Adoptable Pets - WCAHS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -128,19 +129,18 @@
   <!-- Sponsor an Animal -->
   <section class="bg-white py-16">
     <div class="max-w-4xl mx-auto px-4">
-      <div class="bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl p-10 md:p-14 text-white flex flex-col md:flex-row items-center gap-8">
-        <div class="flex-1">
+      <div class="bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl text-white flex flex-col md:flex-row overflow-hidden">
+        <div class="w-full h-56 md:w-56 lg:w-64 md:h-auto shrink-0">
+          <img src="images/photos/IMG_1590.JPEG" alt="WCAHS kitten" class="w-full h-full object-cover">
+        </div>
+        <div class="p-10 md:p-14 flex-1 flex flex-col items-center justify-center text-center">
           <h2 class="font-display text-3xl font-bold mb-3">Sponsor an Animal</h2>
           <p class="text-amber-100 leading-relaxed mb-6">Not ready to adopt? You can still make a difference. Sponsor an animal's care — help cover food, vet bills, and supplies while they wait for their forever home.</p>
-          <div class="flex flex-wrap gap-3">
-            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white text-amber-700 font-bold px-6 py-3 rounded-full transition hover:bg-amber-50">$25/month</button>
+          <div class="grid grid-cols-2 gap-3 max-w-xs">
+            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white text-amber-700 font-bold px-6 py-3 rounded-full transition hover:bg-amber-50">$10/month</button>
+            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">$25/month</button>
             <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">$50/month</button>
             <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">Custom</button>
-          </div>
-        </div>
-        <div class="shrink-0">
-          <div class="w-32 h-32 bg-white/20 rounded-2xl flex items-center justify-center">
-            <svg class="w-16 h-16 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
           </div>
         </div>
       </div>
@@ -151,31 +151,40 @@
   <section id="apply" class="bg-sage-800 py-16 relative overflow-hidden">
     <img src="images/dogs/dog_06.png" alt="" style="position:absolute; bottom:0; left:20px; height:100px; opacity:0.06; filter:invert(1);">
     <img src="images/paws/paw_04.png" alt="" style="position:absolute; top:15px; right:60px; height:40px; opacity:0.05; filter:invert(1); transform:rotate(-10deg);">
-    <div class="max-w-3xl mx-auto px-4 text-center">
-      <h2 class="font-display text-3xl font-bold text-white mb-4">Ready to Apply?</h2>
-      <p class="text-sage-200 text-lg mb-8">Our application process helps us match you with the perfect pet. All adoption decisions are made by our board to ensure the best outcome for every animal.</p>
-      <div class="bg-white/10 backdrop-blur rounded-2xl p-8 text-left max-w-lg mx-auto">
-        <h3 class="text-white font-bold text-lg mb-4">Requirements</h3>
-        <ul class="space-y-3 text-sage-200 text-sm">
-          <li class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-            Existing pets must be current on vaccinations
-          </li>
-          <li class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-            Existing pets must be spayed/neutered
-          </li>
-          <li class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-            Pets must live primarily indoors
-          </li>
-          <li class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-            Background check required
-          </li>
-        </ul>
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="font-display text-3xl font-bold text-white mb-4">Ready to Apply?</h2>
+        <p class="text-sage-200 text-lg max-w-2xl mx-auto">Our application process helps us match you with the perfect pet. All adoption decisions are made by our board to ensure the best outcome for every animal.</p>
       </div>
-      <a href="contact.html" class="mt-8 inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-4 rounded-full text-lg transition shadow-lg">Start Application</a>
+      <div class="flex flex-col md:flex-row gap-6 items-stretch max-w-4xl mx-auto mb-10">
+        <div class="flex-1 bg-white/10 backdrop-blur rounded-2xl p-8 text-left">
+          <h3 class="text-white font-bold text-lg mb-4">Requirements</h3>
+          <ul class="space-y-3 text-sage-200 text-sm">
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Existing pets must be current on vaccinations
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Existing pets must be spayed/neutered
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Pets must live primarily indoors
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              Background check required
+            </li>
+          </ul>
+        </div>
+        <div class="flex-1 rounded-2xl overflow-hidden shadow-lg ring-2 ring-white/10 h-56 md:h-auto">
+          <img src="images/photos/IMG_1597.JPEG" alt="WCAHS grey cat" class="w-full h-full object-cover">
+        </div>
+      </div>
+      <div class="text-center">
+        <a href="contact.html" class="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-4 rounded-full text-lg transition shadow-lg">Start Application</a>
+      </div>
     </div>
   </section>
 
@@ -191,6 +200,7 @@
         <ul class="space-y-2 text-sm">
           <li><a href="pets.html" class="hover:text-white transition">Adoptable Pets</a></li>
           <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
+          <li><a href="faq.html" class="hover:text-white transition">FAQ</a></li>
           <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
           <li><a href="contact.html#donate" class="hover:text-white transition">Donate</a></li>
         </ul>

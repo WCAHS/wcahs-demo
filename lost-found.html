@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="favicon.png">
   <title>Lost & Found Pets - WCAHS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -259,7 +260,18 @@
     <img src="images/cats/cat_12.png" alt="" style="position:absolute; top:30px; left:20px; height:100px; opacity:0.03;">
     <div class="max-w-2xl mx-auto px-4 relative z-10">
       <h2 class="font-display text-3xl font-bold text-gray-900 mb-3 text-center">Report a Lost or Found Pet</h2>
-      <p class="text-gray-500 text-center mb-10">Fill out the form below and we'll post it to this page and share it on our Facebook</p>
+      <p class="text-gray-500 text-center mb-4">Fill out the form below and we'll post it to this page and share it on our Facebook.</p>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-10">
+        <p class="text-amber-800 text-sm font-semibold mb-2">Tips for a better report:</p>
+        <ul class="text-amber-700 text-sm space-y-1">
+          <li>&bull; <strong>Act fast</strong> &mdash; the sooner you report, the better the chances of a reunion</li>
+          <li>&bull; <strong>Be specific about location</strong> &mdash; include cross streets, landmarks, or neighborhoods</li>
+          <li>&bull; <strong>Include the exact date and time</strong> the pet was last seen or found</li>
+          <li>&bull; <strong>Upload a clear, recent photo</strong> &mdash; use an original photo, not a screenshot from social media</li>
+          <li>&bull; <strong>Note collar details</strong> &mdash; color, tags, whether it has a microchip</li>
+          <li>&bull; <strong>Mention temperament</strong> &mdash; is the pet friendly, scared, aggressive? This helps people approach safely</li>
+        </ul>
+      </div>
 
       <form class="space-y-5" onsubmit="event.preventDefault(); alert('This is a demo — reports would be submitted and posted here.');">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -344,6 +356,7 @@
             <p class="text-gray-500 text-sm">Click to upload or drag and drop</p>
             <p class="text-gray-400 text-xs mt-1">PNG, JPG up to 10MB</p>
           </div>
+          <p class="text-gray-400 text-xs mt-2">Use a clear, well-lit original photo &mdash; not a screenshot from Facebook or a blurry zoomed-in crop. Show the full body if possible. Multiple angles help.</p>
         </div>
 
         <button type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg">Submit Report</button>
@@ -351,26 +364,114 @@
     </div>
   </section>
 
-  <!-- Tips & Resources -->
+  <!-- Lost Pet Tips -->
   <section class="max-w-4xl mx-auto px-4 py-16">
-    <h2 class="font-display text-2xl font-bold text-gray-900 mb-8 text-center">What to Do If Your Pet Is Lost</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-bold text-sage-800 mb-2">Search Your Area</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">Check under porches, in garages, sheds, and bushes. Cats especially hide close to home. Search at dawn and dusk when it's quiet.</p>
+    <h2 class="font-display text-2xl font-bold text-gray-900 mb-3 text-center">My Pet Is Lost</h2>
+    <p class="text-gray-500 text-center mb-10">Time matters. Here's what to do right now.</p>
+
+    <div class="space-y-4 mb-8">
+      <div class="bg-white rounded-xl p-6 shadow-sm border-l-4 border-red-400">
+        <h3 class="font-bold text-gray-900 mb-2">First 30 Minutes</h3>
+        <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+          <li>&bull; Search your home thoroughly &mdash; closets, under furniture, garages, sheds, window wells</li>
+          <li>&bull; Walk your neighborhood calling their name, especially at dawn/dusk when it's quiet</li>
+          <li>&bull; Place their bed, a worn shirt, food, and water outside where they were last seen</li>
+          <li>&bull; Cats usually hide close to home &mdash; check under porches, bushes, and crawl spaces</li>
+        </ul>
       </div>
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-bold text-sage-800 mb-2">Post Everywhere</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">Report here, post on our Facebook, and share with <a href="#" class="text-sage-600 underline">Lost Dogs MN</a> and <a href="#" class="text-sage-600 underline">SE-MN Lost/Found Pets</a>.</p>
+
+      <div class="bg-white rounded-xl p-6 shadow-sm border-l-4 border-amber-400">
+        <h3 class="font-bold text-gray-900 mb-2">First Few Hours</h3>
+        <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+          <li>&bull; <strong>Report here</strong> and share on our <a href="https://facebook.com/WasecaCAHS/" class="text-sage-600 underline" target="_blank">Facebook page</a></li>
+          <li>&bull; Call your microchip company to report the loss and verify your contact info is current</li>
+          <li>&bull; Contact local vets &mdash; don't just call, <strong>hand-deliver a flyer</strong> with a photo</li>
+          <li>&bull; Notify Waseca animal control and local police</li>
+          <li>&bull; Post on <a href="https://lostdogsmn.com/" class="text-sage-600 underline" target="_blank">Lost Dogs MN</a> and the <a href="https://www.facebook.com/groups/307003906074963" class="text-sage-600 underline" target="_blank">SE-MN Lost/Found Pets</a> Facebook group</li>
+          <li>&bull; Post on Craigslist, Nextdoor, and local Facebook neighborhood groups</li>
+        </ul>
       </div>
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-bold text-sage-800 mb-2">Contact Local Vets & Shelters</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">Call nearby vet clinics and animal control. Someone may have brought your pet in. Ask them to scan for a microchip.</p>
+
+      <div class="bg-white rounded-xl p-6 shadow-sm border-l-4 border-sage-500">
+        <h3 class="font-bold text-gray-900 mb-2">Ongoing Search</h3>
+        <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+          <li>&bull; Print flyers with a <strong>clear photo, phone number, and location last seen</strong> &mdash; hang at intersections at driver eye-level</li>
+          <li>&bull; Search at least a 3-mile radius from where your pet went missing</li>
+          <li>&bull; Visit local shelters in person &mdash; don't just call. Ask to see all areas including intake</li>
+          <li>&bull; Alert mail carriers, delivery drivers, and neighbors &mdash; they cover the most ground daily</li>
+          <li>&bull; <strong>Don't chase your pet</strong> if spotted &mdash; sit down, avoid eye contact, and lure with treats. Chasing can scare them further away</li>
+          <li>&bull; Track all sightings with date, time, and exact location on a map</li>
+          <li>&bull; <strong>Don't give up</strong> &mdash; many pets are found weeks or even months later</li>
+        </ul>
       </div>
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h3 class="font-bold text-sage-800 mb-2">Leave Familiar Items Out</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">Put their bed, a worn shirt, or litter box outside your door. Familiar scents can guide them home from surprisingly far away.</p>
+    </div>
+  </section>
+
+  <!-- Found Pet Tips -->
+  <section class="bg-white py-16">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="font-display text-2xl font-bold text-gray-900 mb-3 text-center">I Found a Stray</h2>
+      <p class="text-gray-500 text-center mb-10">Thank you for helping. Here's how to get them home.</p>
+
+      <div class="space-y-4">
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Check for ID</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; Look for a collar tag with a phone number and call immediately</li>
+            <li>&bull; Take the animal to any vet or shelter for a <strong>free microchip scan</strong> &mdash; if no chip is found, try a second location as chips can migrate</li>
+            <li>&bull; Check inside ears and inner thighs for tattoos (common for purebreds)</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Spread the Word</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; <strong>Report here</strong> and check our lost pet listings for a match</li>
+            <li>&bull; Post on <a href="https://lostdogsmn.com/" class="text-sage-600 underline" target="_blank">Lost Dogs MN</a> and <a href="https://www.facebook.com/groups/307003906074963" class="text-sage-600 underline" target="_blank">SE-MN Lost/Found Pets</a></li>
+            <li>&bull; Post flyers in the neighborhood where the animal was found</li>
+            <li>&bull; Check for existing "lost pet" signs in the area</li>
+            <li>&bull; <strong>Withhold one identifying detail</strong> (a marking, collar color) so the real owner can prove ownership</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Reuniting Safely</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; Ask the person to <strong>describe the pet</strong> &mdash; don't give them the description first</li>
+            <li>&bull; Request proof of ownership: vet records, dated photos with the pet, or adoption paperwork</li>
+            <li>&bull; Meet in a public place during daylight &mdash; a police station parking lot or vet office is ideal</li>
+            <li>&bull; Don't worry if the pet seems hesitant at first &mdash; long-missing animals may need a moment to recognize their owner</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-amber-400">
+          <h3 class="font-bold text-gray-900 mb-2">If No Owner Is Found</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">Contact us at <a href="tel:5072017287" class="text-sage-600 underline">(507) 201-7287</a>. We can help coordinate next steps, connect the animal with a foster home, and get them the care they need.</p>
+        </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Resources -->
+  <section class="max-w-4xl mx-auto px-4 py-12 pb-16">
+    <h3 class="font-bold text-gray-900 text-center mb-6">Helpful Resources</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <a href="https://lostdogsmn.com/" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">Lost Dogs MN</p>
+        <p class="text-gray-400 text-xs mt-1">Statewide network</p>
+      </a>
+      <a href="https://www.facebook.com/groups/307003906074963" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">SE-MN Lost/Found Pets</p>
+        <p class="text-gray-400 text-xs mt-1">Regional Facebook group</p>
+      </a>
+      <a href="https://www.petmicrochiplookup.org/" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">Microchip Lookup</p>
+        <p class="text-gray-400 text-xs mt-1">Find chip company</p>
+      </a>
+      <a href="https://facebook.com/WasecaCAHS/" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">WCAHS Facebook</p>
+        <p class="text-gray-400 text-xs mt-1">Share your report</p>
+      </a>
     </div>
   </section>
 
@@ -386,6 +487,7 @@
         <ul class="space-y-2 text-sm">
           <li><a href="pets.html" class="hover:text-white transition">Adoptable Pets</a></li>
           <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
+          <li><a href="faq.html" class="hover:text-white transition">FAQ</a></li>
           <li><a href="events.html" class="hover:text-white transition">Events</a></li>
           <li><a href="lost-found.html" class="hover:text-white transition">Lost & Found</a></li>
           <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
