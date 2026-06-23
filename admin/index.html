@@ -140,7 +140,8 @@
         </a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
         <a onclick="navigate('email')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="email">Email</a>
-        <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
+        <!-- FAQ temporarily hidden — editor needs rework -->
+        <!-- <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a> -->
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
         <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
@@ -1676,34 +1677,36 @@ async function renderApiStatus(el) {
 
   el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">API Status</h1>
 
-  <div class="card p-5 mb-5">
-    <div class="flex items-center gap-3 mb-3">
-      <span class="w-3 h-3 rounded-full ${dotStyle.split(';')[0]}" style="${dotStyle.split(';')[1] || ''}"></span>
-      <h2 class="font-bold text-gray-900">ShelterLuv Sync</h2>
-      <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${badgeStyle}">${statusLabel}</span>
-    </div>
-    <div class="flex items-center gap-6 text-sm text-gray-600 flex-wrap">
-      <div><span class="text-gray-400">Animals:</span> <span class="font-semibold text-gray-800">${data.current_animals}</span></div>
-      <div><span class="text-gray-400">Last sync:</span> <span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
-      <div><span class="text-gray-400">Next sync:</span> <span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
-    </div>
-    <p class="text-xs text-gray-400 mt-3">Syncs every 15 min via GitHub Actions</p>
-  </div>
-
-  <div class="card p-5">
-    <h3 class="font-bold text-gray-900 text-sm mb-2">Recent</h3>
-    ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
-    '<div class="space-y-0.5">' + data.recent_syncs.slice(0, 5).map(s => `
-      <div class="flex items-center justify-between py-1 text-xs">
-        <div class="flex items-center gap-2">
-          ${s.status === 'success'
-            ? '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
-            : '<svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
-          }
-          <span class="text-gray-400">${localTime(s.synced_at)}</span>
-        </div>
+  <div class="grid md:grid-cols-2 gap-5">
+    <div class="card p-5">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="w-3 h-3 rounded-full ${dotStyle.split(';')[0]}" style="${dotStyle.split(';')[1] || ''}"></span>
+        <h2 class="font-bold text-gray-900 text-sm">ShelterLuv Sync</h2>
+        <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold ${badgeStyle}">${statusLabel}</span>
       </div>
-    `).join('') + '</div>'}
+      <div class="space-y-1.5 text-sm text-gray-600">
+        <div class="flex justify-between"><span class="text-gray-400">Animals</span><span class="font-semibold text-gray-800">${data.current_animals}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Last sync</span><span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Next sync</span><span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
+      </div>
+      <p class="text-[11px] text-gray-400 mt-3">Every 15 min via GitHub Actions</p>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-900 text-sm mb-2">Recent Syncs</h3>
+      ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
+      '<div class="space-y-0.5">' + data.recent_syncs.slice(0, 5).map(s => `
+        <div class="flex items-center justify-between py-1 text-xs">
+          <div class="flex items-center gap-2">
+            ${s.status === 'success'
+              ? '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
+              : '<svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+            }
+            <span class="text-gray-400">${localTime(s.synced_at)}</span>
+          </div>
+        </div>
+      `).join('') + '</div>'}
+    </div>
   </div>`;
 }
 
