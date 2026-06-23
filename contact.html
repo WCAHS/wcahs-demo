@@ -262,7 +262,8 @@
           btn.classList.add('amt-selected', 'border-2', 'border-white/50', 'ring-2', 'ring-white/20');
         }
         function openZeffy() {
-          var base = 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581?modal=true';
+          var zeffyUrl = (window._wcahsSettings && window._wcahsSettings.zeffy_url) || 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581';
+          var base = zeffyUrl + '?modal=true';
           if (_selectedAmount) base += '&amount=' + _selectedAmount;
           var overlay = document.createElement('div');
           overlay.id = 'zeffyOverlay';

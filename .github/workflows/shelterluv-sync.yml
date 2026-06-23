@@ -1,0 +1,84 @@
+name: ShelterLuv Sync
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch: {}      # Manual trigger from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch ShelterLuv & push to D1
+        env:
+          SHELTERLUV_API_KEY: ${{ secrets.SHELTERLUV_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+        run: |
+          set -e
+
+          # Fetch publishable animals from ShelterLuv
+          echo "Fetching from ShelterLuv..."
+          RESPONSE=$(curl -sf -H "X-Api-Key: $SHELTERLUV_API_KEY" \
+            "https://www.shelterluv.com/api/v1/animals?status_type=publishable&limit=100")
+
+          ANIMAL_COUNT=$(echo "$RESPONSE" | jq '.animals | length')
+          echo "Found $ANIMAL_COUNT publishable animals"
+
+          # Build SQL statements
+          SQL="DELETE FROM animals;"
+
+          if [ "$ANIMAL_COUNT" -gt 0 ]; then
+            # Process each animal into an INSERT statement
+            SQL+=$(echo "$RESPONSE" | jq -r '.animals[] | @json' | while IFS= read -r animal; do
+              ID=$(echo "$animal" | jq -r '.["Internal-ID"]')
+              SLID=$(echo "$animal" | jq -r '.ID // ""')
+              NAME=$(echo "$animal" | jq -r '.Name // ""' | sed "s/'/''/g")
+              TYPE=$(echo "$animal" | jq -r '.Type // ""')
+              BREED=$(echo "$animal" | jq -r '.Breed // ""' | sed "s/'/''/g")
+              SEX=$(echo "$animal" | jq -r '.Sex // ""')
+              AGE=$(echo "$animal" | jq -r '.Age // 0')
+              SIZE=$(echo "$animal" | jq -r '.Size // ""')
+              WEIGHT=$(echo "$animal" | jq -r '.CurrentWeightPounds // ""')
+              COLOR=$(echo "$animal" | jq -r '.Color // ""' | sed "s/'/''/g")
+              ALTERED=$(echo "$animal" | jq -r '.Altered // ""')
+              MICRO=$(echo "$animal" | jq -r 'if (.Microchips // [] | length) > 0 then 1 else 0 end')
+              DESC=$(echo "$animal" | jq -r '.Description // ""' | sed "s/'/''/g")
+              COVER=$(echo "$animal" | jq -r '.CoverPhoto // ""')
+              PHOTOS=$(echo "$animal" | jq -c '.Photos // []')
+              ATTRS=$(echo "$animal" | jq -c '[.Attributes // [] | .[] | select(.Publish == "Yes") | .AttributeName]')
+              FEE=$(echo "$animal" | jq -r '.AdoptionFeeGroup.Price // "null"')
+              FEE_NAME=$(echo "$animal" | jq -r '.AdoptionFeeGroup.Name // ""' | sed "s/'/''/g")
+              IN_FOSTER=$(echo "$animal" | jq -r 'if .InFoster then 1 else 0 end')
+              STATUS=$(echo "$animal" | jq -r '.Status // ""')
+
+              # Format age display
+              if [ "$AGE" -lt 12 ]; then
+                AGE_DISPLAY="${AGE} mo"
+              else
+                YEARS=$((AGE / 12))
+                MONTHS=$((AGE % 12))
+                if [ "$MONTHS" -eq 0 ]; then
+                  AGE_DISPLAY="${YEARS} yr"
+                else
+                  AGE_DISPLAY="${YEARS} yr ${MONTHS} mo"
+                fi
+              fi
+
+              echo "INSERT INTO animals (id,shelterluv_id,name,type,breed,sex,age,age_display,size,weight,color,altered,microchipped,description,cover_photo,photos,attributes,adoption_fee,adoption_fee_name,in_foster,status,last_updated) VALUES ('$ID','$SLID','$NAME','$TYPE','$BREED','$SEX',$AGE,'$AGE_DISPLAY','$SIZE','$WEIGHT','$COLOR','$ALTERED',$MICRO,'$DESC','$COVER','$PHOTOS','$ATTRS',$FEE,'$FEE_NAME',$IN_FOSTER,'$STATUS',datetime('now'));"
+            done)
+          fi
+
+          # Log the sync
+          SQL+="INSERT INTO sync_log (animal_count, status) VALUES ($ANIMAL_COUNT, 'success');"
+
+          echo "Executing SQL against D1..."
+          curl -sf -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"sql\": $(echo "$SQL" | jq -Rs .)}" \
+            | jq '.success'
+
+          echo "Sync complete: $ANIMAL_COUNT animals"

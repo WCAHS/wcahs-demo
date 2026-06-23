@@ -100,7 +100,6 @@
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer" data-nav="events">Events</a>
         <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
-        <a onclick="navigate('about')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="about">About Page</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="users">Users</a>
         <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
       </nav>
@@ -230,9 +229,14 @@ function h(str) { const d = document.createElement('div'); d.textContent = str; 
 function fmtPhone(p) { if(!p)return''; const d=p.replace(/\D/g,''); if(d.length===10)return'('+d.substring(0,3)+') '+d.substring(3,6)+'-'+d.substring(6); if(d.length===11&&d[0]==='1')return'('+d.substring(1,4)+') '+d.substring(4,7)+'-'+d.substring(7); return p; }
 function formatDate(d) { if (!d) return ''; return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
 function timeAgo(dt) {
-  const d = new Date(dt); const now = new Date(); const diff = Math.floor((now - d) / 1000);
+  const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z'); const now = new Date(); const diff = Math.floor((now - d) / 1000);
   if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff/60) + 'm ago';
   if (diff < 86400) return Math.floor(diff/3600) + 'h ago'; return Math.floor(diff/86400) + 'd ago';
+}
+function localTime(dt) {
+  if (!dt) return '';
+  const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+  return d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
 }
 
 // ── Submissions ──
@@ -685,6 +689,14 @@ async function renderSettings(el) {
   </div>
 
   <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Integrations</h2>
+    <div class="grid grid-cols-1 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Zeffy Donation Form URL</label><input id="setZeffy" value="${h(data.zeffy_url||'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://www.zeffy.com/embed/donation-form/...">
+        <p class="text-xs text-gray-400 mt-1">Used for donate buttons and sponsor links across the site</p></div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Social & Partners</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Facebook URL</label><input id="setFb" value="${h(data.facebook_url||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
@@ -702,7 +714,7 @@ async function renderSettings(el) {
   <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
     <div class="flex items-center gap-4 mb-3">
-      <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
+      <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction===true||data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
     </div>
     <p class="text-xs text-gray-400">Shows a one-time popup per session with "Pardon Our Muddy Paws!" message. Visitors dismiss it to continue browsing.</p>
     <div class="mt-3"><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
@@ -720,7 +732,7 @@ async function renderSettings(el) {
   <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Site Announcement Banner</h2>
     <div class="flex items-center gap-4 mb-3">
-      <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
+      <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled===true||data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
     </div>
     <div class="mb-3"><label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label><input id="setAnnText" value="${h(data.announcement_text||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. We're closed Dec 24-26 for the holidays"></div>
     <div><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
@@ -789,15 +801,17 @@ window.handleAnnPageToggle = function(el) {
 };
 
 window.saveSettings = async function() {
+  try {
   const annChecks = [...document.querySelectorAll('#annPages input:checked')].map(c => c.value);
-  const annPages = annChecks.includes('all') ? 'all' : annChecks.join(',');
+  const annPages = annChecks.length > 0 ? (annChecks.includes('all') ? 'all' : annChecks.join(',')) : 'all';
   const ucChecks = [...document.querySelectorAll('#ucPages input:checked')].map(c => c.value);
-  const ucPages = ucChecks.includes('all') ? 'all' : ucChecks.join(',');
-  await api('/admin/settings', { method: 'PUT', body: {
+  const ucPages = ucChecks.length > 0 ? (ucChecks.includes('all') ? 'all' : ucChecks.join(',')) : 'all';
+  const res = await api('/admin/settings', { method: 'PUT', body: {
     phone: document.getElementById('setPhone').value,
     email: document.getElementById('setEmail').value,
     address: document.getElementById('setAddress').value,
     address_note: document.getElementById('setAddressNote').value,
+    zeffy_url: document.getElementById('setZeffy').value,
     facebook_url: document.getElementById('setFb').value,
     partners: _partners,
     under_construction: document.getElementById('setUcEnabled').checked ? 'true' : 'false',
@@ -807,9 +821,23 @@ window.saveSettings = async function() {
     announcement_pages: annPages,
   }});
   const saved = document.getElementById('settingsSaved');
+  if (res.error) {
+    saved.textContent = 'Error: ' + JSON.stringify(res.error);
+    saved.style.background = '#fef3c7'; saved.style.color = '#92400e';
+  } else {
+    saved.textContent = 'Settings saved!';
+    saved.style.background = '#e8ebe3'; saved.style.color = '#3b4434';
+  }
+  saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
   saved.classList.remove('hidden');
-  saved.style.background = '#e8ebe3'; saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
-  setTimeout(() => { saved.classList.add('hidden'); saved.style.background = ''; saved.style.padding = ''; }, 3000);
+  setTimeout(() => { saved.classList.add('hidden'); }, 3000);
+  } catch(err) {
+    const saved = document.getElementById('settingsSaved');
+    saved.textContent = 'JS Error: ' + err.message;
+    saved.style.background = '#fef3c7'; saved.style.color = '#92400e';
+    saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
+    saved.classList.remove('hidden');
+  }
 };
 
 // ── About Page ──
@@ -861,61 +889,45 @@ window.saveAbout = async function() {
 // ── API Status ──
 async function renderApiStatus(el) {
   el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-gray-400">Loading...</p>';
-  const data = await api('/admin/sync-status');
-  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+  let data;
+  try { data = await api('/admin/sync-status'); } catch(e) { data = { error: e.message }; }
+  if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">Could not load: ' + h(data.error) + '</p>'; return; }
 
   const statusIcon = (s) => s === 'success'
     ? '<span class="inline-block w-2.5 h-2.5 rounded-full bg-green-500 mr-2"></span>'
     : '<span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400 mr-2"></span>';
 
+  const lastSync = data.recent_syncs[0];
+  const isHealthy = lastSync?.status === 'success';
+
   el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-    <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
-      <p class="text-3xl font-bold text-sage-700">${data.current_animals}</p>
-      <p class="text-gray-500 text-sm mt-1">Animals in Database</p>
-    </div>
-    <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
-      <p class="text-3xl font-bold text-sage-700">${data.last_success ? timeAgo(data.last_success) : 'Never'}</p>
-      <p class="text-gray-500 text-sm mt-1">Last Successful Sync</p>
-    </div>
-    <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
-      <p class="text-3xl font-bold text-sage-700">1 min</p>
-      <p class="text-gray-500 text-sm mt-1">Sync Interval</p>
-    </div>
-  </div>
-
   <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-amber-500'}"></span>
       <h2 class="font-bold text-gray-900">ShelterLuv Sync</h2>
-      <span class="text-xs px-3 py-1 rounded-full ${data.recent_syncs[0]?.status === 'success' ? 'bg-sage-100 text-sage-700' : 'bg-amber-100 text-amber-700'}">${data.recent_syncs[0]?.status === 'success' ? 'Healthy' : 'Issue Detected'}</span>
+      <span class="text-xs px-3 py-1 rounded-full ${isHealthy ? 'bg-sage-100 text-sage-700' : 'bg-amber-100 text-amber-700'}">${isHealthy ? 'Healthy' : 'Issue'}</span>
     </div>
-    <p class="text-sm text-gray-500 mb-1">Source: ShelterLuv API (Org 95252)</p>
-    <p class="text-sm text-gray-500 mb-1">Endpoint: <code class="text-xs bg-gray-100 px-2 py-0.5 rounded">animals?status_type=publishable</code></p>
-    <p class="text-sm text-gray-500">Photos stored in: Cloudflare R2</p>
+    <div class="grid grid-cols-3 gap-4 mb-4">
+      <div class="text-center"><p class="text-2xl font-bold text-sage-700">${data.current_animals}</p><p class="text-gray-400 text-xs">Animals</p></div>
+      <div class="text-center"><p class="text-2xl font-bold text-sage-700">${data.last_success ? timeAgo(data.last_success) : '—'}</p><p class="text-gray-400 text-xs">Last Sync</p></div>
+      <div class="text-center"><p class="text-2xl font-bold text-sage-700">1 min</p><p class="text-gray-400 text-xs">Interval</p></div>
+    </div>
+    <button onclick="triggerSync()" id="syncBtn" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2 rounded-2xl transition">Sync Now</button>
+    <span id="syncStatus" class="text-sm ml-3 hidden"></span>
   </div>
 
   <div class="bg-white rounded-2xl p-6 shadow-sm">
-    <h2 class="font-bold text-gray-900 mb-4">Recent Sync Log</h2>
-    ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs recorded yet</p>' :
-    '<div class="space-y-2">' + data.recent_syncs.map(s => `
-      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-        <div class="flex items-center">
-          ${statusIcon(s.status)}
-          <span class="text-sm ${s.status === 'success' ? 'text-gray-700' : 'text-red-600'}">${h(s.status)}</span>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-500">${s.animal_count} animals</span>
-          <span class="text-xs text-gray-400">${s.synced_at}</span>
-        </div>
+    <h3 class="font-bold text-gray-900 text-sm mb-3">Recent Syncs</h3>
+    ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
+    '<div class="space-y-1">' + data.recent_syncs.slice(0, 5).map(s => `
+      <div class="flex items-center justify-between py-1.5 text-xs">
+        <div class="flex items-center gap-2">${statusIcon(s.status)}<span class="${s.status === 'success' ? 'text-gray-600' : 'text-amber-600'}">${s.status === 'success' ? s.animal_count + ' animals' : 'Error'}</span></div>
+        <span class="text-gray-400">${localTime(s.synced_at)}</span>
       </div>
     `).join('') + '</div>'}
-  </div>
-
-  <div class="mt-6">
-    <button onclick="triggerSync()" id="syncBtn" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl transition">Trigger Manual Sync</button>
-    <span id="syncStatus" class="text-sm ml-3 hidden"></span>
   </div>`;
+
 }
 
 window.triggerSync = async function() {

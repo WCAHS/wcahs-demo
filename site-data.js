@@ -17,26 +17,10 @@ function displayPhone(phone) {
 
 // Shared site data loader — fetches settings from API and updates dynamic elements
 (function() {
-  var CACHE_KEY = 'wcahs_settings';
-  var CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
   function loadSettings() {
-    // Check sessionStorage cache first
-    var cached = sessionStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        var parsed = JSON.parse(cached);
-        if (parsed._ts && Date.now() - parsed._ts < CACHE_TTL) {
-          applySettings(parsed.data);
-          return;
-        }
-      } catch(e) {}
-    }
-
     fetch('/api/settings')
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: data, _ts: Date.now() }));
         applySettings(data);
       })
       .catch(function() {
@@ -47,7 +31,7 @@ function displayPhone(phone) {
   function applySettings(s) {
     // Announcement banner (with page targeting)
     var banner = document.getElementById('announcement-banner');
-    if (banner && s.announcement_enabled === 'true' && s.announcement_text) {
+    if (banner && (s.announcement_enabled === true || s.announcement_enabled === 'true') && s.announcement_text) {
       var pages = s.announcement_pages || 'all';
       var currentPage = location.pathname.replace(/.*\//, '').replace('.html', '') || 'home';
       if (currentPage === 'index') currentPage = 'home';

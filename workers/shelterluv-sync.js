@@ -22,8 +22,20 @@ async function fetchAnimals(apiKey) {
 
   while (true) {
     const url = `${API_BASE}/animals?status_type=publishable&limit=${limit}&offset=${offset}`;
-    const res = await fetch(url, { headers: { 'X-Api-Key': apiKey } });
-    if (!res.ok) throw new Error(`ShelterLuv API error: ${res.status}`);
+    let res;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch(url, {
+        headers: {
+          'X-Api-Key': apiKey,
+          'User-Agent': 'Mozilla/5.0 (compatible; WCAHS-Sync/2.0)',
+          'Accept': 'application/json',
+        },
+        redirect: 'follow',
+      });
+      if (res.ok) break;
+      if (attempt < 2) await new Promise(r => setTimeout(r, 2000));
+    }
+    if (!res.ok) throw new Error(`ShelterLuv API error: ${res.status} after 3 attempts`);
     const data = await res.json();
     const animals = data.animals || [];
     if (animals.length === 0) break;

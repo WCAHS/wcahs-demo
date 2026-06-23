@@ -100,7 +100,7 @@
     // Under construction popup — controlled via admin settings
     if (!sessionStorage.getItem('wcahs_banner_dismissed')) {
       fetch('/api/settings').then(function(r){return r.json();}).then(function(s) {
-        if (s.under_construction !== 'true') return;
+        if (s.under_construction !== true && s.under_construction !== 'true') return;
         var pages = s.under_construction_pages || 'all';
         var currentPage = location.pathname.replace(/.*\//, '').replace('.html', '') || 'home';
         if (currentPage === 'index') currentPage = 'home';
