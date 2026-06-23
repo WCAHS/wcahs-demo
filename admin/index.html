@@ -7,6 +7,8 @@
   <title>WCAHS Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -25,12 +27,55 @@
   <style>
     body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
     .font-display { font-family: 'Playfair Display', serif; }
-    .sidebar-link { transition: background 0.15s; }
-    .sidebar-link:hover, .sidebar-link.active { background: rgba(255,255,255,0.15); }
+    .sidebar-link { transition: all 0.15s ease; border-radius: 10px; }
+    .sidebar-link:hover { background: rgba(255,255,255,0.1); }
+    .sidebar-link.active { background: rgba(255,255,255,0.15); border-left: 3px solid #fbbf24; padding-left: 9px; }
     .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 6px; }
+    .card { background: white; border-radius: 16px; border: 1px solid #e8ebe3; box-shadow: 0 1px 3px rgba(59,68,52,0.04); }
+    .card-warm { background: #fffcf8; border-radius: 16px; border: 1px solid #e8ebe3; box-shadow: 0 1px 3px rgba(59,68,52,0.04); }
+
+    /* Quill overrides */
+    .ql-toolbar.ql-snow { border-radius: 10px 10px 0 0; border-color: #d2d8c8; background: #f6f7f4; }
+    .ql-container.ql-snow { border-radius: 0 0 10px 10px; border-color: #d2d8c8; min-height: 120px; font-family: 'Nunito', sans-serif; font-size: 14px; }
+    .ql-editor { min-height: 100px; }
+
+    /* Chart bar hover */
+    .chart-bar { transition: opacity 0.15s; cursor: default; }
+    .chart-bar:hover { opacity: 0.85; }
+    .chart-bar-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #3b4434; color: white; font-size: 11px; padding: 2px 8px; border-radius: 6px; white-space: nowrap; margin-bottom: 4px; }
+    .chart-bar:hover .chart-bar-tooltip { display: block; }
+
+    /* Inbox item accents */
+    .inbox-item { border-left: 4px solid transparent; transition: all 0.15s ease; }
+    .inbox-item.type-contact { border-left-color: #3b82f6; }
+    .inbox-item.type-foster { border-left-color: #5c6b4e; }
+    .inbox-item.type-lost { border-left-color: #ef4444; }
+    .inbox-item.type-found { border-left-color: #22c55e; }
+    .inbox-item.unread { background: #fffcf8; border-left-width: 4px; }
+    .inbox-item.unread .inbox-name { font-weight: 800; }
+    .inbox-item.read { opacity: 0.75; }
+    .inbox-item.read:hover { opacity: 1; }
+
+    /* Status dots */
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .status-dot.new { background: #f59e0b; }
+    .status-dot.contacted { background: #3b82f6; }
+    .status-dot.followup { background: #8b5cf6; }
+    .status-dot.closed { background: #9ca3af; }
+    .status-dot.pending { background: #f59e0b; }
+    .status-dot.approved { background: #22c55e; }
+    .status-dot.resolved { background: #3b82f6; }
+    .status-dot.rejected { background: #ef4444; }
+
+    /* Filter tabs */
+    .filter-tab { padding: 6px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; transition: all 0.15s; cursor: pointer; border: 1.5px solid transparent; }
+    .filter-tab.active { background: #48543e; color: white; border-color: #48543e; }
+    .filter-tab:not(.active) { background: white; color: #6b7280; border-color: #e8ebe3; }
+    .filter-tab:not(.active):hover { border-color: #b3bea3; color: #48543e; }
+
     @media (max-width: 767px) {
       #dashboard { flex-direction: column; }
-      #sidebar { position: fixed; inset: 0; z-index: 50; transform: translateX(-100%); transition: transform 0.2s ease; width: 100%; max-width: 280px; height: 100vh; }
+      #sidebar { position: fixed; inset: 0; z-index: 50; transform: translateX(-100%); transition: transform 0.25s ease; width: 100%; max-width: 280px; height: 100vh; }
       #sidebar.open { transform: translateX(0); }
       #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 49; }
       #sidebar.open + #sidebarOverlay { display: block; }
@@ -78,37 +123,34 @@
       <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="p-1">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
-      <img src="../images/logo.png" alt="WCAHS" class="h-7 brightness-200">
+      <img src="../images/logo.png" alt="WCAHS" class="h-7" style="filter: invert(1) brightness(2);">
       <span class="text-sage-300 text-xs">Admin</span>
     </div>
     <!-- Sidebar -->
     <div id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.remove('open')"></div>
     <aside id="sidebar" class="w-56 bg-sage-900 text-white flex flex-col shrink-0 md:sticky top-0 h-screen">
-      <div class="p-4 border-b border-sage-800">
-        <img src="../images/logo.png" alt="WCAHS" class="h-8 brightness-200">
-        <p class="text-sage-300 text-xs mt-1">Admin Panel</p>
+      <div class="p-5 border-b border-sage-800">
+        <img src="../images/logo.png" alt="WCAHS" class="h-8" style="filter: invert(1) brightness(2);">
+        <p class="text-sage-400 text-xs mt-1.5 tracking-wide uppercase font-semibold">Admin Panel</p>
       </div>
-      <nav class="flex-1 py-3 space-y-0.5 px-2 overflow-y-auto">
-        <a onclick="navigate('submissions')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer flex items-center justify-between" data-nav="submissions">
+      <nav class="flex-1 py-4 space-y-1 px-3 overflow-y-auto">
+        <a onclick="navigate('submissions')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer flex items-center justify-between" data-nav="submissions">
           <span>Inbox</span>
           <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
         </a>
-        <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer flex items-center justify-between" data-nav="lost-found">
-          <span>Lost & Found</span>
-          <span id="lfBadge" class="badge bg-amber-500 text-white hidden">0</span>
-        </a>
-        <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer" data-nav="events">Events</a>
-        <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
-        <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
-        <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="users">Users</a>
-        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
-        <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
+        <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
+        <a onclick="navigate('forms')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="forms">Forms</a>
+        <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
+        <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
+        <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
+        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
+        <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
       </nav>
       <div class="p-4 border-t border-sage-800 space-y-2">
         <a href="https://accounts.zoho.com/signin" target="_blank" class="block text-center bg-sage-700 hover:bg-sage-600 text-sage-200 text-xs font-semibold py-2 px-3 rounded-lg transition">Check Email</a>
         <a onclick="navigate('my-account')" class="sidebar-link block px-3 py-2 rounded-lg text-xs cursor-pointer text-sage-300 hover:text-white" data-nav="my-account">My Account</a>
-        <p class="text-sage-300 text-xs" id="loggedInAs"></p>
-        <button onclick="logout()" class="text-sage-400 hover:text-white text-xs transition">Log out</button>
+        <p class="text-sage-400 text-xs" id="loggedInAs"></p>
+        <button onclick="logout()" class="text-sage-500 hover:text-white text-xs transition">Log out</button>
       </div>
     </aside>
 
@@ -137,7 +179,6 @@ async function checkAuth() {
     const res = await api('/auth/me');
     if (res.username) { showDashboard(res); return; }
   } catch(e) {}
-  // Check if setup needed
   try {
     const res = await api('/auth/setup', { method: 'POST', body: { username: '', password: '' } });
   } catch(e) {}
@@ -154,7 +195,6 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   const turnstileEl = document.querySelector('[name="cf-turnstile-response"]');
   const turnstileToken = turnstileEl ? turnstileEl.value : '';
 
-  // Try setup first (creates account if no users exist)
   const setupRes = await api('/auth/setup', { method: 'POST', body: { username: user, password: pass } });
 
   const loginRes = await api('/auth/login', { method: 'POST', body: { username: user, password: pass, turnstile_token: turnstileToken } });
@@ -173,7 +213,6 @@ function showDashboard(user) {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
   document.getElementById('loggedInAs').textContent = user.username + ' (' + user.role + ')';
-  // Hide admin-only nav items for staff
   if (user.role !== 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
   }
@@ -186,35 +225,41 @@ async function logout() {
   location.reload();
 }
 
+// Cache for inbox data
+let _subsData = [];
+let _lfData = [];
+
 async function loadBadgeCounts() {
   try {
     const subs = await api('/admin/submissions');
-    const unread = subs.filter(s => !s.is_read).length;
-    const badge = document.getElementById('inboxBadge');
-    if (unread > 0) { badge.textContent = unread; badge.classList.remove('hidden'); }
-    else { badge.classList.add('hidden'); }
-
+    _subsData = subs;
     const reports = await api('/admin/lost-found');
-    const pending = reports.filter(r => r.status === 'pending').length;
-    const lfBadge = document.getElementById('lfBadge');
-    if (pending > 0) { lfBadge.textContent = pending; lfBadge.classList.remove('hidden'); }
-    else { lfBadge.classList.add('hidden'); }
+    _lfData = reports;
+
+    const unreadSubs = Array.isArray(subs) ? subs.filter(s => !s.is_read).length : 0;
+    const pendingLF = Array.isArray(reports) ? reports.filter(r => r.status === 'pending').length : 0;
+    const totalBadge = unreadSubs + pendingLF;
+
+    const badge = document.getElementById('inboxBadge');
+    if (totalBadge > 0) { badge.textContent = totalBadge; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
   } catch(e) {}
 }
 
 // ── Navigation ──
 function navigate(page) {
-  // Close sidebar on mobile
   var sb = document.getElementById('sidebar');
   if (sb) sb.classList.remove('open');
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
   const link = document.querySelector(`[data-nav="${page}"]`);
   if (link) link.classList.add('active');
   const content = document.getElementById('content');
+  // Destroy any Quill instances
+  _quillInstances = {};
   switch(page) {
     case 'submissions': renderSubmissions(content); break;
-    case 'lost-found': renderLostFound(content); break;
     case 'events': renderEvents(content); break;
+    case 'forms': renderForms(content); break;
     case 'faq': renderFaq(content); break;
     case 'settings': renderSettings(content); break;
     case 'about': renderAbout(content); break;
@@ -240,86 +285,322 @@ function localTime(dt) {
   const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
   return d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
 }
+function minutesAgo(dt) {
+  if (!dt) return null;
+  const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+  return Math.floor((new Date() - d) / 60000);
+}
 
-// ── Submissions ──
+// ── Quill helpers ──
+let _quillInstances = {};
+
+function initQuill(containerId, initialHtml) {
+  setTimeout(() => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const q = new Quill('#' + containerId, {
+      theme: 'snow',
+      modules: {
+        toolbar: [['bold', 'italic', 'underline'], ['link'], [{ list: 'ordered' }, { list: 'bullet' }]]
+      }
+    });
+    if (initialHtml) {
+      q.root.innerHTML = initialHtml;
+    }
+    _quillInstances[containerId] = q;
+  }, 50);
+}
+
+function getQuillHtml(containerId) {
+  const q = _quillInstances[containerId];
+  if (!q) return '';
+  const html = q.root.innerHTML;
+  return html === '<p><br></p>' ? '' : html;
+}
+
+// ── Submissions (Unified Inbox) ──
+let _inboxFilter = 'all';
+
 async function renderSubmissions(el) {
   el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Inbox</h1><p class="text-gray-400">Loading...</p>';
-  const data = await api('/admin/submissions');
-  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
-  const tabs = `<div class="flex gap-2 mb-6">
-    <button onclick="filterSubs('all')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-sage-700 text-white">All (${data.length})</button>
-    <button onclick="filterSubs('contact')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">Contact (${data.filter(s=>s.type==='contact').length})</button>
-    <button onclick="filterSubs('foster')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">Foster (${data.filter(s=>s.type==='foster').length})</button>
-  </div>`;
+  const [subs, reports] = await Promise.all([
+    api('/admin/submissions'),
+    api('/admin/lost-found')
+  ]);
+  if (subs.error) { el.innerHTML += '<p class="text-red-500">' + subs.error + '</p>'; return; }
 
-  const statusLabels = { new: 'New', contacted: 'Contacted', followup: 'Follow-up', closed: 'Closed' };
-  const statusColors = { new: 'bg-amber-100 text-amber-700', contacted: 'bg-blue-100 text-blue-700', followup: 'bg-purple-100 text-purple-700', closed: 'bg-gray-100 text-gray-500' };
+  _subsData = Array.isArray(subs) ? subs : [];
+  _lfData = Array.isArray(reports) ? reports : [];
 
-  let html = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Inbox</h1>' + tabs;
-  if (data.length === 0) {
-    html += '<div class="bg-white rounded-2xl p-8 text-center text-gray-400">No submissions yet</div>';
+  // Build unified list
+  const allItems = [];
+
+  _subsData.forEach(s => {
+    let phone = '';
+    let msg = s.message;
+    const phoneMatch = msg.match(/^Phone: (.+?)\n\n/);
+    if (phoneMatch) { phone = phoneMatch[1]; msg = msg.replace(phoneMatch[0], ''); }
+    allItems.push({
+      kind: 'submission',
+      itemType: s.type, // contact or foster
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      phone: phone,
+      subject: s.subject,
+      message: msg,
+      rawMessage: s.message,
+      status: s.status || 'new',
+      is_read: s.is_read,
+      created_at: s.created_at,
+      _raw: s
+    });
+  });
+
+  _lfData.forEach(r => {
+    allItems.push({
+      kind: 'lf',
+      itemType: r.type, // lost or found
+      id: r.id,
+      name: r.reporter_name,
+      email: r.reporter_email || '',
+      phone: r.reporter_phone || '',
+      petName: r.pet_name,
+      species: r.species,
+      breed: r.breed,
+      color: r.color,
+      gender: r.gender,
+      collar_details: r.collar_details,
+      temperament: r.temperament,
+      current_location: r.current_location,
+      collar_status: r.collar_status,
+      description: r.description,
+      location_details: r.location_details,
+      photo_url: r.photo_url,
+      status: r.status || 'pending',
+      is_read: r.status !== 'pending', // pending = unread
+      created_at: r.created_at,
+      _raw: r
+    });
+  });
+
+  // Sort by date descending
+  allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  // Counts
+  const counts = {
+    all: allItems.length,
+    contact: allItems.filter(i => i.itemType === 'contact').length,
+    foster: allItems.filter(i => i.itemType === 'foster').length,
+    lost: allItems.filter(i => i.itemType === 'lost').length,
+    found: allItems.filter(i => i.itemType === 'found').length
+  };
+
+  const tabBtn = (key, label) => {
+    const isActive = _inboxFilter === key;
+    return `<button onclick="filterInbox('${key}')" class="filter-tab ${isActive ? 'active' : ''}">${label} (${counts[key]})</button>`;
+  };
+
+  let html = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">Inbox</h1>
+    <div class="flex gap-2 mb-5 flex-wrap">
+      ${tabBtn('all', 'All')}
+      ${tabBtn('contact', 'Contact')}
+      ${tabBtn('foster', 'Foster')}
+      ${tabBtn('lost', 'Lost')}
+      ${tabBtn('found', 'Found')}
+    </div>`;
+
+  if (allItems.length === 0) {
+    html += `<div class="card p-10 text-center">
+      <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-2.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+      <p class="text-gray-400 font-semibold">Inbox is empty</p>
+      <p class="text-gray-300 text-sm mt-1">New submissions and reports will appear here</p>
+    </div>`;
   } else {
-    html += '<div id="subsList" class="space-y-4">';
-    data.forEach(s => {
-      const unread = !s.is_read;
-      const st = s.status || 'new';
-      let phone = '';
-      let msg = s.message;
-      const phoneMatch = msg.match(/^Phone: (.+?)\n\n/);
-      if (phoneMatch) { phone = phoneMatch[1]; msg = msg.replace(phoneMatch[0], ''); }
+    html += '<div id="inboxList" class="space-y-2">';
+    allItems.forEach(item => {
+      const unread = !item.is_read;
+      const readClass = unread ? 'unread' : 'read';
 
-      html += `<div class="sub-item bg-white rounded-2xl shadow-sm overflow-hidden ${unread ? 'border-l-4 border-amber-400' : ''}" data-type="${s.type}">
-        <div class="flex items-center gap-3 p-4 cursor-pointer hover:bg-sage-50 transition" onclick="toggleSub(${s.id}); ${unread ? 'markRead('+s.id+', true)' : ''}">
-          <div class="w-10 h-10 rounded-full ${s.type==='foster' ? 'bg-sage-100' : 'bg-blue-50'} flex items-center justify-center shrink-0">
-            <span class="text-sm font-bold ${s.type==='foster' ? 'text-sage-700' : 'text-blue-600'}">${h(s.name.charAt(0).toUpperCase())}</span>
-          </div>
+      // Avatar colors by type
+      const avatarColors = { contact: 'bg-blue-50 text-blue-600', foster: 'bg-sage-100 text-sage-700', lost: 'bg-red-50 text-red-600', found: 'bg-green-50 text-green-700' };
+      const avatarClass = avatarColors[item.itemType] || 'bg-gray-100 text-gray-600';
+
+      // Thumbnail for L&F
+      let thumbHtml = '';
+      if (item.kind === 'lf' && item.photo_url) {
+        let photos = [];
+        try { photos = JSON.parse(item.photo_url); } catch(e) { photos = [item.photo_url]; }
+        if (photos[0]) {
+          thumbHtml = `<img src="${photos[0]}" class="w-10 h-10 rounded-xl object-cover shrink-0">`;
+        }
+      }
+      if (!thumbHtml) {
+        const initial = item.name ? item.name.charAt(0).toUpperCase() : '?';
+        thumbHtml = `<div class="w-10 h-10 rounded-xl ${avatarClass} flex items-center justify-center shrink-0"><span class="text-sm font-bold">${h(initial)}</span></div>`;
+      }
+
+      // Title line
+      let titleExtra = '';
+      if (item.kind === 'lf') {
+        const petLabel = item.petName || ('Unknown ' + (item.species || 'Pet'));
+        titleExtra = ` &mdash; <span class="text-gray-500 font-normal">${h(petLabel)}</span>`;
+      }
+
+      // Subtitle
+      let subtitle = '';
+      if (item.kind === 'submission') {
+        subtitle = h(item.email);
+        if (item.subject && item.subject !== 'General Inquiry') subtitle += ' &bull; ' + h(item.subject);
+      } else {
+        subtitle = h(item.species || '');
+        if (item.breed) subtitle += ' &bull; ' + h(item.breed);
+        if (item.location_details) subtitle += ' &bull; ' + h(item.location_details);
+      }
+      subtitle += ' &bull; ' + timeAgo(item.created_at);
+
+      const clickId = item.kind === 'submission' ? 'sub-' + item.id : 'lf-' + item.id;
+      const arrowId = item.kind === 'submission' ? 'sub-arrow-' + item.id : 'lf-arrow-' + item.id;
+      const markReadCall = (item.kind === 'submission' && unread) ? `markRead(${item.id}, true);` : '';
+
+      html += `<div class="inbox-item card type-${item.itemType} ${readClass} overflow-hidden" data-type="${item.itemType}">
+        <div class="flex items-center gap-3 p-4 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('${clickId}', '${arrowId}'); ${markReadCall}">
+          ${thumbHtml}
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-bold text-gray-900 text-sm">${h(s.name)}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full ${s.type==='foster' ? 'bg-sage-100 text-sage-700' : 'bg-blue-100 text-blue-700'}">${s.type}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full ${statusColors[st]}">${statusLabels[st] || st}</span>
+            <div class="flex items-center gap-2">
+              <span class="status-dot ${item.status}" title="${item.status}"></span>
+              <span class="inbox-name text-gray-900 text-sm">${h(item.name)}${titleExtra}</span>
             </div>
-            <p class="text-xs text-gray-400 mt-0.5 truncate">${h(s.email)}${s.subject && s.subject !== 'General Inquiry' ? ' &bull; ' + h(s.subject) : ''} &bull; ${timeAgo(s.created_at)}</p>
+            <p class="text-xs text-gray-400 mt-0.5 truncate">${subtitle}</p>
           </div>
-          <svg class="w-5 h-5 text-gray-300 shrink-0 transition-transform" id="sub-arrow-${s.id}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <svg class="w-5 h-5 text-gray-300 shrink-0 transition-transform" id="${arrowId}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <div id="sub-${s.id}" class="hidden border-t border-gray-100 p-5">
-          <div class="flex flex-wrap items-center gap-3 text-sm mb-3">
-            <a href="mailto:${h(s.email)}" class="text-sage-700 hover:underline">${h(s.email)}</a>
-            ${phone ? '<a href="tel:' + phone.replace(/\\D/g,'') + '" class="text-sage-700 hover:underline">' + h(fmtPhone(phone)) + '</a>' : ''}
-            ${s.subject && s.subject !== 'General Inquiry' ? '<span class="text-gray-400">&bull; ' + h(s.subject) + '</span>' : ''}
-          </div>
-          <p class="text-sm text-gray-700 whitespace-pre-wrap mb-4">${h(msg)}</p>
-          <div class="flex items-center gap-3 flex-wrap pt-3 border-t border-gray-100">
-            <select onchange="updateSubStatus(${s.id}, this.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white">
-              ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
-            </select>
-            ${unread ? `<button onclick="event.stopPropagation(); markRead(${s.id}, true)" class="text-xs text-sage-700 hover:underline">Mark read</button>` : `<button onclick="event.stopPropagation(); markRead(${s.id}, false)" class="text-xs text-gray-400 hover:underline">Mark unread</button>`}
-            <button onclick="event.stopPropagation(); if(confirm('Delete this submission?')) deleteSub(${s.id})" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
-          </div>
-        </div>
-      </div>`;
+        <div id="${clickId}" class="hidden border-t border-sage-100">`;
+
+      // Expanded content
+      if (item.kind === 'submission') {
+        html += renderSubExpanded(item);
+      } else {
+        html += renderLFExpanded(item);
+      }
+
+      html += `</div></div>`;
     });
     html += '</div>';
   }
+
   el.innerHTML = html;
-  window._subsData = data;
 }
 
-window.filterSubs = function(type) {
-  document.querySelectorAll('.sub-item').forEach(el => {
-    el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
-  });
-  document.querySelectorAll('.sub-tab').forEach(b => { b.className = b.className.replace(/bg-sage-700 text-white|bg-gray-200 text-gray-700/g, ''); });
-  event.target.classList.add('bg-sage-700', 'text-white');
+function renderSubExpanded(item) {
+  const statusLabels = { new: 'New', contacted: 'Contacted', followup: 'Follow-up', closed: 'Closed' };
+  const st = item.status;
+
+  if (item.itemType === 'contact') {
+    return `<div class="p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-4">
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Name</p><p class="text-sm text-gray-800 font-semibold">${h(item.name)}</p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="mailto:${h(item.email)}" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Phone</p><p class="text-sm text-gray-800">${item.phone ? '<a href="tel:' + item.phone.replace(/\\D/g,'') + '" class="text-sage-700 hover:underline">' + h(fmtPhone(item.phone)) + '</a>' : '<span class="text-gray-300">&mdash;</span>'}</p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Subject</p><p class="text-sm text-gray-800">${item.subject ? h(item.subject) : '<span class="text-gray-300">&mdash;</span>'}</p></div>
+      </div>
+      <div class="mb-4">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Message</p>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap bg-sage-50 rounded-xl p-4">${h(item.message)}</p>
+      </div>
+      ${subActionBar(item, statusLabels, st)}
+    </div>`;
+  } else {
+    // Foster
+    return `<div class="p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-4">
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Name</p><p class="text-sm text-gray-800 font-semibold">${h(item.name)}</p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="mailto:${h(item.email)}" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
+      </div>
+      <div class="mb-4">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">About Yourself</p>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap bg-sage-50 rounded-xl p-4">${item.message ? h(item.message) : '<span class="text-gray-300">&mdash;</span>'}</p>
+      </div>
+      ${subActionBar(item, statusLabels, st)}
+    </div>`;
+  }
+}
+
+function subActionBar(item, statusLabels, st) {
+  const unread = !item.is_read;
+  return `<div class="flex items-center gap-3 flex-wrap pt-3 border-t border-sage-100">
+    <select onchange="updateSubStatus(${item.id}, this.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-sage-400">
+      ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
+    </select>
+    ${unread ? `<button onclick="event.stopPropagation(); markRead(${item.id}, true)" class="text-xs text-sage-700 hover:underline">Mark read</button>` : `<button onclick="event.stopPropagation(); markRead(${item.id}, false)" class="text-xs text-gray-400 hover:underline">Mark unread</button>`}
+    <button onclick="event.stopPropagation(); if(confirm('Delete this submission?')) deleteSub(${item.id})" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
+  </div>`;
+}
+
+function renderLFExpanded(item) {
+  const r = item._raw;
+  let photos = [];
+  if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+
+  return `<div class="p-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+      <div>
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pet Details</h4>
+        <div class="space-y-1.5 text-sm">
+          <p><span class="text-gray-400 w-24 inline-block">Species:</span> <span class="font-semibold">${h(r.species)}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Breed:</span> <span class="font-semibold">${r.breed ? h(r.breed) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Color:</span> <span class="font-semibold">${r.color ? h(r.color) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Gender:</span> <span class="font-semibold">${r.gender ? h(r.gender) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Collar:</span> <span class="font-semibold">${r.collar_details ? h(r.collar_details) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Temperament:</span> <span class="font-semibold">${r.temperament ? h(r.temperament) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Currently:</span> <span class="font-semibold">${r.current_location ? h(r.current_location) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+          <p><span class="text-gray-400 w-24 inline-block">Collar status:</span> <span class="font-semibold">${r.collar_status ? h(r.collar_status) : '<span class="text-gray-300">&mdash;</span>'}</span></p>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Reporter</h4>
+        <div class="space-y-1.5 text-sm">
+          <p class="font-semibold">${h(r.reporter_name)}</p>
+          ${r.reporter_phone ? '<p><a href="tel:'+r.reporter_phone.replace(/\\D/g,'')+'" class="text-sage-700 hover:underline">'+h(fmtPhone(r.reporter_phone))+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
+          ${r.reporter_email ? '<p><a href="mailto:'+h(r.reporter_email)+'" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
+        </div>
+        ${r.location_details ? '<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">Location</h4><p class="text-sm font-semibold">'+h(r.location_details)+'</p>' : ''}
+      </div>
+    </div>
+    ${r.description ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</h4><p class="text-sm text-gray-700 bg-sage-50 rounded-xl p-4">'+h(r.description)+'</p></div>' : ''}
+    ${photos.length > 0 ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photos</h4><div class="flex flex-wrap gap-3">'+photos.map(p=>'<img src="'+p+'" class="w-24 h-24 rounded-xl object-cover">').join('')+'</div></div>' : ''}
+    <div class="flex items-center gap-3 flex-wrap pt-3 border-t border-sage-100">
+      ${r.status==='pending' ? `<button onclick="updateReport(${r.id},'approved')" class="text-sm bg-sage-600 text-white px-4 py-2 rounded-xl hover:bg-sage-700 transition font-semibold">Approve</button><button onclick="updateReport(${r.id},'rejected')" class="text-sm bg-gray-100 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-200 transition font-semibold">Reject</button>` : ''}
+      ${r.status==='approved' ? `<button onclick="resolveReport(${r.id})" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-xl hover:bg-blue-200 transition font-semibold">Mark Resolved</button>` : ''}
+      <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-sm bg-purple-50 text-purple-700 px-4 py-2 rounded-xl hover:bg-purple-100 transition font-semibold">Generate Poster</button>
+      <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id})" class="text-sm text-red-400 hover:text-red-600 ml-auto">Delete</button>
+    </div>
+  </div>`;
+}
+
+window.toggleInboxItem = function(elId, arrowId) {
+  var el = document.getElementById(elId);
+  var arrow = document.getElementById(arrowId);
+  if (!el) return;
+  el.classList.toggle('hidden');
+  if (arrow) arrow.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
 };
 
+window.filterInbox = function(type) {
+  _inboxFilter = type;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+  document.querySelectorAll('.inbox-item').forEach(el => {
+    el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
+  });
+};
+
+// Keep old function names working
+window.filterSubs = window.filterInbox;
+
 window.toggleSub = function(id) {
-  var el = document.getElementById('sub-' + id);
-  var arrow = document.getElementById('sub-arrow-' + id);
-  el.classList.toggle('hidden');
-  arrow.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
+  toggleInboxItem('sub-' + id, 'sub-arrow-' + id);
 };
 
 window.markRead = async function(id, read) {
@@ -337,96 +618,20 @@ window.deleteSub = async function(id) {
   navigate('submissions'); loadBadgeCounts();
 };
 
-// ── Lost & Found ──
-async function renderLostFound(el) {
-  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Lost & Found Reports</h1><p class="text-gray-400">Loading...</p>';
-  const data = await api('/admin/lost-found');
-  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
-
-  let html = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Lost & Found Reports</h1>';
-  const statuses = { pending: 'Pending Review', approved: 'Approved', resolved: 'Resolved', rejected: 'Rejected' };
-  const statusColors = { pending: 'bg-amber-100 text-amber-700', approved: 'bg-sage-100 text-sage-700', resolved: 'bg-blue-100 text-blue-700', rejected: 'bg-red-100 text-red-700' };
-
-  if (data.length === 0) {
-    html += '<div class="bg-white rounded-2xl p-8 text-center text-gray-400">No reports submitted</div>';
-  } else {
-    html += '<div class="space-y-4">';
-    data.forEach(r => {
-      // Parse photo URLs
-      let photos = [];
-      if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
-      const thumbUrl = photos[0] || '';
-
-      html += `<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div class="flex items-center gap-4 p-4 cursor-pointer hover:bg-sage-50 transition" onclick="toggleReport(${r.id})">
-          ${thumbUrl ? '<img src="'+thumbUrl+'" class="w-14 h-14 rounded-xl object-cover shrink-0">' : '<div class="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center shrink-0"><svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>'}
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-bold text-gray-900">${h(r.pet_name || 'Unknown ' + r.species)}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full ${r.type==='lost' ? 'bg-red-100 text-red-700' : 'bg-sage-100 text-sage-700'}">${r.type}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full ${statusColors[r.status]}">${statuses[r.status]}</span>
-            </div>
-            <p class="text-xs text-gray-400 mt-0.5">${h(r.species)}${r.breed ? ' &bull; ' + h(r.breed) : ''} &bull; ${h(r.reporter_name)} &bull; ${timeAgo(r.created_at)}</p>
-          </div>
-          <svg class="w-5 h-5 text-gray-300 shrink-0 transition-transform" id="arrow-${r.id}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </div>
-        <div id="report-${r.id}" class="hidden border-t border-gray-100 p-5">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pet Details</h4>
-              <div class="space-y-1 text-sm">
-                <p><span class="text-gray-400">Species:</span> <span class="font-semibold">${h(r.species)}</span></p>
-                ${r.breed ? '<p><span class="text-gray-400">Breed:</span> <span class="font-semibold">'+h(r.breed)+'</span></p>' : ''}
-                ${r.color ? '<p><span class="text-gray-400">Color:</span> <span class="font-semibold">'+h(r.color)+'</span></p>' : ''}
-                ${r.gender ? '<p><span class="text-gray-400">Gender:</span> <span class="font-semibold">'+h(r.gender)+'</span></p>' : ''}
-                ${r.collar_details ? '<p><span class="text-gray-400">Collar:</span> <span class="font-semibold">'+h(r.collar_details)+'</span></p>' : ''}
-                ${r.temperament ? '<p><span class="text-gray-400">Temperament:</span> <span class="font-semibold">'+h(r.temperament)+'</span></p>' : ''}
-                ${r.current_location ? '<p><span class="text-gray-400">Currently:</span> <span class="font-semibold">'+h(r.current_location)+'</span></p>' : ''}
-                ${r.collar_status ? '<p><span class="text-gray-400">Collar status:</span> <span class="font-semibold">'+h(r.collar_status)+'</span></p>' : ''}
-              </div>
-            </div>
-            <div>
-              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Reporter</h4>
-              <div class="space-y-1 text-sm">
-                <p class="font-semibold">${h(r.reporter_name)}</p>
-                ${r.reporter_phone ? '<p><a href="tel:'+r.reporter_phone.replace(/\\D/g,'')+'" class="text-sage-700 hover:underline">'+h(fmtPhone(r.reporter_phone))+'</a></p>' : ''}
-                ${r.reporter_email ? '<p><a href="mailto:'+h(r.reporter_email)+'" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : ''}
-              </div>
-              ${r.location_details ? '<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">Location</h4><p class="text-sm font-semibold">'+h(r.location_details)+'</p>' : ''}
-            </div>
-          </div>
-          ${r.description ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</h4><p class="text-sm text-gray-700">'+h(r.description)+'</p></div>' : ''}
-          ${photos.length > 0 ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photos</h4><div class="flex flex-wrap gap-3">'+photos.map(p=>'<img src="'+p+'" class="w-24 h-24 rounded-xl object-cover">').join('')+'</div></div>' : ''}
-          <div class="flex items-center gap-3 flex-wrap pt-3 border-t border-gray-100">
-            ${r.status==='pending' ? `<button onclick="updateReport(${r.id},'approved')" class="text-sm bg-sage-600 text-white px-4 py-2 rounded-xl hover:bg-sage-700 transition font-semibold">Approve</button><button onclick="updateReport(${r.id},'rejected')" class="text-sm bg-gray-100 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-200 transition font-semibold">Reject</button>` : ''}
-            ${r.status==='approved' ? `<button onclick="resolveReport(${r.id})" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-xl hover:bg-blue-200 transition font-semibold">Mark Resolved</button>` : ''}
-            <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-sm bg-purple-50 text-purple-700 px-4 py-2 rounded-xl hover:bg-purple-100 transition font-semibold">Generate Poster</button>
-            <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id})" class="text-sm text-red-400 hover:text-red-600 ml-auto">Delete</button>
-          </div>
-        </div>
-      </div>`;
-    });
-    html += '</div>';
-  }
-  el.innerHTML = html;
-}
-
+// ── Lost & Found (now in Inbox, keep window functions) ──
 window.toggleReport = function(id) {
-  var el = document.getElementById('report-' + id);
-  var arrow = document.getElementById('arrow-' + id);
-  el.classList.toggle('hidden');
-  arrow.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
+  toggleInboxItem('lf-' + id, 'lf-arrow-' + id);
 };
 
 window.updateReport = async function(id, status) {
   await api('/admin/lost-found/' + id, { method: 'PUT', body: { status } });
-  navigate('lost-found'); loadBadgeCounts();
+  navigate('submissions'); loadBadgeCounts();
 };
 
 window.resolveReport = async function(id) {
   const note = prompt('Resolution note (e.g., "Reunited with owner"):');
   await api('/admin/lost-found/' + id, { method: 'PUT', body: { status: 'resolved', resolved_note: note || '' } });
-  navigate('lost-found'); loadBadgeCounts();
+  navigate('submissions'); loadBadgeCounts();
 };
 
 window.generatePoster = function(report) {
@@ -436,8 +641,18 @@ window.generatePoster = function(report) {
 
 window.deleteReport = async function(id) {
   await api('/admin/lost-found/' + id, { method: 'DELETE' });
-  navigate('lost-found'); loadBadgeCounts();
+  navigate('submissions'); loadBadgeCounts();
 };
+
+// ── Forms (placeholder) ──
+function renderForms(el) {
+  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">Forms</h1>
+    <div class="card p-10 text-center">
+      <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="text-gray-500 font-semibold text-lg">Coming Soon</p>
+      <p class="text-gray-400 text-sm mt-1">Custom form builder will be available in a future update</p>
+    </div>`;
+}
 
 // ── Events ──
 async function renderEvents(el) {
@@ -447,21 +662,21 @@ async function renderEvents(el) {
 
   let html = `<div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-display font-bold text-sage-800">Events</h1>
-    <button onclick="showEventForm()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Event</button>
+    <button onclick="showEventForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ Add Event</button>
   </div>`;
   html += '<div id="eventFormArea"></div>';
 
   if (data.length === 0) {
-    html += '<div class="bg-white rounded-2xl p-8 text-center text-gray-400">No events yet</div>';
+    html += '<div class="card p-8 text-center text-gray-400">No events yet</div>';
   } else {
     html += '<div class="space-y-3">';
     data.forEach(ev => {
       const past = new Date(ev.date + 'T23:59:59') < new Date();
-      html += `<div class="bg-white rounded-2xl p-5 shadow-sm ${past ? 'opacity-60' : ''}">
+      html += `<div class="card p-5 ${past ? 'opacity-60' : ''}">
         <div class="flex items-start justify-between mb-1">
           <div>
             <span class="font-bold text-gray-900">${h(ev.title)}</span>
-            ${ev.badge ? `<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 ml-2">${h(ev.badge)}</span>` : ''}
+            ${ev.badge ? `<span class="text-xs px-2 py-0.5 rounded-full bg-sage-100 text-sage-700 ml-2">${h(ev.badge)}</span>` : ''}
             ${!ev.published ? '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 ml-2">Draft</span>' : ''}
             ${past ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 ml-2">Past</span>' : ''}
           </div>
@@ -494,14 +709,12 @@ function buildTimeOptions(selected) {
 
 function eventFormHtml(ev) {
   const e = ev || {};
-  // Parse existing time like "10:00 AM - 2:00 PM" into start/end
   let startTime = '', endTime = '';
   if (e.time) {
     const parts = e.time.split(/\s*[-–]\s*/);
     startTime = (parts[0] || '').trim();
     endTime = (parts[1] || '').trim();
   }
-  // Parse location — might be "Venue, Address" format
   let venue = '', address = '';
   if (e.location) {
     const lParts = e.location.split(/, (.+)/);
@@ -512,34 +725,34 @@ function eventFormHtml(ev) {
   const curBadge = e.badge || '';
   const isCustomBadge = curBadge && !badges.includes(curBadge);
 
-  return `<div class="bg-sage-50 rounded-2xl p-6 mb-6 border border-sage-200">
+  return `<div class="card-warm p-6 mb-6 border border-sage-200" style="background:#f6f7f4;">
     <h3 class="font-bold text-gray-900 mb-4">${ev ? 'Edit Event' : 'New Event'}</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-600 mb-1">Event Title *</label><input id="evTitle" value="${h(e.title||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. Adoption Day at Tractor Supply"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Start Date *</label><input id="evDate" type="date" value="${e.date||''}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">End Date <span class="font-normal text-gray-400">(multi-day)</span></label><input id="evEndDate" type="date" value="${e.end_date||''}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-600 mb-1">Event Title *</label><input id="evTitle" value="${h(e.title||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Adoption Day at Tractor Supply"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Start Date *</label><input id="evDate" type="date" value="${e.date||''}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">End Date <span class="font-normal text-gray-400">(multi-day)</span></label><input id="evEndDate" type="date" value="${e.end_date||''}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Event Type</label>
-        <select id="evBadgeSelect" onchange="if(this.value==='custom'){document.getElementById('evBadgeCustom').classList.remove('hidden')}else{document.getElementById('evBadgeCustom').classList.add('hidden')}" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <select id="evBadgeSelect" onchange="if(this.value==='custom'){document.getElementById('evBadgeCustom').classList.remove('hidden')}else{document.getElementById('evBadgeCustom').classList.add('hidden')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
           <option value="">None</option>
           ${badges.map(b => '<option value="'+b+'"'+(curBadge===b?' selected':'')+'>'+b+'</option>').join('')}
           <option value="custom" ${isCustomBadge?'selected':''}>Custom...</option>
         </select>
-        <input id="evBadgeCustom" class="${isCustomBadge?'':'hidden'} w-full border rounded-lg px-3 py-2 text-sm mt-2" value="${isCustomBadge?h(curBadge):''}" placeholder="Custom event type">
+        <input id="evBadgeCustom" class="${isCustomBadge?'':'hidden'} w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-sage-400" value="${isCustomBadge?h(curBadge):''}" placeholder="Custom event type">
       </div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Start Time</label>
-        <select id="evStartTime" class="w-full border rounded-lg px-3 py-2 text-sm">${buildTimeOptions(startTime)}</select></div>
+        <select id="evStartTime" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${buildTimeOptions(startTime)}</select></div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">End Time</label>
-        <select id="evEndTime" class="w-full border rounded-lg px-3 py-2 text-sm">${buildTimeOptions(endTime)}</select></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Venue Name</label><input id="evVenue" value="${h(venue)}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. Tractor Supply Co."></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="evAddress" value="${h(address)}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. 123 Main St, Waseca"></div>
+        <select id="evEndTime" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${buildTimeOptions(endTime)}</select></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Venue Name</label><input id="evVenue" value="${h(venue)}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Tractor Supply Co."></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="evAddress" value="${h(address)}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. 123 Main St, Waseca"></div>
     </div>
-    <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="evDesc" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${h(e.description||'')}</textarea></div>
+    <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="evDesc" rows="3" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${h(e.description||'')}</textarea></div>
     <div class="flex items-center gap-4 mb-4">
       <label class="flex items-center gap-2 text-sm"><input id="evPublished" type="checkbox" ${e.published!==0?'checked':''}> Published</label>
     </div>
     <div class="flex gap-2">
-      <button onclick="saveEvent(${e.id||'null'})" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
-      <button onclick="document.getElementById('eventFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
+      <button onclick="saveEvent(${e.id||'null'})" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Save</button>
+      <button onclick="document.getElementById('eventFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
     </div>
   </div>`;
 }
@@ -548,21 +761,18 @@ window.showEventForm = function() { document.getElementById('eventFormArea').inn
 window.editEvent = function(ev) { document.getElementById('eventFormArea').innerHTML = eventFormHtml(ev); window.scrollTo(0,0); };
 
 window.saveEvent = async function(id) {
-  // Combine time fields
   const startTime = document.getElementById('evStartTime').value;
   const endTime = document.getElementById('evEndTime').value;
   let time = '';
   if (startTime && endTime) time = startTime + ' – ' + endTime;
   else if (startTime) time = startTime;
 
-  // Combine location fields
   const venue = document.getElementById('evVenue').value.trim();
   const address = document.getElementById('evAddress').value.trim();
   let location = '';
   if (venue && address) location = venue + ', ' + address;
   else location = venue || address;
 
-  // Badge from dropdown or custom
   const badgeSelect = document.getElementById('evBadgeSelect').value;
   const badgeCustom = document.getElementById('evBadgeCustom').value.trim();
   const badge = badgeSelect === 'custom' ? badgeCustom : badgeSelect;
@@ -600,7 +810,7 @@ async function renderFaq(el) {
   const sections = { adoption: 'Adoption', fostering: 'Fostering', general: 'General' };
   let html = `<div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-display font-bold text-sage-800">FAQ</h1>
-    <button onclick="showFaqForm()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Question</button>
+    <button onclick="showFaqForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ Add Question</button>
   </div>`;
   html += '<div id="faqFormArea"></div>';
 
@@ -612,9 +822,9 @@ async function renderFaq(el) {
     } else {
       html += '<div class="space-y-2 mb-4">';
       items.forEach(f => {
-        html += `<div class="bg-white rounded-2xl p-4 shadow-sm">
+        html += `<div class="card p-4">
           <p class="font-semibold text-gray-900 text-sm">${h(f.question)}</p>
-          <p class="text-gray-500 text-xs mt-1 line-clamp-2">${f.answer.substring(0, 200)}...</p>
+          <div class="text-gray-500 text-xs mt-1 line-clamp-2">${f.answer.substring(0, 200)}...</div>
           <div class="flex gap-4 mt-3">
             <button onclick='editFaq(${JSON.stringify(f).replace(/'/g,"&#39;")})' class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
             <button onclick="if(confirm('Delete this FAQ?')) deleteFaq(${f.id})" class="text-xs text-red-400 hover:underline">Delete</button>
@@ -629,34 +839,43 @@ async function renderFaq(el) {
 
 function faqFormHtml(fq) {
   const f = fq || {};
-  return `<div class="bg-sage-50 rounded-2xl p-6 mb-6 border border-sage-200">
+  const editorId = 'fqAnswerEditor';
+  return `<div class="card-warm p-6 mb-6 border border-sage-200" style="background:#f6f7f4;">
     <h3 class="font-bold text-gray-900 mb-4">${fq ? 'Edit FAQ' : 'New FAQ'}</h3>
     <div class="grid grid-cols-1 gap-4 mb-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Section *</label>
-        <select id="fqSection" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <select id="fqSection" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
           <option value="adoption" ${f.section==='adoption'?'selected':''}>Adoption</option>
           <option value="fostering" ${f.section==='fostering'?'selected':''}>Fostering</option>
           <option value="general" ${f.section==='general'?'selected':''}>General</option>
         </select></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Question *</label><input id="fqQuestion" value="${h(f.question||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Answer *</label><textarea id="fqAnswer" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm">${f.answer||''}</textarea>
-        <p class="text-xs text-gray-400 mt-1">HTML is allowed (links, bold, etc.)</p></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Question *</label><input id="fqQuestion" value="${h(f.question||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Answer *</label>
+        <div id="${editorId}"></div>
+      </div>
     </div>
     <div class="flex gap-2">
-      <button onclick="saveFaq(${f.id||'null'}, ${f.sort_order||0})" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
-      <button onclick="document.getElementById('faqFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
+      <button onclick="saveFaq(${f.id||'null'}, ${f.sort_order||0})" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Save</button>
+      <button onclick="document.getElementById('faqFormArea').innerHTML=''; _quillInstances={};" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
     </div>
   </div>`;
 }
 
-window.showFaqForm = function() { document.getElementById('faqFormArea').innerHTML = faqFormHtml(); };
-window.editFaq = function(fq) { document.getElementById('faqFormArea').innerHTML = faqFormHtml(fq); window.scrollTo(0,0); };
+window.showFaqForm = function() {
+  document.getElementById('faqFormArea').innerHTML = faqFormHtml();
+  initQuill('fqAnswerEditor', '');
+};
+window.editFaq = function(fq) {
+  document.getElementById('faqFormArea').innerHTML = faqFormHtml(fq);
+  initQuill('fqAnswerEditor', fq.answer || '');
+  window.scrollTo(0,0);
+};
 
 window.saveFaq = async function(id, sortOrder) {
   const body = {
     section: document.getElementById('fqSection').value,
     question: document.getElementById('fqQuestion').value,
-    answer: document.getElementById('fqAnswer').value,
+    answer: getQuillHtml('fqAnswerEditor'),
     sort_order: sortOrder,
   };
   if (!body.question || !body.answer) { alert('Question and answer required'); return; }
@@ -680,40 +899,40 @@ async function renderSettings(el) {
 
   el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Site Settings</h1>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Contact Information</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label><input id="setPhone" value="${h(data.phone||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Email</label><input id="setEmail" value="${h(data.email||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="setAddress" value="${h(data.address||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address Note</label><input id="setAddressNote" value="${h(data.address_note||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label><input id="setPhone" value="${h(data.phone||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Email</label><input id="setEmail" value="${h(data.email||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="setAddress" value="${h(data.address||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address Note</label><input id="setAddressNote" value="${h(data.address_note||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Integrations</h2>
     <div class="grid grid-cols-1 gap-4 mb-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Zeffy Donation Form URL</label><input id="setZeffy" value="${h(data.zeffy_url||'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://www.zeffy.com/embed/donation-form/...">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Zeffy Donation Form URL</label><input id="setZeffy" value="${h(data.zeffy_url||'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://www.zeffy.com/embed/donation-form/...">
         <p class="text-xs text-gray-400 mt-1">Used for donate buttons and sponsor links across the site</p></div>
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Social & Partners</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Facebook URL</label><input id="setFb" value="${h(data.facebook_url||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Facebook URL</label><input id="setFb" value="${h(data.facebook_url||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-1">Partners</label>
         <div id="partnersList" class="space-y-2 mb-2"></div>
         <div class="flex gap-2">
-          <input id="newPartner" class="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="Partner name">
-          <button onclick="addPartner()" class="bg-sage-700 text-white text-xs font-semibold px-3 py-2 rounded-lg">Add</button>
+          <input id="newPartner" class="flex-1 border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="Partner name">
+          <button onclick="addPartner()" class="bg-sage-700 text-white text-xs font-semibold px-3 py-2.5 rounded-xl hover:bg-sage-800 transition">Add</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
     <div class="flex items-center gap-4 mb-3">
       <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction===true||data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
@@ -731,12 +950,12 @@ async function renderSettings(el) {
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Site Announcement Banner</h2>
     <div class="flex items-center gap-4 mb-3">
       <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled===true||data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
     </div>
-    <div class="mb-3"><label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label><input id="setAnnText" value="${h(data.announcement_text||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. We're closed Dec 24-26 for the holidays"></div>
+    <div class="mb-3"><label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label><input id="setAnnText" value="${h(data.announcement_text||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. We're closed Dec 24-26 for the holidays"></div>
     <div><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
       <div class="flex flex-wrap gap-3" id="annPages">
         ${['all','home','pets','events','lost-found','about','contact','faq'].map(p => {
@@ -750,10 +969,9 @@ async function renderSettings(el) {
     </div>
   </div>
 
-  <button onclick="saveSettings()" class="bg-sage-700 hover:bg-sage-900 text-white font-bold px-6 py-3 rounded-lg transition">Save Settings</button>
+  <button onclick="saveSettings()" class="bg-sage-700 hover:bg-sage-800 text-white font-bold px-6 py-3 rounded-xl transition">Save Settings</button>
   <span id="settingsSaved" class="text-sm font-bold ml-3 hidden" style="color:#5c6b4e;">Settings saved!</span>`;
 
-  // Render partners list
   const partnerArr = Array.isArray(data.partners) ? data.partners : (data.partners ? data.partners.split(',').map(s=>s.trim()).filter(Boolean) : []);
   setTimeout(() => renderPartnersList(partnerArr), 0);
 }
@@ -765,7 +983,7 @@ window.renderPartnersList = function(partners) {
   const el = document.getElementById('partnersList');
   if (!el) return;
   el.innerHTML = partners.map((p, i) =>
-    `<div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+    `<div class="flex items-center justify-between bg-sage-50 rounded-xl px-3 py-2">
       <span class="text-sm text-gray-800">${h(p)}</span>
       <button onclick="removePartner(${i})" class="text-red-500 text-xs hover:underline">Remove</button>
     </div>`
@@ -830,14 +1048,14 @@ window.saveSettings = async function() {
     saved.textContent = 'Settings saved!';
     saved.style.background = '#e8ebe3'; saved.style.color = '#3b4434';
   }
-  saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
+  saved.style.padding = '6px 14px'; saved.style.borderRadius = '10px';
   saved.classList.remove('hidden');
   setTimeout(() => { saved.classList.add('hidden'); }, 3000);
   } catch(err) {
     const saved = document.getElementById('settingsSaved');
     saved.textContent = 'JS Error: ' + err.message;
     saved.style.background = '#fef3c7'; saved.style.color = '#92400e';
-    saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
+    saved.style.padding = '6px 14px'; saved.style.borderRadius = '10px';
     saved.classList.remove('hidden');
   }
 };
@@ -850,45 +1068,50 @@ async function renderAbout(el) {
 
   el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">About Page Content</h1>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Mission Statement</h2>
-    <div class="space-y-3">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 1</label><textarea id="abMission1" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text||''}</textarea></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 2</label><textarea id="abMission2" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text_2||''}</textarea></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 3</label><textarea id="abMission3" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text_3||''}</textarea></div>
+    <div class="space-y-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 1</label><div id="abMission1Editor"></div></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 2</label><div id="abMission2Editor"></div></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 3</label><div id="abMission3Editor"></div></div>
     </div>
-    <p class="text-xs text-gray-400 mt-2">HTML allowed (e.g. &lt;strong&gt;bold&lt;/strong&gt;, &lt;a href="..."&gt;links&lt;/a&gt;)</p>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Why Foster-Based?</h2>
-    <div class="space-y-3">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Home Environment</label><textarea id="abFoster1" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_home||''}</textarea></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Better Matches</label><textarea id="abFoster2" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_matches||''}</textarea></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Lower Costs</label><textarea id="abFoster3" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_costs||''}</textarea></div>
+    <div class="space-y-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Home Environment</label><div id="abFoster1Editor"></div></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Better Matches</label><div id="abFoster2Editor"></div></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Lower Costs</label><div id="abFoster3Editor"></div></div>
     </div>
   </div>
 
-  <button onclick="saveAbout()" class="bg-sage-700 hover:bg-sage-900 text-white font-bold px-6 py-3 rounded-lg transition">Save</button>
+  <button onclick="saveAbout()" class="bg-sage-700 hover:bg-sage-800 text-white font-bold px-6 py-3 rounded-xl transition">Save</button>
   <span id="aboutSaved" class="text-sage-700 text-sm ml-3 hidden">Saved!</span>`;
+
+  initQuill('abMission1Editor', data.mission_text || '');
+  initQuill('abMission2Editor', data.mission_text_2 || '');
+  initQuill('abMission3Editor', data.mission_text_3 || '');
+  initQuill('abFoster1Editor', data.why_foster_home || '');
+  initQuill('abFoster2Editor', data.why_foster_matches || '');
+  initQuill('abFoster3Editor', data.why_foster_costs || '');
 }
 
 window.saveAbout = async function() {
   await api('/admin/settings', { method: 'PUT', body: {
-    mission_text: document.getElementById('abMission1').value,
-    mission_text_2: document.getElementById('abMission2').value,
-    mission_text_3: document.getElementById('abMission3').value,
-    why_foster_home: document.getElementById('abFoster1').value,
-    why_foster_matches: document.getElementById('abFoster2').value,
-    why_foster_costs: document.getElementById('abFoster3').value,
+    mission_text: getQuillHtml('abMission1Editor'),
+    mission_text_2: getQuillHtml('abMission2Editor'),
+    mission_text_3: getQuillHtml('abMission3Editor'),
+    why_foster_home: getQuillHtml('abFoster1Editor'),
+    why_foster_matches: getQuillHtml('abFoster2Editor'),
+    why_foster_costs: getQuillHtml('abFoster3Editor'),
   }});
   const saved = document.getElementById('aboutSaved');
   saved.classList.remove('hidden');
-  saved.style.background = '#e8ebe3'; saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
+  saved.style.background = '#e8ebe3'; saved.style.padding = '6px 14px'; saved.style.borderRadius = '10px';
   setTimeout(() => { saved.classList.add('hidden'); saved.style.background = ''; saved.style.padding = ''; }, 3000);
 };
 
-// ── API Status ──
 // ── Analytics ──
 let analyticsRange = '7d';
 async function renderAnalytics(el) {
@@ -902,20 +1125,42 @@ async function renderAnalytics(el) {
     return;
   }
 
-  const rangeBtn = (val, label) => `<button onclick="analyticsRange='${val}';renderAnalytics(document.getElementById('content'))" class="px-3 py-1.5 rounded-full text-xs font-semibold transition ${analyticsRange === val ? 'bg-sage-700 text-white' : 'bg-white text-gray-600 hover:bg-sage-100'}">${label}</button>`;
+  const rangeBtn = (val, label) => `<button onclick="analyticsRange='${val}';renderAnalytics(document.getElementById('content'))" class="filter-tab ${analyticsRange === val ? 'active' : ''}">${label}</button>`;
 
-  // Sparkline bar chart
+  // Bar chart with adaptive sizing
   const dates = data.byDate || [];
   const maxCount = Math.max(...dates.map(d => d.count), 1);
-  const bars = dates.map(d => {
-    const pct = Math.max((d.count / maxCount) * 100, 2);
-    const label = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return `<div class="flex-1 flex flex-col items-center gap-1 min-w-0">
-      <span class="text-[10px] text-gray-400">${d.count}</span>
-      <div class="w-full rounded-t" style="height:${pct}px;max-height:100px;background:linear-gradient(to top,#5c6b4e,#93a27e)"></div>
-      <span class="text-[9px] text-gray-400 truncate w-full text-center">${label}</span>
+  const numBars = dates.length;
+
+  let barsHtml = '';
+  if (numBars === 0) {
+    barsHtml = `<div class="flex items-center justify-center h-full w-full">
+      <div class="text-center">
+        <svg class="w-12 h-12 mx-auto text-sage-200 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <p class="text-gray-400 text-xs">No data for this period</p>
+      </div>
     </div>`;
-  }).join('');
+  } else {
+    // Adaptive: wider bars for few data points, thinner for many
+    const barGap = numBars <= 7 ? '6px' : numBars <= 14 ? '3px' : '2px';
+    const minBarWidth = numBars <= 7 ? '36px' : numBars <= 14 ? '20px' : '8px';
+    // Label skip: show every Nth label to avoid overlap
+    const labelSkip = numBars <= 7 ? 1 : numBars <= 14 ? 2 : numBars <= 21 ? 3 : Math.ceil(numBars / 8);
+
+    barsHtml = `<div class="flex items-end justify-center w-full h-full" style="gap:${barGap}">`;
+    dates.forEach((d, i) => {
+      const heightPct = Math.max((d.count / maxCount) * 100, 4); // min 4% so 0-count bars visible
+      const heightPx = Math.max(Math.round(heightPct * 1.2), 4);
+      const label = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const showLabel = (i % labelSkip === 0) || i === numBars - 1;
+      barsHtml += `<div class="chart-bar flex flex-col items-center gap-1 relative" style="flex:1;min-width:${minBarWidth};max-width:60px">
+        <div class="chart-bar-tooltip">${d.count} view${d.count!==1?'s':''}</div>
+        <div class="w-full rounded-t-md" style="height:${heightPx}px;background:linear-gradient(to top,#48543e,#93a27e)"></div>
+        ${showLabel ? `<span class="text-[9px] text-gray-400 truncate w-full text-center leading-tight">${label}</span>` : '<span class="text-[9px] invisible">.</span>'}
+      </div>`;
+    });
+    barsHtml += '</div>';
+  }
 
   // Table builder
   const table = (rows) => rows.length === 0 ? '<p class="text-gray-400 text-xs">No data yet</p>' :
@@ -935,57 +1180,57 @@ async function renderAnalytics(el) {
     <div class="flex gap-2">${rangeBtn('24h', '24h')}${rangeBtn('7d', '7 days')}${rangeBtn('30d', '30 days')}</div>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+    <div class="card p-4 text-center">
       <p class="text-2xl font-bold text-sage-700">${data.totalViews.toLocaleString()}</p>
-      <p class="text-gray-400 text-xs">Page Views</p>
+      <p class="text-gray-400 text-xs mt-0.5">Page Views</p>
     </div>
-    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div class="card p-4 text-center">
       <p class="text-2xl font-bold text-sage-700">${data.totalVisits.toLocaleString()}</p>
-      <p class="text-gray-400 text-xs">Visits</p>
+      <p class="text-gray-400 text-xs mt-0.5">Visits</p>
     </div>
-    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div class="card p-4 text-center">
       <p class="text-2xl font-bold text-sage-700">${data.topPages.length}</p>
-      <p class="text-gray-400 text-xs">Pages Hit</p>
+      <p class="text-gray-400 text-xs mt-0.5">Pages Hit</p>
     </div>
-    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div class="card p-4 text-center">
       <p class="text-2xl font-bold text-sage-700">${data.topCountries.length}</p>
-      <p class="text-gray-400 text-xs">Countries</p>
+      <p class="text-gray-400 text-xs mt-0.5">Countries</p>
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  <div class="card p-6 mb-5">
     <h3 class="font-bold text-gray-900 text-sm mb-4">Page Views Over Time</h3>
-    <div class="flex items-end gap-1" style="height:120px">${bars || '<p class="text-gray-400 text-xs">No data yet</p>'}</div>
+    <div style="height:140px">${barsHtml}</div>
   </div>
 
-  <div class="grid md:grid-cols-2 gap-6 mb-6">
-    <div class="bg-white rounded-2xl p-6 shadow-sm">
+  <div class="grid md:grid-cols-2 gap-5 mb-5">
+    <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Top Pages</h3>
       ${table(data.topPages)}
     </div>
-    <div class="bg-white rounded-2xl p-6 shadow-sm">
+    <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Referrers</h3>
       ${table(data.topReferrers)}
     </div>
   </div>
 
-  <div class="grid md:grid-cols-3 gap-6">
-    <div class="bg-white rounded-2xl p-6 shadow-sm">
+  <div class="grid md:grid-cols-3 gap-5">
+    <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Countries</h3>
       ${table(data.topCountries)}
     </div>
-    <div class="bg-white rounded-2xl p-6 shadow-sm">
+    <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Browsers</h3>
       ${table(data.topBrowsers)}
     </div>
-    <div class="bg-white rounded-2xl p-6 shadow-sm">
+    <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Devices</h3>
       ${table(data.devices)}
     </div>
   </div>
 
-  <p class="text-xs text-gray-400 mt-4 text-center">Powered by Cloudflare Web Analytics — privacy-first, no cookies</p>`;
+  <p class="text-xs text-gray-400 mt-4 text-center">Powered by Cloudflare Web Analytics</p>`;
 }
 
 // ── API Status ──
@@ -995,40 +1240,49 @@ async function renderApiStatus(el) {
   try { data = await api('/admin/sync-status'); } catch(e) { data = { error: e.message }; }
   if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">Could not load: ' + h(data.error) + '</p>'; return; }
 
-  const statusIcon = (s) => s === 'success'
-    ? '<span class="inline-block w-2.5 h-2.5 rounded-full bg-green-500 mr-2"></span>'
-    : '<span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400 mr-2"></span>';
-
   const lastSync = data.recent_syncs[0];
   const isHealthy = lastSync?.status === 'success';
+  const lastSuccessMin = data.last_success ? minutesAgo(data.last_success) : null;
+  const nextSyncMin = lastSuccessMin !== null ? Math.max(15 - lastSuccessMin, 0) : null;
 
-  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1>
+  const lastSyncLabel = lastSuccessMin !== null
+    ? (lastSuccessMin < 1 ? 'just now' : lastSuccessMin + ' min ago')
+    : 'never';
+  const nextSyncLabel = nextSyncMin !== null
+    ? (nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
+    : 'unknown';
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">API Status</h1>
+
+  <div class="card p-5 mb-5">
     <div class="flex items-center gap-3 mb-4">
-      <span class="w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-amber-500'}"></span>
+      <span class="w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-amber-500'}" style="${isHealthy ? 'box-shadow:0 0 0 4px rgba(34,197,94,0.2)' : 'box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}"></span>
       <h2 class="font-bold text-gray-900">ShelterLuv Sync</h2>
-      <span class="text-xs px-3 py-1 rounded-full ${isHealthy ? 'bg-sage-100 text-sage-700' : 'bg-amber-100 text-amber-700'}">${isHealthy ? 'Healthy' : 'Issue'}</span>
+      <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${isHealthy ? 'bg-sage-100 text-sage-700' : 'bg-amber-100 text-amber-700'}">${isHealthy ? 'Healthy' : 'Issue'}</span>
     </div>
-    <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="text-center"><p class="text-2xl font-bold text-sage-700">${data.current_animals}</p><p class="text-gray-400 text-xs">Animals</p></div>
-      <div class="text-center"><p class="text-2xl font-bold text-sage-700">${data.last_success ? timeAgo(data.last_success) : '—'}</p><p class="text-gray-400 text-xs">Last Sync</p></div>
-      <div class="text-center"><p class="text-2xl font-bold text-sage-700">15 min</p><p class="text-gray-400 text-xs">Interval</p></div>
+    <div class="flex items-center gap-6 text-sm text-gray-600 flex-wrap">
+      <div><span class="text-gray-400">Animals:</span> <span class="font-semibold text-gray-800">${data.current_animals}</span></div>
+      <div><span class="text-gray-400">Last sync:</span> <span class="font-semibold text-gray-800">${lastSyncLabel}</span></div>
+      <div><span class="text-gray-400">Next sync:</span> <span class="font-semibold text-gray-800">${nextSyncLabel}</span></div>
     </div>
-    <p class="text-xs text-gray-400 mt-2">Syncs automatically every 15 minutes via GitHub Actions</p>
+    <p class="text-xs text-gray-400 mt-3">Syncs automatically every 15 minutes via GitHub Actions</p>
   </div>
 
-  <div class="bg-white rounded-2xl p-6 shadow-sm">
+  <div class="card p-5">
     <h3 class="font-bold text-gray-900 text-sm mb-3">Recent Syncs</h3>
     ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
-    '<div class="space-y-1">' + data.recent_syncs.slice(0, 5).map(s => `
+    '<div class="space-y-1">' + data.recent_syncs.slice(0, 8).map(s => `
       <div class="flex items-center justify-between py-1.5 text-xs">
-        <div class="flex items-center gap-2">${statusIcon(s.status)}<span class="${s.status === 'success' ? 'text-gray-600' : 'text-amber-600'}">${s.status === 'success' ? s.animal_count + ' animals' : 'Error'}</span></div>
-        <span class="text-gray-400">${localTime(s.synced_at)}</span>
+        <div class="flex items-center gap-2">
+          ${s.status === 'success'
+            ? '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
+            : '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+          }
+          <span class="text-gray-500">${localTime(s.synced_at)}</span>
+        </div>
       </div>
     `).join('') + '</div>'}
   </div>`;
-
 }
 
 
@@ -1036,22 +1290,25 @@ async function renderApiStatus(el) {
 async function renderMyAccount(el) {
   const me = await api('/auth/me');
   el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">My Account</h1>
-  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6 max-w-md">
+  <div class="card p-6 mb-5 max-w-md">
     <div class="mb-4">
-      <p class="text-sm text-gray-500">Username</p>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Username</p>
       <p class="font-bold text-gray-900">${h(me.username)}</p>
     </div>
     <div class="mb-6">
-      <p class="text-sm text-gray-500">Role</p>
-      <p class="font-bold text-gray-900">${me.role}</p>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Role</p>
+      <div class="flex items-center gap-2">
+        <span class="status-dot ${me.role === 'admin' ? 'approved' : 'contacted'}"></span>
+        <p class="font-bold text-gray-900 capitalize">${me.role}</p>
+      </div>
     </div>
     <h3 class="font-bold text-gray-900 mb-3">Change Password</h3>
     <div class="space-y-3">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Current Password</label><input id="cpCurrent" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">New Password (min 8 characters)</label><input id="cpNew" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Confirm New Password</label><input id="cpConfirm" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Current Password</label><input id="cpCurrent" type="password" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">New Password (min 8 characters)</label><input id="cpNew" type="password" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Confirm New Password</label><input id="cpConfirm" type="password" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
       <div id="cpStatus" class="hidden text-sm"></div>
-      <button onclick="changeMyPassword()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Change Password</button>
+      <button onclick="changeMyPassword()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Change Password</button>
     </div>
   </div>`;
 }
@@ -1083,47 +1340,54 @@ async function renderUsers(el) {
   const data = await api('/admin/users');
   if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Users</h1><p class="text-red-500">' + data.error + '</p>'; return; }
 
-  const roleColors = { admin: 'bg-purple-100 text-purple-700', staff: 'bg-blue-100 text-blue-700' };
-
   let html = `<div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-display font-bold text-sage-800">Users</h1>
-    <button onclick="showUserForm()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add User</button>
+    <button onclick="showUserForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ Add User</button>
   </div>`;
   html += '<div id="userFormArea"></div>';
-  html += '<div class="space-y-3">';
+  html += '<div class="space-y-2">';
   data.forEach(u => {
-    html += `<div class="bg-white rounded-2xl p-5 shadow-sm flex items-center justify-between">
-      <div>
-        <span class="font-bold text-gray-900">${h(u.username)}</span>
-        <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${roleColors[u.role] || 'bg-gray-100 text-gray-600'}">${u.role}</span>
-        <span class="text-xs text-gray-400 ml-2">Created ${new Date(u.created_at).toLocaleDateString()}</span>
+    const isAdmin = u.role === 'admin';
+    const dotColor = isAdmin ? 'bg-sage-500' : 'bg-blue-500';
+    html += `<div class="card p-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span>
+        <div>
+          <span class="font-bold text-gray-900 text-sm">${h(u.username)}</span>
+          <span class="text-xs text-gray-400 ml-2 capitalize">${u.role}</span>
+          <span class="text-xs text-gray-300 ml-2">Created ${new Date(u.created_at).toLocaleDateString()}</span>
+        </div>
       </div>
-      <div class="flex gap-2">
-        <button onclick="resetUserPassword(${u.id}, '${h(u.username)}')" class="text-xs text-sage-700 hover:underline">Reset password</button>
-        <button onclick="if(confirm('Delete user ${h(u.username)}?')) deleteUser(${u.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+      <div class="flex gap-3">
+        <button onclick="resetUserPassword(${u.id}, '${h(u.username)}')" class="text-xs text-sage-700 hover:underline font-semibold">Reset password</button>
+        <button onclick="if(confirm('Delete user ${h(u.username)}?')) deleteUser(${u.id})" class="text-xs text-red-400 hover:underline">Delete</button>
       </div>
     </div>`;
   });
   html += '</div>';
-  html += '<div class="mt-8 bg-gray-50 rounded-2xl p-5 text-sm text-gray-500"><strong>Roles:</strong><br><span class="text-purple-700 font-semibold">Admin</span> — full access to everything<br><span class="text-blue-700 font-semibold">Staff</span> — Inbox, Lost & Found, and Events only (no site settings, FAQ, about page, or user management)</div>';
+  html += `<div class="mt-6 card p-5 text-sm text-gray-500">
+    <strong class="text-gray-700">Roles</strong><br>
+    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-sage-500"></span> <strong>Admin</strong></span> &mdash; full access to everything<br>
+    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox and Events only
+  </div>`;
   el.innerHTML = html;
 }
 
 window.showUserForm = function() {
-  document.getElementById('userFormArea').innerHTML = `<div class="bg-sage-50 rounded-2xl p-6 mb-6 border border-sage-200">
+  document.getElementById('userFormArea').innerHTML = `<div class="card-warm p-6 mb-5 border border-sage-200" style="background:#f6f7f4;">
     <h3 class="font-bold text-gray-900 mb-4">New User</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label><input id="nuUser" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Password * (min 8 chars)</label><input id="nuPass" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label><input id="nuUser" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Password * (min 8 chars)</label><input id="nuPass" type="password" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Role *</label>
-        <select id="nuRole" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <select id="nuRole" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
           <option value="staff">Staff</option>
           <option value="admin">Admin</option>
         </select></div>
     </div>
     <div class="flex gap-2">
-      <button onclick="createUser()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Create User</button>
-      <button onclick="document.getElementById('userFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
+      <button onclick="createUser()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Create User</button>
+      <button onclick="document.getElementById('userFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
     </div>
   </div>`;
 };

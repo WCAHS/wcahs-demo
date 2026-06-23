@@ -55,6 +55,28 @@ export async function hashPassword(password) {
   return `${saltB64}:${hashB64}`;
 }
 
+export async function sendNotification(env, { subject, html }) {
+  if (!env.RESEND_API_KEY) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'WCAHS Notifications <noreply@wcahs.org>',
+        to: ['info@wcahs.org'],
+        subject,
+        html,
+      }),
+    });
+  } catch (e) {
+    // Don't fail the form submission if email fails
+    console.error('Resend error:', e.message);
+  }
+}
+
 export async function verifyPassword(password, stored) {
   const [saltB64, expectedB64] = stored.split(':');
   const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));

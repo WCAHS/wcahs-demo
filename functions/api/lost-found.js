@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification } from './_helpers.js';
 
 export async function onRequestGet(context) {
   const { results } = await context.env.DB.prepare(
@@ -39,6 +39,21 @@ export async function onRequestPost(context) {
     photoUrl, body.collar_details || null, body.temperament || null,
     body.current_location || null, body.collar_status || null
   ).run();
+
+  const typeLabel = body.type === 'lost' ? 'Lost Pet' : 'Found Pet';
+  await sendNotification(env, {
+    subject: `New ${typeLabel} Report — ${body.pet_name || body.species}`,
+    html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New ${typeLabel} Report</h2>
+      <table style="border-collapse:collapse;width:100%;max-width:500px">
+        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Type</td><td style="padding:8px 12px;font-weight:600">${typeLabel}</td></tr>
+        <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Species</td><td style="padding:8px 12px">${body.species}</td></tr>
+        ${body.pet_name ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Pet Name</td><td style="padding:8px 12px">${body.pet_name}</td></tr>` : ''}
+        ${body.breed ? `<tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Breed</td><td style="padding:8px 12px">${body.breed}</td></tr>` : ''}
+        ${body.location_details ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Location</td><td style="padding:8px 12px">${body.location_details}</td></tr>` : ''}
+        <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Reporter</td><td style="padding:8px 12px">${body.reporter_name}${body.reporter_email ? ' &lt;' + body.reporter_email + '&gt;' : ''}</td></tr>
+      </table>
+      <p style="margin-top:20px;font-size:12px;color:#999">Review this report at <a href="https://wcahs.org/admin/">wcahs.org/admin</a></p>`,
+  });
 
   return json({ ok: true, message: 'Report submitted. It will appear after review.' });
 }
