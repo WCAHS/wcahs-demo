@@ -1,0 +1,19 @@
+name = "wcahs-shelterluv-sync"
+main = "shelterluv-sync.js"
+compatibility_date = "2026-06-22"
+
+# Run every 30 minutes
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wcahs-db"
+database_id = "2d709989-259d-441d-8e2e-b7cf03637fc0"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "wcahs-uploads"
+
+[vars]
+SHELTERLUV_API_KEY = "XThePvRuzxbnBZKwXcLkHOuL6EwQAzzN44Du1W7u"

@@ -1,16 +1,11 @@
-import { json, error, verifyTurnstile } from './_helpers.js';
+import { json, error } from './_helpers.js';
 
 // Public photo upload for lost/found reports (max 5, max 10MB each)
+// Turnstile is verified on the final form submission, not here (tokens are single-use)
 export async function onRequestPost(context) {
   const { env, request } = context;
 
   const formData = await request.formData();
-  const turnstileToken = formData.get('turnstile_token');
-
-  if (!turnstileToken) return error('CAPTCHA required');
-  const valid = await verifyTurnstile(turnstileToken, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'));
-  if (!valid) return error('CAPTCHA verification failed', 403);
-
   const files = formData.getAll('photos');
   if (!files || files.length === 0) return error('No files uploaded');
   if (files.length > 5) return error('Maximum 5 photos allowed');

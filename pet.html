@@ -121,7 +121,7 @@
 
         <!-- Apply Button -->
         <a id="applyBtn" href="contact.html" class="block text-center bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg mb-4"></a>
-        <a id="sponsorBtn" href="contact.html#donate" class="block text-center border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold py-3 rounded-xl transition text-sm"></a>
+        <a id="sponsorBtn" href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581" target="_blank" class="block text-center border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold py-3 rounded-xl transition text-sm"></a>
       </div>
 
     </div>
@@ -362,7 +362,7 @@
     }
 
     // Load data
-    fetch('data/animals.json')
+    fetch('/api/pets')
       .then(r => r.json())
       .then(data => {
         const animals = data.animals || [];

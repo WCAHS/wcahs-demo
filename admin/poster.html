@@ -245,6 +245,12 @@
       ? (r.species || 'Pet') + ' needs your help getting home'
       : (r.species || 'Pet') + ' found — is this yours?';
 
+    // Parse photo URL (may be JSON array or single string)
+    let photoUrl = '';
+    if (r.photo_url) {
+      try { const arr = JSON.parse(r.photo_url); photoUrl = arr[0] || ''; } catch(e) { photoUrl = r.photo_url; }
+    }
+
     const phone = fmtPhone(r.reporter_phone) || r.org_phone || '(507) 201-7287';
     const contactName = r.reporter_name || 'WCAHS';
 
@@ -269,8 +275,8 @@
       </div>
 
       <div class="photo-area">
-        ${r.photo_url
-          ? `<img src="${r.photo_url}" alt="${r.pet_name || 'Pet'}">`
+        ${photoUrl
+          ? `<img src="${photoUrl}" alt="${r.pet_name || 'Pet'}">`
           : '<div class="no-photo">No Photo Available</div>'}
       </div>
 

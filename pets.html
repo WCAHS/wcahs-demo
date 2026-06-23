@@ -142,10 +142,10 @@
           <h2 class="font-display text-3xl font-bold mb-3">Sponsor an Animal</h2>
           <p class="text-amber-100 leading-relaxed mb-6">Not ready to adopt? You can still make a difference. Sponsor an animal's care — help cover food, vet bills, and supplies while they wait for their forever home.</p>
           <div class="grid grid-cols-2 gap-3 max-w-xs">
-            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white text-amber-700 font-bold px-6 py-3 rounded-full transition hover:bg-amber-50">$10/month</button>
-            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">$25/month</button>
-            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">$50/month</button>
-            <button onclick="alert('This is a demo — sponsorship would be set up here.')" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30">Custom</button>
+            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581?amount=10" target="_blank" class="bg-white text-amber-700 font-bold px-6 py-3 rounded-full transition hover:bg-amber-50 text-center">$10/month</a>
+            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581?amount=25" target="_blank" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30 text-center">$25/month</a>
+            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581?amount=50" target="_blank" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30 text-center">$50/month</a>
+            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581" target="_blank" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30 text-center">Custom</a>
           </div>
         </div>
       </div>
@@ -305,7 +305,7 @@
     }
 
     // Load data
-    fetch('data/animals.json')
+    fetch('/api/pets')
       .then(r => r.json())
       .then(data => {
         allAnimals = data.animals || [];

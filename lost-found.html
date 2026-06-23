@@ -369,7 +369,7 @@
               var upData = await upRes.json();
               if (upData.ok && upData.urls) { body.photo_url = upData.urls[0]; body.photo_urls = upData.urls; }
               else if (upData.error) {
-                status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (upData.error) + '</p></div>';
+                status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (upData.error) + '</p></div>';
                 status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
                 return;
               }
@@ -378,14 +378,14 @@
             var res = await fetch('/api/lost-found', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
             var data = await res.json();
             if (data.ok) {
-              status.innerHTML = '<div class="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center"><svg class="w-10 h-10 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="font-bold text-green-800 text-lg">Report Submitted!</p><p class="text-green-600 text-sm mt-1">' + (data.message || 'Your report will appear after review.') + '</p></div>';
-              status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none';
+              status.innerHTML = '<div class="bg-sage-50 border-2 border-sage-200 rounded-xl p-6 text-center" style="background:#f6f7f4;border-color:#d2d8c8;"><img src="images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">Report Submitted!</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || 'Your report will appear after review.') + '</p></div>';
+              status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none'; _selectedPhotos = []; renderPreviews();
             } else {
-              status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (data.error || 'Something went wrong') + '</p></div>';
+              status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (data.error || 'Something went wrong') + '</p></div>';
               status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
             }
           } catch(err) {
-            status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">Could not submit. Please try again.</p></div>';
+            status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Could not submit. Please try again.</p></div>';
             status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
           }
         });

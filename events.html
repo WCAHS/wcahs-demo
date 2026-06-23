@@ -110,19 +110,26 @@
   <script>
     fetch('/api/events').then(r=>r.json()).then(function(events) {
       if (!events.length) return;
-      var colors = { sage: 'bg-sage-700', amber: 'bg-amber-500' };
+      var autoColors = ['bg-sage-700', 'bg-amber-500', 'bg-sage-600', 'bg-amber-600'];
       var container = document.getElementById('eventsContainer');
-      container.innerHTML = '<div class="space-y-6">' + events.map(function(ev) {
+      container.innerHTML = '<div class="space-y-6">' + events.map(function(ev, idx) {
         var d = new Date(ev.date + 'T00:00:00');
         var month = d.toLocaleString('en-US', {month:'short'});
         var day = d.getDate();
         var year = d.getFullYear();
-        var colorClass = colors[ev.color] || 'bg-sage-700';
+        var dateBlock = '<span class="text-sm font-semibold uppercase tracking-wider opacity-80">' + month + '</span>' +
+            '<span class="text-4xl font-bold leading-none">' + day + '</span>' +
+            '<span class="text-sm opacity-80 mt-1">' + year + '</span>';
+        if (ev.end_date && ev.end_date !== ev.date) {
+          var d2 = new Date(ev.end_date + 'T00:00:00');
+          dateBlock = '<span class="text-sm font-semibold uppercase tracking-wider opacity-80">' + month + ' ' + day + '</span>' +
+            '<span class="text-xl font-bold leading-none my-1">to</span>' +
+            '<span class="text-sm font-semibold uppercase tracking-wider opacity-80">' + d2.toLocaleString('en-US',{month:'short'}) + ' ' + d2.getDate() + '</span>';
+        }
+        var colorClass = autoColors[idx % autoColors.length];
         return '<div class="bg-white rounded-2xl shadow-sm overflow-hidden card-hover flex flex-col md:flex-row">' +
           '<div class="' + colorClass + ' text-white p-6 md:p-8 flex flex-col items-center justify-center md:w-40 shrink-0">' +
-            '<span class="text-sm font-semibold uppercase tracking-wider opacity-80">' + month + '</span>' +
-            '<span class="text-4xl font-bold leading-none">' + day + '</span>' +
-            '<span class="text-sm opacity-80 mt-1">' + year + '</span>' +
+            dateBlock +
           '</div>' +
           '<div class="p-6 md:p-8 flex-1">' +
             '<div class="flex flex-wrap items-center gap-3 mb-2">' +

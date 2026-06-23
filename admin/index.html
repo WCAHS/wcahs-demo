@@ -2,14 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="../favicon.png">
   <title>WCAHS Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: { 50: '#f6f7f4', 100: '#e8ebe3', 200: '#d2d8c8', 300: '#b3bea3', 400: '#93a27e', 500: '#758762', 600: '#5c6b4e', 700: '#48543e', 800: '#3b4434', 900: '#33392e' },
+            amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+            warm: { 50: '#fdf8f3' }
+          },
+          fontFamily: { display: ['Playfair Display', 'serif'], body: ['Nunito', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
-    body { font-family: 'Nunito', sans-serif; background-color: #f6f7f4; }
+    body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
+    .font-display { font-family: 'Playfair Display', serif; }
     .sidebar-link { transition: background 0.15s; }
     .sidebar-link:hover, .sidebar-link.active { background: rgba(255,255,255,0.15); }
     .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 6px; }
@@ -31,27 +46,27 @@
 
   <!-- Login Screen -->
   <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-sm border border-sage-100 p-8 w-full max-w-sm">
       <div class="text-center mb-6">
         <img src="../images/logo.png" alt="WCAHS" class="h-12 mx-auto mb-3">
-        <h1 class="font-bold text-xl text-gray-900">Admin Login</h1>
+        <h1 class="font-display font-bold text-xl text-sage-800">Admin Login</h1>
       </div>
-      <div id="setupForm" class="hidden mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+      <div id="setupForm" class="hidden mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
         <p class="text-amber-800 text-sm font-semibold mb-2">First-time setup</p>
         <p class="text-amber-700 text-xs mb-3">Create your admin account.</p>
       </div>
       <form id="loginForm" class="space-y-4">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
-          <input id="loginUser" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-700" required>
+          <input id="loginUser" type="text" class="w-full border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-600" required>
         </div>
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-          <input id="loginPass" type="password" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-700" required>
+          <input id="loginPass" type="password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-600" required>
         </div>
         <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
         <div id="loginError" class="hidden text-red-600 text-sm"></div>
-        <button type="submit" class="w-full bg-green-800 hover:bg-green-900 text-white font-bold py-3 rounded-xl transition">Log In</button>
+        <button type="submit" class="w-full bg-sage-700 hover:bg-sage-900 text-white font-bold py-3 rounded-2xl transition">Log In</button>
       </form>
     </div>
   </div>
@@ -59,19 +74,19 @@
   <!-- Admin Dashboard (hidden until authenticated) -->
   <div id="dashboard" class="hidden min-h-screen md:flex">
     <!-- Mobile Header -->
-    <div id="mobileHeader" class="hidden bg-green-900 text-white px-4 py-3 items-center justify-between sticky top-0 z-40">
+    <div id="mobileHeader" class="hidden bg-sage-900 text-white px-4 py-3 items-center justify-between sticky top-0 z-40">
       <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="p-1">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <img src="../images/logo.png" alt="WCAHS" class="h-7 brightness-200">
-      <span class="text-green-300 text-xs">Admin</span>
+      <span class="text-sage-300 text-xs">Admin</span>
     </div>
     <!-- Sidebar -->
     <div id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.remove('open')"></div>
-    <aside id="sidebar" class="w-56 bg-green-900 text-white flex flex-col shrink-0 md:sticky top-0 h-screen">
-      <div class="p-4 border-b border-green-800">
+    <aside id="sidebar" class="w-56 bg-sage-900 text-white flex flex-col shrink-0 md:sticky top-0 h-screen">
+      <div class="p-4 border-b border-sage-800">
         <img src="../images/logo.png" alt="WCAHS" class="h-8 brightness-200">
-        <p class="text-green-300 text-xs mt-1">Admin Panel</p>
+        <p class="text-sage-300 text-xs mt-1">Admin Panel</p>
       </div>
       <nav class="flex-1 py-3 space-y-0.5 px-2 overflow-y-auto">
         <a onclick="navigate('submissions')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer flex items-center justify-between" data-nav="submissions">
@@ -87,12 +102,13 @@
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('about')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="about">About Page</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="users">Users</a>
+        <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
       </nav>
-      <div class="p-4 border-t border-green-800 space-y-2">
-        <a href="https://accounts.zoho.com/signin" target="_blank" class="block text-center bg-green-800 hover:bg-green-700 text-green-200 text-xs font-semibold py-2 px-3 rounded-lg transition">Check Email</a>
-        <a onclick="navigate('my-account')" class="sidebar-link block px-3 py-2 rounded-lg text-xs cursor-pointer text-green-300 hover:text-white" data-nav="my-account">My Account</a>
-        <p class="text-green-300 text-xs" id="loggedInAs"></p>
-        <button onclick="logout()" class="text-green-400 hover:text-white text-xs transition">Log out</button>
+      <div class="p-4 border-t border-sage-800 space-y-2">
+        <a href="https://accounts.zoho.com/signin" target="_blank" class="block text-center bg-sage-700 hover:bg-sage-600 text-sage-200 text-xs font-semibold py-2 px-3 rounded-lg transition">Check Email</a>
+        <a onclick="navigate('my-account')" class="sidebar-link block px-3 py-2 rounded-lg text-xs cursor-pointer text-sage-300 hover:text-white" data-nav="my-account">My Account</a>
+        <p class="text-sage-300 text-xs" id="loggedInAs"></p>
+        <button onclick="logout()" class="text-sage-400 hover:text-white text-xs transition">Log out</button>
       </div>
     </aside>
 
@@ -204,6 +220,7 @@ function navigate(page) {
     case 'about': renderAbout(content); break;
     case 'users': renderUsers(content); break;
     case 'my-account': renderMyAccount(content); break;
+    case 'api-status': renderApiStatus(content); break;
     default: content.innerHTML = '<p class="text-gray-400">Select a section</p>';
   }
 }
@@ -220,37 +237,61 @@ function timeAgo(dt) {
 
 // ── Submissions ──
 async function renderSubmissions(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Inbox</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Inbox</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/submissions');
   if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
   const tabs = `<div class="flex gap-2 mb-6">
-    <button onclick="filterSubs('all')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-green-800 text-white">All (${data.length})</button>
+    <button onclick="filterSubs('all')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-sage-700 text-white">All (${data.length})</button>
     <button onclick="filterSubs('contact')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">Contact (${data.filter(s=>s.type==='contact').length})</button>
     <button onclick="filterSubs('foster')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">Foster (${data.filter(s=>s.type==='foster').length})</button>
   </div>`;
 
-  let html = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Inbox</h1>' + tabs;
+  const statusLabels = { new: 'New', contacted: 'Contacted', followup: 'Follow-up', closed: 'Closed' };
+  const statusColors = { new: 'bg-amber-100 text-amber-700', contacted: 'bg-blue-100 text-blue-700', followup: 'bg-purple-100 text-purple-700', closed: 'bg-gray-100 text-gray-500' };
+
+  let html = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Inbox</h1>' + tabs;
   if (data.length === 0) {
-    html += '<div class="bg-white rounded-xl p-8 text-center text-gray-400">No submissions yet</div>';
+    html += '<div class="bg-white rounded-2xl p-8 text-center text-gray-400">No submissions yet</div>';
   } else {
-    html += '<div id="subsList" class="space-y-3">';
+    html += '<div id="subsList" class="space-y-4">';
     data.forEach(s => {
       const unread = !s.is_read;
-      html += `<div class="sub-item bg-white rounded-xl p-5 shadow-sm ${unread ? 'border-l-4 border-amber-400' : ''}" data-type="${s.type}">
-        <div class="flex items-start justify-between mb-2">
-          <div>
-            <span class="font-bold text-gray-900">${h(s.name)}</span>
-            <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${s.type==='foster' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${s.type}</span>
-            ${unread ? '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">new</span>' : ''}
+      const st = s.status || 'new';
+      let phone = '';
+      let msg = s.message;
+      const phoneMatch = msg.match(/^Phone: (.+?)\n\n/);
+      if (phoneMatch) { phone = phoneMatch[1]; msg = msg.replace(phoneMatch[0], ''); }
+
+      html += `<div class="sub-item bg-white rounded-2xl shadow-sm overflow-hidden ${unread ? 'border-l-4 border-amber-400' : ''}" data-type="${s.type}">
+        <div class="flex items-center gap-3 p-4 cursor-pointer hover:bg-sage-50 transition" onclick="toggleSub(${s.id}); ${unread ? 'markRead('+s.id+', true)' : ''}">
+          <div class="w-10 h-10 rounded-full ${s.type==='foster' ? 'bg-sage-100' : 'bg-blue-50'} flex items-center justify-center shrink-0">
+            <span class="text-sm font-bold ${s.type==='foster' ? 'text-sage-700' : 'text-blue-600'}">${h(s.name.charAt(0).toUpperCase())}</span>
           </div>
-          <span class="text-xs text-gray-400">${timeAgo(s.created_at)}</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-gray-900 text-sm">${h(s.name)}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${s.type==='foster' ? 'bg-sage-100 text-sage-700' : 'bg-blue-100 text-blue-700'}">${s.type}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${statusColors[st]}">${statusLabels[st] || st}</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5 truncate">${h(s.email)}${s.subject && s.subject !== 'General Inquiry' ? ' &bull; ' + h(s.subject) : ''} &bull; ${timeAgo(s.created_at)}</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-300 shrink-0 transition-transform" id="sub-arrow-${s.id}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <p class="text-sm text-gray-500 mb-1">${h(s.email)}${s.subject ? ' &bull; ' + h(s.subject) : ''}</p>
-        <p class="text-sm text-gray-700 whitespace-pre-wrap">${h(s.message)}</p>
-        <div class="flex gap-2 mt-3">
-          ${unread ? `<button onclick="markRead(${s.id}, true)" class="text-xs text-green-700 hover:underline">Mark read</button>` : `<button onclick="markRead(${s.id}, false)" class="text-xs text-gray-400 hover:underline">Mark unread</button>`}
-          <button onclick="if(confirm('Delete this submission?')) deleteSub(${s.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+        <div id="sub-${s.id}" class="hidden border-t border-gray-100 p-5">
+          <div class="flex flex-wrap items-center gap-3 text-sm mb-3">
+            <a href="mailto:${h(s.email)}" class="text-sage-700 hover:underline">${h(s.email)}</a>
+            ${phone ? '<a href="tel:' + phone.replace(/\\D/g,'') + '" class="text-sage-700 hover:underline">' + h(fmtPhone(phone)) + '</a>' : ''}
+            ${s.subject && s.subject !== 'General Inquiry' ? '<span class="text-gray-400">&bull; ' + h(s.subject) + '</span>' : ''}
+          </div>
+          <p class="text-sm text-gray-700 whitespace-pre-wrap mb-4">${h(msg)}</p>
+          <div class="flex items-center gap-3 flex-wrap pt-3 border-t border-gray-100">
+            <select onchange="updateSubStatus(${s.id}, this.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white">
+              ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
+            </select>
+            ${unread ? `<button onclick="event.stopPropagation(); markRead(${s.id}, true)" class="text-xs text-sage-700 hover:underline">Mark read</button>` : `<button onclick="event.stopPropagation(); markRead(${s.id}, false)" class="text-xs text-gray-400 hover:underline">Mark unread</button>`}
+            <button onclick="event.stopPropagation(); if(confirm('Delete this submission?')) deleteSub(${s.id})" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
+          </div>
         </div>
       </div>`;
     });
@@ -264,13 +305,25 @@ window.filterSubs = function(type) {
   document.querySelectorAll('.sub-item').forEach(el => {
     el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
   });
-  document.querySelectorAll('.sub-tab').forEach(b => { b.className = b.className.replace(/bg-green-800 text-white|bg-gray-200 text-gray-700/g, ''); });
-  event.target.classList.add('bg-green-800', 'text-white');
+  document.querySelectorAll('.sub-tab').forEach(b => { b.className = b.className.replace(/bg-sage-700 text-white|bg-gray-200 text-gray-700/g, ''); });
+  event.target.classList.add('bg-sage-700', 'text-white');
+};
+
+window.toggleSub = function(id) {
+  var el = document.getElementById('sub-' + id);
+  var arrow = document.getElementById('sub-arrow-' + id);
+  el.classList.toggle('hidden');
+  arrow.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
 };
 
 window.markRead = async function(id, read) {
   await api('/admin/submissions/' + id, { method: 'PUT', body: { is_read: read } });
   navigate('submissions'); loadBadgeCounts();
+};
+
+window.updateSubStatus = async function(id, status) {
+  await api('/admin/submissions/' + id, { method: 'PUT', body: { status: status, is_read: true } });
+  loadBadgeCounts();
 };
 
 window.deleteSub = async function(id) {
@@ -280,37 +333,70 @@ window.deleteSub = async function(id) {
 
 // ── Lost & Found ──
 async function renderLostFound(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Lost & Found Reports</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Lost & Found Reports</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/lost-found');
   if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
-  let html = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Lost & Found Reports</h1>';
+  let html = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Lost & Found Reports</h1>';
   const statuses = { pending: 'Pending Review', approved: 'Approved', resolved: 'Resolved', rejected: 'Rejected' };
-  const statusColors = { pending: 'bg-amber-100 text-amber-700', approved: 'bg-green-100 text-green-700', resolved: 'bg-blue-100 text-blue-700', rejected: 'bg-red-100 text-red-700' };
+  const statusColors = { pending: 'bg-amber-100 text-amber-700', approved: 'bg-sage-100 text-sage-700', resolved: 'bg-blue-100 text-blue-700', rejected: 'bg-red-100 text-red-700' };
 
   if (data.length === 0) {
-    html += '<div class="bg-white rounded-xl p-8 text-center text-gray-400">No reports submitted</div>';
+    html += '<div class="bg-white rounded-2xl p-8 text-center text-gray-400">No reports submitted</div>';
   } else {
-    html += '<div class="space-y-3">';
+    html += '<div class="space-y-4">';
     data.forEach(r => {
-      html += `<div class="bg-white rounded-xl p-5 shadow-sm">
-        <div class="flex items-start justify-between mb-2">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-bold text-gray-900">${h(r.pet_name || 'Unknown')}</span>
-            <span class="text-xs px-2 py-0.5 rounded-full ${r.type==='lost' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${r.type}</span>
-            <span class="text-xs px-2 py-0.5 rounded-full ${statusColors[r.status]}">${statuses[r.status]}</span>
+      // Parse photo URLs
+      let photos = [];
+      if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+      const thumbUrl = photos[0] || '';
+
+      html += `<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="flex items-center gap-4 p-4 cursor-pointer hover:bg-sage-50 transition" onclick="toggleReport(${r.id})">
+          ${thumbUrl ? '<img src="'+thumbUrl+'" class="w-14 h-14 rounded-xl object-cover shrink-0">' : '<div class="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center shrink-0"><svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>'}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-gray-900">${h(r.pet_name || 'Unknown ' + r.species)}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${r.type==='lost' ? 'bg-red-100 text-red-700' : 'bg-sage-100 text-sage-700'}">${r.type}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${statusColors[r.status]}">${statuses[r.status]}</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">${h(r.species)}${r.breed ? ' &bull; ' + h(r.breed) : ''} &bull; ${h(r.reporter_name)} &bull; ${timeAgo(r.created_at)}</p>
           </div>
-          <span class="text-xs text-gray-400">${timeAgo(r.created_at)}</span>
+          <svg class="w-5 h-5 text-gray-300 shrink-0 transition-transform" id="arrow-${r.id}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <p class="text-sm text-gray-500">${h(r.species)}${r.breed ? ' &bull; ' + h(r.breed) : ''}${r.color ? ' &bull; ' + h(r.color) : ''} &bull; ${h(r.gender || 'Unknown')}</p>
-        <p class="text-sm text-gray-500 mt-1">Reporter: ${h(r.reporter_name)}${r.reporter_phone ? ' &bull; ' + h(fmtPhone(r.reporter_phone)) : ''}</p>
-        ${r.location_details ? '<p class="text-sm text-gray-600 mt-1">Location: ' + h(r.location_details) + '</p>' : ''}
-        ${r.description ? '<p class="text-sm text-gray-700 mt-2">' + h(r.description) + '</p>' : ''}
-        <div class="flex gap-2 mt-3 flex-wrap">
-          ${r.status==='pending' ? `<button onclick="updateReport(${r.id},'approved')" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200">Approve</button><button onclick="updateReport(${r.id},'rejected')" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full hover:bg-red-200">Reject</button>` : ''}
-          ${r.status==='approved' ? `<button onclick="resolveReport(${r.id})" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200">Mark Resolved</button>` : ''}
-          <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full hover:bg-purple-200">Generate Poster</button>
-          <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+        <div id="report-${r.id}" class="hidden border-t border-gray-100 p-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pet Details</h4>
+              <div class="space-y-1 text-sm">
+                <p><span class="text-gray-400">Species:</span> <span class="font-semibold">${h(r.species)}</span></p>
+                ${r.breed ? '<p><span class="text-gray-400">Breed:</span> <span class="font-semibold">'+h(r.breed)+'</span></p>' : ''}
+                ${r.color ? '<p><span class="text-gray-400">Color:</span> <span class="font-semibold">'+h(r.color)+'</span></p>' : ''}
+                ${r.gender ? '<p><span class="text-gray-400">Gender:</span> <span class="font-semibold">'+h(r.gender)+'</span></p>' : ''}
+                ${r.collar_details ? '<p><span class="text-gray-400">Collar:</span> <span class="font-semibold">'+h(r.collar_details)+'</span></p>' : ''}
+                ${r.temperament ? '<p><span class="text-gray-400">Temperament:</span> <span class="font-semibold">'+h(r.temperament)+'</span></p>' : ''}
+                ${r.current_location ? '<p><span class="text-gray-400">Currently:</span> <span class="font-semibold">'+h(r.current_location)+'</span></p>' : ''}
+                ${r.collar_status ? '<p><span class="text-gray-400">Collar status:</span> <span class="font-semibold">'+h(r.collar_status)+'</span></p>' : ''}
+              </div>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Reporter</h4>
+              <div class="space-y-1 text-sm">
+                <p class="font-semibold">${h(r.reporter_name)}</p>
+                ${r.reporter_phone ? '<p><a href="tel:'+r.reporter_phone.replace(/\\D/g,'')+'" class="text-sage-700 hover:underline">'+h(fmtPhone(r.reporter_phone))+'</a></p>' : ''}
+                ${r.reporter_email ? '<p><a href="mailto:'+h(r.reporter_email)+'" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : ''}
+              </div>
+              ${r.location_details ? '<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">Location</h4><p class="text-sm font-semibold">'+h(r.location_details)+'</p>' : ''}
+            </div>
+          </div>
+          ${r.description ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</h4><p class="text-sm text-gray-700">'+h(r.description)+'</p></div>' : ''}
+          ${photos.length > 0 ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photos</h4><div class="flex flex-wrap gap-3">'+photos.map(p=>'<img src="'+p+'" class="w-24 h-24 rounded-xl object-cover">').join('')+'</div></div>' : ''}
+          <div class="flex items-center gap-3 flex-wrap pt-3 border-t border-gray-100">
+            ${r.status==='pending' ? `<button onclick="updateReport(${r.id},'approved')" class="text-sm bg-sage-600 text-white px-4 py-2 rounded-xl hover:bg-sage-700 transition font-semibold">Approve</button><button onclick="updateReport(${r.id},'rejected')" class="text-sm bg-gray-100 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-200 transition font-semibold">Reject</button>` : ''}
+            ${r.status==='approved' ? `<button onclick="resolveReport(${r.id})" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-xl hover:bg-blue-200 transition font-semibold">Mark Resolved</button>` : ''}
+            <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-sm bg-purple-50 text-purple-700 px-4 py-2 rounded-xl hover:bg-purple-100 transition font-semibold">Generate Poster</button>
+            <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id})" class="text-sm text-red-400 hover:text-red-600 ml-auto">Delete</button>
+          </div>
         </div>
       </div>`;
     });
@@ -318,6 +404,13 @@ async function renderLostFound(el) {
   }
   el.innerHTML = html;
 }
+
+window.toggleReport = function(id) {
+  var el = document.getElementById('report-' + id);
+  var arrow = document.getElementById('arrow-' + id);
+  el.classList.toggle('hidden');
+  arrow.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
+};
 
 window.updateReport = async function(id, status) {
   await api('/admin/lost-found/' + id, { method: 'PUT', body: { status } });
@@ -342,23 +435,23 @@ window.deleteReport = async function(id) {
 
 // ── Events ──
 async function renderEvents(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Events</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Events</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/events');
   if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
   let html = `<div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Events</h1>
-    <button onclick="showEventForm()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Event</button>
+    <h1 class="text-2xl font-display font-bold text-sage-800">Events</h1>
+    <button onclick="showEventForm()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Event</button>
   </div>`;
   html += '<div id="eventFormArea"></div>';
 
   if (data.length === 0) {
-    html += '<div class="bg-white rounded-xl p-8 text-center text-gray-400">No events yet</div>';
+    html += '<div class="bg-white rounded-2xl p-8 text-center text-gray-400">No events yet</div>';
   } else {
     html += '<div class="space-y-3">';
     data.forEach(ev => {
       const past = new Date(ev.date + 'T23:59:59') < new Date();
-      html += `<div class="bg-white rounded-xl p-5 shadow-sm ${past ? 'opacity-60' : ''}">
+      html += `<div class="bg-white rounded-2xl p-5 shadow-sm ${past ? 'opacity-60' : ''}">
         <div class="flex items-start justify-between mb-1">
           <div>
             <span class="font-bold text-gray-900">${h(ev.title)}</span>
@@ -367,11 +460,11 @@ async function renderEvents(el) {
             ${past ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 ml-2">Past</span>' : ''}
           </div>
         </div>
-        <p class="text-sm text-gray-500">${formatDate(ev.date)}${ev.time ? ' &bull; ' + h(ev.time) : ''}${ev.location ? ' &bull; ' + h(ev.location) : ''}</p>
+        <p class="text-sm text-gray-500">${formatDate(ev.date)}${ev.end_date && ev.end_date !== ev.date ? ' – ' + formatDate(ev.end_date) : ''}${ev.time ? ' &bull; ' + h(ev.time) : ''}${ev.location ? ' &bull; ' + h(ev.location) : ''}</p>
         ${ev.description ? '<p class="text-sm text-gray-600 mt-2">' + h(ev.description) + '</p>' : ''}
-        <div class="flex gap-2 mt-3">
-          <button onclick='editEvent(${JSON.stringify(ev).replace(/'/g,"&#39;")})' class="text-xs text-green-700 hover:underline">Edit</button>
-          <button onclick="if(confirm('Delete this event?')) deleteEvent(${ev.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+        <div class="flex gap-4 mt-3">
+          <button onclick='editEvent(${JSON.stringify(ev).replace(/'/g,"&#39;")})' class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
+          <button onclick="if(confirm('Delete this event?')) deleteEvent(${ev.id})" class="text-xs text-red-400 hover:underline">Delete</button>
         </div>
       </div>`;
     });
@@ -380,28 +473,66 @@ async function renderEvents(el) {
   el.innerHTML = html;
 }
 
+function buildTimeOptions(selected) {
+  let opts = '<option value="">--</option>';
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const label = h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+      opts += `<option value="${label}" ${selected===label?'selected':''}>${label}</option>`;
+    }
+  }
+  return opts;
+}
+
 function eventFormHtml(ev) {
   const e = ev || {};
-  return `<div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+  // Parse existing time like "10:00 AM - 2:00 PM" into start/end
+  let startTime = '', endTime = '';
+  if (e.time) {
+    const parts = e.time.split(/\s*[-–]\s*/);
+    startTime = (parts[0] || '').trim();
+    endTime = (parts[1] || '').trim();
+  }
+  // Parse location — might be "Venue, Address" format
+  let venue = '', address = '';
+  if (e.location) {
+    const lParts = e.location.split(/, (.+)/);
+    venue = lParts[0] || '';
+    address = lParts[1] || '';
+  }
+  const badges = ['Adoption Event', 'Fundraiser', 'Community Event', 'Volunteer Event', 'Pet Expo', 'Other'];
+  const curBadge = e.badge || '';
+  const isCustomBadge = curBadge && !badges.includes(curBadge);
+
+  return `<div class="bg-sage-50 rounded-2xl p-6 mb-6 border border-sage-200">
     <h3 class="font-bold text-gray-900 mb-4">${ev ? 'Edit Event' : 'New Event'}</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Title *</label><input id="evTitle" value="${h(e.title||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Date *</label><input id="evDate" type="date" value="${e.date||''}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Time</label><input id="evTime" value="${h(e.time||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. 10:00 AM - 2:00 PM"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Location</label><input id="evLocation" value="${h(e.location||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Badge</label><input id="evBadge" value="${h(e.badge||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. Adoption Event, Fundraiser"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Color</label>
-        <select id="evColor" class="w-full border rounded-lg px-3 py-2 text-sm">
-          <option value="sage" ${e.color==='sage'?'selected':''}>Sage (green)</option>
-          <option value="amber" ${e.color==='amber'?'selected':''}>Amber (gold)</option>
-        </select></div>
+      <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-600 mb-1">Event Title *</label><input id="evTitle" value="${h(e.title||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. Adoption Day at Tractor Supply"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Start Date *</label><input id="evDate" type="date" value="${e.date||''}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">End Date <span class="font-normal text-gray-400">(multi-day)</span></label><input id="evEndDate" type="date" value="${e.end_date||''}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Event Type</label>
+        <select id="evBadgeSelect" onchange="if(this.value==='custom'){document.getElementById('evBadgeCustom').classList.remove('hidden')}else{document.getElementById('evBadgeCustom').classList.add('hidden')}" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="">None</option>
+          ${badges.map(b => '<option value="'+b+'"'+(curBadge===b?' selected':'')+'>'+b+'</option>').join('')}
+          <option value="custom" ${isCustomBadge?'selected':''}>Custom...</option>
+        </select>
+        <input id="evBadgeCustom" class="${isCustomBadge?'':'hidden'} w-full border rounded-lg px-3 py-2 text-sm mt-2" value="${isCustomBadge?h(curBadge):''}" placeholder="Custom event type">
+      </div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Start Time</label>
+        <select id="evStartTime" class="w-full border rounded-lg px-3 py-2 text-sm">${buildTimeOptions(startTime)}</select></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">End Time</label>
+        <select id="evEndTime" class="w-full border rounded-lg px-3 py-2 text-sm">${buildTimeOptions(endTime)}</select></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Venue Name</label><input id="evVenue" value="${h(venue)}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. Tractor Supply Co."></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="evAddress" value="${h(address)}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. 123 Main St, Waseca"></div>
     </div>
     <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="evDesc" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${h(e.description||'')}</textarea></div>
     <div class="flex items-center gap-4 mb-4">
       <label class="flex items-center gap-2 text-sm"><input id="evPublished" type="checkbox" ${e.published!==0?'checked':''}> Published</label>
     </div>
     <div class="flex gap-2">
-      <button onclick="saveEvent(${e.id||'null'})" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
+      <button onclick="saveEvent(${e.id||'null'})" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
       <button onclick="document.getElementById('eventFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
     </div>
   </div>`;
@@ -411,14 +542,36 @@ window.showEventForm = function() { document.getElementById('eventFormArea').inn
 window.editEvent = function(ev) { document.getElementById('eventFormArea').innerHTML = eventFormHtml(ev); window.scrollTo(0,0); };
 
 window.saveEvent = async function(id) {
+  // Combine time fields
+  const startTime = document.getElementById('evStartTime').value;
+  const endTime = document.getElementById('evEndTime').value;
+  let time = '';
+  if (startTime && endTime) time = startTime + ' – ' + endTime;
+  else if (startTime) time = startTime;
+
+  // Combine location fields
+  const venue = document.getElementById('evVenue').value.trim();
+  const address = document.getElementById('evAddress').value.trim();
+  let location = '';
+  if (venue && address) location = venue + ', ' + address;
+  else location = venue || address;
+
+  // Badge from dropdown or custom
+  const badgeSelect = document.getElementById('evBadgeSelect').value;
+  const badgeCustom = document.getElementById('evBadgeCustom').value.trim();
+  const badge = badgeSelect === 'custom' ? badgeCustom : badgeSelect;
+
+  const endDate = document.getElementById('evEndDate').value;
+
   const body = {
     title: document.getElementById('evTitle').value,
     date: document.getElementById('evDate').value,
-    time: document.getElementById('evTime').value,
-    location: document.getElementById('evLocation').value,
+    end_date: endDate || null,
+    time: time,
+    location: location,
     description: document.getElementById('evDesc').value,
-    badge: document.getElementById('evBadge').value,
-    color: document.getElementById('evColor').value,
+    badge: badge,
+    color: 'auto',
     published: document.getElementById('evPublished').checked,
   };
   if (!body.title || !body.date) { alert('Title and date are required'); return; }
@@ -434,14 +587,14 @@ window.deleteEvent = async function(id) {
 
 // ── FAQ ──
 async function renderFaq(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">FAQ</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">FAQ</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/faq');
   if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
   const sections = { adoption: 'Adoption', fostering: 'Fostering', general: 'General' };
   let html = `<div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">FAQ</h1>
-    <button onclick="showFaqForm()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Question</button>
+    <h1 class="text-2xl font-display font-bold text-sage-800">FAQ</h1>
+    <button onclick="showFaqForm()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Question</button>
   </div>`;
   html += '<div id="faqFormArea"></div>';
 
@@ -453,12 +606,12 @@ async function renderFaq(el) {
     } else {
       html += '<div class="space-y-2 mb-4">';
       items.forEach(f => {
-        html += `<div class="bg-white rounded-xl p-4 shadow-sm">
+        html += `<div class="bg-white rounded-2xl p-4 shadow-sm">
           <p class="font-semibold text-gray-900 text-sm">${h(f.question)}</p>
           <p class="text-gray-500 text-xs mt-1 line-clamp-2">${f.answer.substring(0, 200)}...</p>
-          <div class="flex gap-2 mt-2">
-            <button onclick='editFaq(${JSON.stringify(f).replace(/'/g,"&#39;")})' class="text-xs text-green-700 hover:underline">Edit</button>
-            <button onclick="if(confirm('Delete this FAQ?')) deleteFaq(${f.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+          <div class="flex gap-4 mt-3">
+            <button onclick='editFaq(${JSON.stringify(f).replace(/'/g,"&#39;")})' class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
+            <button onclick="if(confirm('Delete this FAQ?')) deleteFaq(${f.id})" class="text-xs text-red-400 hover:underline">Delete</button>
           </div>
         </div>`;
       });
@@ -470,7 +623,7 @@ async function renderFaq(el) {
 
 function faqFormHtml(fq) {
   const f = fq || {};
-  return `<div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+  return `<div class="bg-sage-50 rounded-2xl p-6 mb-6 border border-sage-200">
     <h3 class="font-bold text-gray-900 mb-4">${fq ? 'Edit FAQ' : 'New FAQ'}</h3>
     <div class="grid grid-cols-1 gap-4 mb-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Section *</label>
@@ -484,7 +637,7 @@ function faqFormHtml(fq) {
         <p class="text-xs text-gray-400 mt-1">HTML is allowed (links, bold, etc.)</p></div>
     </div>
     <div class="flex gap-2">
-      <button onclick="saveFaq(${f.id||'null'}, ${f.sort_order||0})" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
+      <button onclick="saveFaq(${f.id||'null'}, ${f.sort_order||0})" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
       <button onclick="document.getElementById('faqFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
     </div>
   </div>`;
@@ -513,15 +666,15 @@ window.deleteFaq = async function(id) {
 
 // ── Site Settings ──
 async function renderSettings(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Site Settings</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Site Settings</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/settings');
   if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
   const partners = Array.isArray(data.partners) ? data.partners.join(', ') : (data.partners || '');
 
-  el.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-6">Site Settings</h1>
+  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Site Settings</h1>
 
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Contact Information</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label><input id="setPhone" value="${h(data.phone||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
@@ -531,7 +684,7 @@ async function renderSettings(el) {
     </div>
   </div>
 
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Social & Partners</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Facebook URL</label><input id="setFb" value="${h(data.facebook_url||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
@@ -540,13 +693,13 @@ async function renderSettings(el) {
         <div id="partnersList" class="space-y-2 mb-2"></div>
         <div class="flex gap-2">
           <input id="newPartner" class="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="Partner name">
-          <button onclick="addPartner()" class="bg-green-800 text-white text-xs font-semibold px-3 py-2 rounded-lg">Add</button>
+          <button onclick="addPartner()" class="bg-sage-700 text-white text-xs font-semibold px-3 py-2 rounded-lg">Add</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
     <div class="flex items-center gap-4 mb-3">
       <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
@@ -564,7 +717,7 @@ async function renderSettings(el) {
     </div>
   </div>
 
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Site Announcement Banner</h2>
     <div class="flex items-center gap-4 mb-3">
       <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
@@ -583,8 +736,8 @@ async function renderSettings(el) {
     </div>
   </div>
 
-  <button onclick="saveSettings()" class="bg-green-800 hover:bg-green-900 text-white font-bold px-6 py-3 rounded-lg transition">Save Settings</button>
-  <span id="settingsSaved" class="text-green-700 text-sm ml-3 hidden">Saved!</span>`;
+  <button onclick="saveSettings()" class="bg-sage-700 hover:bg-sage-900 text-white font-bold px-6 py-3 rounded-lg transition">Save Settings</button>
+  <span id="settingsSaved" class="text-sm font-bold ml-3 hidden" style="color:#5c6b4e;">Settings saved!</span>`;
 
   // Render partners list
   const partnerArr = Array.isArray(data.partners) ? data.partners : (data.partners ? data.partners.split(',').map(s=>s.trim()).filter(Boolean) : []);
@@ -655,18 +808,19 @@ window.saveSettings = async function() {
   }});
   const saved = document.getElementById('settingsSaved');
   saved.classList.remove('hidden');
-  setTimeout(() => saved.classList.add('hidden'), 2000);
+  saved.style.background = '#e8ebe3'; saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
+  setTimeout(() => { saved.classList.add('hidden'); saved.style.background = ''; saved.style.padding = ''; }, 3000);
 };
 
 // ── About Page ──
 async function renderAbout(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">About Page Content</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">About Page Content</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/settings');
   if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
 
-  el.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-6">About Page Content</h1>
+  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">About Page Content</h1>
 
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Mission Statement</h2>
     <div class="space-y-3">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 1</label><textarea id="abMission1" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text||''}</textarea></div>
@@ -676,7 +830,7 @@ async function renderAbout(el) {
     <p class="text-xs text-gray-400 mt-2">HTML allowed (e.g. &lt;strong&gt;bold&lt;/strong&gt;, &lt;a href="..."&gt;links&lt;/a&gt;)</p>
   </div>
 
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
     <h2 class="font-bold text-gray-900 mb-4">Why Foster-Based?</h2>
     <div class="space-y-3">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Home Environment</label><textarea id="abFoster1" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_home||''}</textarea></div>
@@ -685,8 +839,8 @@ async function renderAbout(el) {
     </div>
   </div>
 
-  <button onclick="saveAbout()" class="bg-green-800 hover:bg-green-900 text-white font-bold px-6 py-3 rounded-lg transition">Save</button>
-  <span id="aboutSaved" class="text-green-700 text-sm ml-3 hidden">Saved!</span>`;
+  <button onclick="saveAbout()" class="bg-sage-700 hover:bg-sage-900 text-white font-bold px-6 py-3 rounded-lg transition">Save</button>
+  <span id="aboutSaved" class="text-sage-700 text-sm ml-3 hidden">Saved!</span>`;
 }
 
 window.saveAbout = async function() {
@@ -700,14 +854,98 @@ window.saveAbout = async function() {
   }});
   const saved = document.getElementById('aboutSaved');
   saved.classList.remove('hidden');
-  setTimeout(() => saved.classList.add('hidden'), 2000);
+  saved.style.background = '#e8ebe3'; saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
+  setTimeout(() => { saved.classList.add('hidden'); saved.style.background = ''; saved.style.padding = ''; }, 3000);
+};
+
+// ── API Status ──
+async function renderApiStatus(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/sync-status');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  const statusIcon = (s) => s === 'success'
+    ? '<span class="inline-block w-2.5 h-2.5 rounded-full bg-green-500 mr-2"></span>'
+    : '<span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400 mr-2"></span>';
+
+  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+      <p class="text-3xl font-bold text-sage-700">${data.current_animals}</p>
+      <p class="text-gray-500 text-sm mt-1">Animals in Database</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+      <p class="text-3xl font-bold text-sage-700">${data.last_success ? timeAgo(data.last_success) : 'Never'}</p>
+      <p class="text-gray-500 text-sm mt-1">Last Successful Sync</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+      <p class="text-3xl font-bold text-sage-700">1 min</p>
+      <p class="text-gray-500 text-sm mt-1">Sync Interval</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold text-gray-900">ShelterLuv Sync</h2>
+      <span class="text-xs px-3 py-1 rounded-full ${data.recent_syncs[0]?.status === 'success' ? 'bg-sage-100 text-sage-700' : 'bg-amber-100 text-amber-700'}">${data.recent_syncs[0]?.status === 'success' ? 'Healthy' : 'Issue Detected'}</span>
+    </div>
+    <p class="text-sm text-gray-500 mb-1">Source: ShelterLuv API (Org 95252)</p>
+    <p class="text-sm text-gray-500 mb-1">Endpoint: <code class="text-xs bg-gray-100 px-2 py-0.5 rounded">animals?status_type=publishable</code></p>
+    <p class="text-sm text-gray-500">Photos stored in: Cloudflare R2</p>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm">
+    <h2 class="font-bold text-gray-900 mb-4">Recent Sync Log</h2>
+    ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs recorded yet</p>' :
+    '<div class="space-y-2">' + data.recent_syncs.map(s => `
+      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+        <div class="flex items-center">
+          ${statusIcon(s.status)}
+          <span class="text-sm ${s.status === 'success' ? 'text-gray-700' : 'text-red-600'}">${h(s.status)}</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-gray-500">${s.animal_count} animals</span>
+          <span class="text-xs text-gray-400">${s.synced_at}</span>
+        </div>
+      </div>
+    `).join('') + '</div>'}
+  </div>
+
+  <div class="mt-6">
+    <button onclick="triggerSync()" id="syncBtn" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl transition">Trigger Manual Sync</button>
+    <span id="syncStatus" class="text-sm ml-3 hidden"></span>
+  </div>`;
+}
+
+window.triggerSync = async function() {
+  const btn = document.getElementById('syncBtn');
+  const status = document.getElementById('syncStatus');
+  btn.disabled = true; btn.textContent = 'Syncing...';
+  status.classList.add('hidden');
+  try {
+    const res = await fetch('https://wcahs-shelterluv-sync.wcahs.workers.dev/trigger', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      status.className = 'text-sm ml-3 text-sage-700'; status.textContent = 'Sync triggered! Refreshing...';
+      status.classList.remove('hidden');
+      setTimeout(() => navigate('api-status'), 2000);
+    } else {
+      status.className = 'text-sm ml-3 text-red-500'; status.textContent = 'Failed';
+      status.classList.remove('hidden');
+    }
+  } catch(e) {
+    status.className = 'text-sm ml-3 text-red-500'; status.textContent = 'Could not reach sync worker';
+    status.classList.remove('hidden');
+  }
+  btn.disabled = false; btn.textContent = 'Trigger Manual Sync';
 };
 
 // ── My Account ──
 async function renderMyAccount(el) {
   const me = await api('/auth/me');
-  el.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-6">My Account</h1>
-  <div class="bg-white rounded-xl p-6 shadow-sm mb-6 max-w-md">
+  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">My Account</h1>
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6 max-w-md">
     <div class="mb-4">
       <p class="text-sm text-gray-500">Username</p>
       <p class="font-bold text-gray-900">${h(me.username)}</p>
@@ -722,7 +960,7 @@ async function renderMyAccount(el) {
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">New Password (min 8 characters)</label><input id="cpNew" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Confirm New Password</label><input id="cpConfirm" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
       <div id="cpStatus" class="hidden text-sm"></div>
-      <button onclick="changeMyPassword()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Change Password</button>
+      <button onclick="changeMyPassword()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Change Password</button>
     </div>
   </div>`;
 }
@@ -738,7 +976,7 @@ window.changeMyPassword = async function() {
 
   const res = await api('/admin/change-password', { method: 'POST', body: { current_password: current, new_password: newPass } });
   if (res.ok) {
-    status.className = 'text-sm text-green-700'; status.textContent = res.message || 'Password changed!';
+    status.className = 'text-sm text-sage-700'; status.textContent = res.message || 'Password changed!';
     document.getElementById('cpCurrent').value = '';
     document.getElementById('cpNew').value = '';
     document.getElementById('cpConfirm').value = '';
@@ -750,38 +988,38 @@ window.changeMyPassword = async function() {
 
 // ── Users ──
 async function renderUsers(el) {
-  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Users</h1><p class="text-gray-400">Loading...</p>';
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Users</h1><p class="text-gray-400">Loading...</p>';
   const data = await api('/admin/users');
-  if (data.error) { el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Users</h1><p class="text-red-500">' + data.error + '</p>'; return; }
+  if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Users</h1><p class="text-red-500">' + data.error + '</p>'; return; }
 
   const roleColors = { admin: 'bg-purple-100 text-purple-700', staff: 'bg-blue-100 text-blue-700' };
 
   let html = `<div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Users</h1>
-    <button onclick="showUserForm()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add User</button>
+    <h1 class="text-2xl font-display font-bold text-sage-800">Users</h1>
+    <button onclick="showUserForm()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add User</button>
   </div>`;
   html += '<div id="userFormArea"></div>';
   html += '<div class="space-y-3">';
   data.forEach(u => {
-    html += `<div class="bg-white rounded-xl p-5 shadow-sm flex items-center justify-between">
+    html += `<div class="bg-white rounded-2xl p-5 shadow-sm flex items-center justify-between">
       <div>
         <span class="font-bold text-gray-900">${h(u.username)}</span>
         <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${roleColors[u.role] || 'bg-gray-100 text-gray-600'}">${u.role}</span>
         <span class="text-xs text-gray-400 ml-2">Created ${new Date(u.created_at).toLocaleDateString()}</span>
       </div>
       <div class="flex gap-2">
-        <button onclick="resetUserPassword(${u.id}, '${h(u.username)}')" class="text-xs text-green-700 hover:underline">Reset password</button>
+        <button onclick="resetUserPassword(${u.id}, '${h(u.username)}')" class="text-xs text-sage-700 hover:underline">Reset password</button>
         <button onclick="if(confirm('Delete user ${h(u.username)}?')) deleteUser(${u.id})" class="text-xs text-red-500 hover:underline">Delete</button>
       </div>
     </div>`;
   });
   html += '</div>';
-  html += '<div class="mt-8 bg-gray-50 rounded-xl p-5 text-sm text-gray-500"><strong>Roles:</strong><br><span class="text-purple-700 font-semibold">Admin</span> — full access to everything<br><span class="text-blue-700 font-semibold">Staff</span> — Inbox, Lost & Found, and Events only (no site settings, FAQ, about page, or user management)</div>';
+  html += '<div class="mt-8 bg-gray-50 rounded-2xl p-5 text-sm text-gray-500"><strong>Roles:</strong><br><span class="text-purple-700 font-semibold">Admin</span> — full access to everything<br><span class="text-blue-700 font-semibold">Staff</span> — Inbox, Lost & Found, and Events only (no site settings, FAQ, about page, or user management)</div>';
   el.innerHTML = html;
 }
 
 window.showUserForm = function() {
-  document.getElementById('userFormArea').innerHTML = `<div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+  document.getElementById('userFormArea').innerHTML = `<div class="bg-sage-50 rounded-2xl p-6 mb-6 border border-sage-200">
     <h3 class="font-bold text-gray-900 mb-4">New User</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label><input id="nuUser" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
@@ -793,7 +1031,7 @@ window.showUserForm = function() {
         </select></div>
     </div>
     <div class="flex gap-2">
-      <button onclick="createUser()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Create User</button>
+      <button onclick="createUser()" class="bg-sage-700 hover:bg-sage-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Create User</button>
       <button onclick="document.getElementById('userFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
     </div>
   </div>`;

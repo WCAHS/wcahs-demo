@@ -117,14 +117,16 @@
     var link = e.target.closest('a[href]');
     if (!link) return;
     var href = link.getAttribute('href');
-    if (href && href.endsWith('.html') && !href.startsWith('http')) {
+    if (href && (href.endsWith('.html') || href.indexOf('.html?') !== -1 || href.indexOf('.html#') !== -1) && !href.startsWith('http')) {
       e.preventDefault();
       var el = document.getElementById('pageLoader');
       if (el) {
         el.classList.remove('loaded');
         el.style.display = '';
+        setTimeout(function() { window.location.href = href; }, 400);
+      } else {
+        window.location.href = href;
       }
-      setTimeout(function() { window.location.href = href; }, 500);
     }
   });
 })();

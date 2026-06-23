@@ -199,14 +199,14 @@
               });
               var data = await res.json();
               if (data.ok) {
-                status.innerHTML = '<div class="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center"><svg class="w-10 h-10 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="font-bold text-green-800 text-lg">Message Sent!</p><p class="text-green-600 text-sm mt-1">' + (data.message || "We'll get back to you soon.") + '</p></div>';
+                status.innerHTML = '<div class="bg-sage-50 border-2 border-sage-200 rounded-xl p-6 text-center" style="background:#f6f7f4;border-color:#d2d8c8;"><img src="images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">Message Sent!</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || "We'll get back to you soon.") + '</p></div>';
                 status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none';
               } else {
-                status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (data.error || 'Something went wrong') + '</p><p class="text-red-500 text-sm mt-1">Please try again.</p></div>';
+                status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (data.error || 'Something went wrong') + '</p><p class="text-sm mt-1" style="color:#b45309;">Please try again.</p></div>';
                 status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Send Message';
               }
             } catch(err) {
-              status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">Could not send</p><p class="text-red-500 text-sm mt-1">Please check your connection and try again.</p></div>';
+              status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Could not send</p><p class="text-sm mt-1" style="color:#b45309;">Please check your connection and try again.</p></div>';
               status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Send Message';
             }
           });
@@ -234,22 +234,46 @@
       </div>
 
       <div id="oneTime" class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-xl mx-auto mb-10">
-        <button class="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$10</button>
-        <button class="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$25</button>
-        <button class="bg-white/30 hover:bg-white/40 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border-2 border-white/50 ring-2 ring-white/20">$50</button>
-        <button class="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">Custom</button>
+        <button onclick="selectAmount(this, 10)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$10</button>
+        <button onclick="selectAmount(this, 25)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$25</button>
+        <button onclick="selectAmount(this, 50)" class="donate-amt bg-white/30 hover:bg-white/40 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border-2 border-white/50 ring-2 ring-white/20 amt-selected">$50</button>
+        <button onclick="selectAmount(this, null)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">Custom</button>
       </div>
 
       <div id="monthly" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 max-w-xl mx-auto mb-10">
-        <button class="bg-white/30 hover:bg-white/40 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border-2 border-white/50 ring-2 ring-white/20">$10<span class="block text-xs font-normal opacity-80">/month</span></button>
-        <button class="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$25<span class="block text-xs font-normal opacity-80">/month</span></button>
-        <button class="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$50<span class="block text-xs font-normal opacity-80">/month</span></button>
-        <button class="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">Custom<span class="block text-xs font-normal opacity-80">/month</span></button>
+        <button onclick="selectAmount(this, 10)" class="donate-amt bg-white/30 hover:bg-white/40 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border-2 border-white/50 ring-2 ring-white/20 amt-selected">$10<span class="block text-xs font-normal opacity-80">/month</span></button>
+        <button onclick="selectAmount(this, 25)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$25<span class="block text-xs font-normal opacity-80">/month</span></button>
+        <button onclick="selectAmount(this, 50)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$50<span class="block text-xs font-normal opacity-80">/month</span></button>
+        <button onclick="selectAmount(this, null)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">Custom<span class="block text-xs font-normal opacity-80">/month</span></button>
       </div>
 
-      <a href="#" onclick="alert('This is a demo — donation processing would be connected here.')" class="inline-block bg-white text-amber-700 font-bold px-10 py-4 rounded-full text-lg transition shadow-lg hover:shadow-xl hover:bg-amber-50">
+      <button onclick="openZeffy()" class="inline-block bg-white text-amber-700 font-bold px-10 py-4 rounded-full text-lg transition shadow-lg hover:shadow-xl hover:bg-amber-50 cursor-pointer">
         Donate Now
-      </a>
+      </button>
+      <script>
+        var _selectedAmount = 50;
+        function selectAmount(btn, amount) {
+          _selectedAmount = amount;
+          btn.closest('.grid').querySelectorAll('.donate-amt').forEach(function(b) {
+            b.classList.remove('amt-selected', 'border-2', 'border-white/50', 'ring-2', 'ring-white/20');
+            b.classList.add('border', 'border-white/20');
+          });
+          btn.classList.remove('border', 'border-white/20');
+          btn.classList.add('amt-selected', 'border-2', 'border-white/50', 'ring-2', 'ring-white/20');
+        }
+        function openZeffy() {
+          var base = 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581?modal=true';
+          if (_selectedAmount) base += '&amount=' + _selectedAmount;
+          var overlay = document.createElement('div');
+          overlay.id = 'zeffyOverlay';
+          overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;';
+          overlay.innerHTML = '<div style="position:relative;width:100%;max-width:500px;height:90vh;max-height:700px;background:#fff;border-radius:16px;overflow:hidden;">' +
+            '' +
+            '<iframe src="' + base + '" style="width:100%;height:100%;border:none;" allowpaymentrequest></iframe></div>';
+          overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+          document.body.appendChild(overlay);
+        }
+      </script>
     </div>
   </section>
 
@@ -313,14 +337,14 @@
             });
             var data = await res.json();
             if (data.ok) {
-              status.innerHTML = '<div class="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center"><svg class="w-10 h-10 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="font-bold text-green-800 text-lg">Application Submitted!</p><p class="text-green-600 text-sm mt-1">' + (data.message || "We'll be in touch soon.") + '</p></div>';
+              status.innerHTML = '<div class="bg-sage-50 border-2 border-sage-200 rounded-xl p-6 text-center" style="background:#f6f7f4;border-color:#d2d8c8;"><img src="images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">Application Submitted!</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || "We'll be in touch soon.") + '</p></div>';
               status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none';
             } else {
-              status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (data.error || 'Something went wrong') + '</p></div>';
+              status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (data.error || 'Something went wrong') + '</p></div>';
               status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Submit Application';
             }
           } catch(err) {
-            status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">Could not submit. Please try again.</p></div>';
+            status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Could not submit. Please try again.</p></div>';
             status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Submit Application';
         });
       </script>
@@ -360,6 +384,7 @@
     </div>
   </footer>
 
+<script src="https://zeffy-scripts.s3.ca-central-1.amazonaws.com/embed-form-script.min.js"></script>
 <script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   date TEXT NOT NULL,
+  end_date TEXT,
   time TEXT,
   location TEXT,
   description TEXT,
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS form_submissions (
   subject TEXT,
   message TEXT NOT NULL,
   is_read INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'new',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
