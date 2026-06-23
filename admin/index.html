@@ -927,17 +927,21 @@ async function renderEmailTemplates() {
         <p class="text-gray-300 text-sm mt-1">Save reusable email templates for broadcasts</p>
       </div>`;
     } else {
-      html += '<div class="space-y-2">';
+      html += '<div class="space-y-3">';
       templates.forEach(t => {
         const created = t.created_at ? new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        // Strip HTML to get plain text preview
+        const bodyPreview = t.html ? t.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 120) : '';
         html += `<div class="card p-4">
-          <div class="flex items-start justify-between">
-            <div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
               <span class="font-bold text-gray-900 text-sm">${h(t.name)}</span>
-              ${t.subject ? '<p class="text-xs text-gray-400 mt-0.5">Subject: ' + h(t.subject) + '</p>' : ''}
-              ${created ? '<p class="text-xs text-gray-300 mt-0.5">' + created + '</p>' : ''}
+              ${t.subject ? '<p class="text-xs text-gray-500 mt-0.5"><span class="text-gray-400">Subject:</span> ' + h(t.subject) + '</p>' : ''}
+              ${bodyPreview ? '<p class="text-xs text-gray-400 mt-1 truncate">' + h(bodyPreview) + '...</p>' : ''}
+              ${created ? '<p class="text-[11px] text-gray-300 mt-1">' + created + '</p>' : ''}
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-2 shrink-0">
+              <button onclick="previewTemplate('${t.id}')" class="text-xs text-blue-600 hover:underline font-semibold">Preview</button>
               <button onclick="editTemplate('${t.id}')" class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
               <button onclick="if(confirm('Delete this template?')) deleteTemplate('${t.id}')" class="text-xs text-red-400 hover:underline">Delete</button>
             </div>
@@ -987,6 +991,26 @@ window.editTemplate = async function(templateId) {
     }
   } catch (e) {
     alert('Failed to load template');
+  }
+};
+
+window.previewTemplate = async function(templateId) {
+  try {
+    const data = await api('/admin/email/templates?id=' + encodeURIComponent(templateId));
+    if (!data || !data.html) { alert('Could not load template preview'); return; }
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:650px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+        <div><strong style="font-size:14px">${h(data.name)}</strong>${data.subject ? '<p style="font-size:12px;color:#888;margin:2px 0 0">' + h(data.subject) + '</p>' : ''}</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999">&times;</button>
+      </div>
+      <div style="padding:20px">${data.html}</div>
+    </div>`;
+    document.body.appendChild(overlay);
+  } catch (e) {
+    alert('Failed to load preview');
   }
 };
 

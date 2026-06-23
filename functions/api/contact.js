@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply } from './_helpers.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -29,6 +29,19 @@ export async function onRequestPost(context) {
         <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Message</td><td style="padding:8px 12px;white-space:pre-wrap">${body.message}</td></tr>
       </table>
       <p style="margin-top:20px;font-size:12px;color:#999">View all messages at <a href="https://wcahs.org/admin/">wcahs.org/admin</a></p>`,
+  });
+
+  await sendAutoReply(env, {
+    to: body.email,
+    subject: 'We received your message!',
+    bodyHtml: `<h2 style="color:#48543e;margin:0 0 16px;font-family:Georgia,serif">Thanks for reaching out, ${body.name}!</h2>
+      <p style="color:#666;font-size:15px;line-height:1.6">We received your message and a member of our team will get back to you as soon as possible.</p>
+      <div style="background:#f6f7f4;border-radius:12px;padding:16px 20px;margin:20px 0">
+        <p style="margin:0;font-size:13px;color:#666"><strong>Subject:</strong> ${body.subject || 'General Inquiry'}</p>
+        <p style="margin:8px 0 0;font-size:13px;color:#666"><strong>Your message:</strong> ${body.message.substring(0, 200)}${body.message.length > 200 ? '...' : ''}</p>
+      </div>
+      <p style="color:#666;font-size:15px;line-height:1.6">In the meantime, feel free to browse our <a href="https://wcahs.org/pets.html" style="color:#5c6b4e;font-weight:700">available pets</a> or check out our <a href="https://wcahs.org/events.html" style="color:#5c6b4e;font-weight:700">upcoming events</a>.</p>
+      <p style="color:#999;font-size:13px;margin-top:24px">— The WCAHS Team</p>`,
   });
 
   return json({ ok: true, message: 'Message sent! We\'ll get back to you soon.' });

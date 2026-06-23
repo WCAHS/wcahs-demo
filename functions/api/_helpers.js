@@ -72,8 +72,31 @@ export async function sendNotification(env, { subject, html }) {
       }),
     });
   } catch (e) {
-    // Don't fail the form submission if email fails
     console.error('Resend error:', e.message);
+  }
+}
+
+const EMAIL_FOOTER = `<div style="padding:20px 32px;text-align:center;background:#f6f7f4"><p style="color:#93a27e;font-size:12px;margin:0">Waseca County Animal Humane Society</p><p style="color:#93a27e;font-size:12px;margin:4px 0 0">(507) 201-7287 &bull; info@wcahs.org &bull; <a href="https://wcahs.org" style="color:#5c6b4e">wcahs.org</a></p></div>`;
+const EMAIL_HEADER = `<div style="background:#48543e;padding:24px 32px;text-align:center"><h1 style="color:#fff;margin:0;font-size:20px;font-family:Georgia,serif">Waseca County Animal Humane Society</h1></div>`;
+
+export async function sendAutoReply(env, { to, subject, bodyHtml }) {
+  if (!env.RESEND_API_KEY || !to) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'WCAHS <noreply@wcahs.org>',
+        to: [to],
+        subject,
+        html: `<div style="max-width:600px;margin:0 auto;font-family:Nunito,Helvetica,Arial,sans-serif">${EMAIL_HEADER}<div style="padding:32px;background:#fff">${bodyHtml}</div>${EMAIL_FOOTER}</div>`,
+      }),
+    });
+  } catch (e) {
+    console.error('Auto-reply error:', e.message);
   }
 }
 
