@@ -31,7 +31,7 @@ export async function onRequestGet(context) {
           limit: 5000
         ) {
           count
-          dimensions { date, path, refererHost, countryName, browserName, deviceType }
+          dimensions { date, requestPath, refererHost, countryName, userAgentBrowser, deviceType }
           sum { visits }
         }
       }
@@ -69,10 +69,10 @@ export async function onRequestGet(context) {
       totalVisits += row.sum.visits;
 
       byDate[d.date] = (byDate[d.date] || 0) + row.count;
-      if (d.path) byPath[d.path] = (byPath[d.path] || 0) + row.count;
+      if (d.requestPath) byPath[d.requestPath] = (byPath[d.requestPath] || 0) + row.count;
       if (d.refererHost) byReferer[d.refererHost] = (byReferer[d.refererHost] || 0) + row.count;
       if (d.countryName) byCountry[d.countryName] = (byCountry[d.countryName] || 0) + row.count;
-      if (d.browserName) byBrowser[d.browserName] = (byBrowser[d.browserName] || 0) + row.count;
+      if (d.userAgentBrowser) byBrowser[d.userAgentBrowser] = (byBrowser[d.userAgentBrowser] || 0) + row.count;
       if (d.deviceType) byDevice[d.deviceType] = (byDevice[d.deviceType] || 0) + row.count;
     }
 
