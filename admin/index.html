@@ -911,10 +911,9 @@ async function renderApiStatus(el) {
     <div class="grid grid-cols-3 gap-4 mb-4">
       <div class="text-center"><p class="text-2xl font-bold text-sage-700">${data.current_animals}</p><p class="text-gray-400 text-xs">Animals</p></div>
       <div class="text-center"><p class="text-2xl font-bold text-sage-700">${data.last_success ? timeAgo(data.last_success) : '—'}</p><p class="text-gray-400 text-xs">Last Sync</p></div>
-      <div class="text-center"><p class="text-2xl font-bold text-sage-700">1 min</p><p class="text-gray-400 text-xs">Interval</p></div>
+      <div class="text-center"><p class="text-2xl font-bold text-sage-700">15 min</p><p class="text-gray-400 text-xs">Interval</p></div>
     </div>
-    <button onclick="triggerSync()" id="syncBtn" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2 rounded-2xl transition">Sync Now</button>
-    <span id="syncStatus" class="text-sm ml-3 hidden"></span>
+    <p class="text-xs text-gray-400 mt-2">Syncs automatically every 15 minutes via GitHub Actions</p>
   </div>
 
   <div class="bg-white rounded-2xl p-6 shadow-sm">
@@ -930,28 +929,6 @@ async function renderApiStatus(el) {
 
 }
 
-window.triggerSync = async function() {
-  const btn = document.getElementById('syncBtn');
-  const status = document.getElementById('syncStatus');
-  btn.disabled = true; btn.textContent = 'Syncing...';
-  status.classList.add('hidden');
-  try {
-    const res = await fetch('https://wcahs-shelterluv-sync.wcahs.workers.dev/trigger', { method: 'POST' });
-    const data = await res.json();
-    if (data.ok) {
-      status.className = 'text-sm ml-3 text-sage-700'; status.textContent = 'Sync triggered! Refreshing...';
-      status.classList.remove('hidden');
-      setTimeout(() => navigate('api-status'), 2000);
-    } else {
-      status.className = 'text-sm ml-3 text-red-500'; status.textContent = 'Failed';
-      status.classList.remove('hidden');
-    }
-  } catch(e) {
-    status.className = 'text-sm ml-3 text-red-500'; status.textContent = 'Could not reach sync worker';
-    status.classList.remove('hidden');
-  }
-  btn.disabled = false; btn.textContent = 'Trigger Manual Sync';
-};
 
 // ── My Account ──
 async function renderMyAccount(el) {
