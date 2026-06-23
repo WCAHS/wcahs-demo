@@ -31,7 +31,7 @@ export async function onRequestGet(context) {
           limit: 5000
         ) {
           count
-          dimensions { date, requestPath, refererHost, countryName, userAgentBrowser, deviceType }
+          dimensions { date, requestPath, refererHost, countryName, userAgentBrowser, userAgentOS, deviceType }
           sum { visits }
         }
       }
@@ -61,7 +61,7 @@ export async function onRequestGet(context) {
 
     // Aggregate totals
     let totalViews = 0, totalVisits = 0;
-    const byDate = {}, byPath = {}, byReferer = {}, byCountry = {}, byBrowser = {}, byDevice = {};
+    const byDate = {}, byPath = {}, byReferer = {}, byCountry = {}, byBrowser = {}, byOS = {}, byDevice = {};
 
     for (const row of rows) {
       const d = row.dimensions;
@@ -73,6 +73,7 @@ export async function onRequestGet(context) {
       if (d.refererHost) byReferer[d.refererHost] = (byReferer[d.refererHost] || 0) + row.count;
       if (d.countryName) byCountry[d.countryName] = (byCountry[d.countryName] || 0) + row.count;
       if (d.userAgentBrowser) byBrowser[d.userAgentBrowser] = (byBrowser[d.userAgentBrowser] || 0) + row.count;
+      if (d.userAgentOS) byOS[d.userAgentOS] = (byOS[d.userAgentOS] || 0) + row.count;
       if (d.deviceType) byDevice[d.deviceType] = (byDevice[d.deviceType] || 0) + row.count;
     }
 
@@ -88,6 +89,7 @@ export async function onRequestGet(context) {
       topReferrers: sortDesc(byReferer),
       topCountries: sortDesc(byCountry),
       topBrowsers: sortDesc(byBrowser),
+      topOS: sortDesc(byOS),
       devices: sortDesc(byDevice),
     });
   } catch (e) {

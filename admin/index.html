@@ -139,7 +139,7 @@
           <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
         </a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
-        <a onclick="navigate('forms')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="forms">Forms</a>
+        <a onclick="navigate('email')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="email">Email</a>
         <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
@@ -259,7 +259,7 @@ function navigate(page) {
   switch(page) {
     case 'submissions': renderSubmissions(content); break;
     case 'events': renderEvents(content); break;
-    case 'forms': renderForms(content); break;
+    case 'email': renderEmail(content); break;
     case 'faq': renderFaq(content); break;
     case 'settings': renderSettings(content); break;
     case 'about': renderAbout(content); break;
@@ -305,7 +305,12 @@ function initQuill(containerId, initialHtml) {
       }
     });
     if (initialHtml) {
-      q.root.innerHTML = initialHtml;
+      // Clean up plain text with newlines — convert to paragraphs if no HTML tags present
+      let cleaned = initialHtml;
+      if (!/<[a-z][\s\S]*>/i.test(cleaned)) {
+        cleaned = cleaned.split(/\n\n+/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+      }
+      q.root.innerHTML = cleaned;
     }
     _quillInstances[containerId] = q;
   }, 50);
@@ -644,14 +649,419 @@ window.deleteReport = async function(id) {
   navigate('submissions'); loadBadgeCounts();
 };
 
-// ── Forms (placeholder) ──
-function renderForms(el) {
-  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">Forms</h1>
-    <div class="card p-10 text-center">
-      <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      <p class="text-gray-500 font-semibold text-lg">Coming Soon</p>
-      <p class="text-gray-400 text-sm mt-1">Custom form builder will be available in a future update</p>
+// ── Email ──
+const EMAIL_TOPICS = [
+  { id: '5bbab86d-df05-4b3b-bf19-084ef34e50ee', name: 'New Adoptions/Available Pets' },
+  { id: '1e47e33e-9f73-46cb-b145-6421dff9ac7e', name: 'Newsletter' },
+  { id: '434e48ed-faa3-4761-afdd-4c2ba91cc82c', name: 'Lost & Found Alerts' },
+];
+
+let _emailTab = 'subscribers';
+
+async function renderEmail(el) {
+  const tabBtn = (key, label) => {
+    const isActive = _emailTab === key;
+    return `<button onclick="_emailTab='${key}';renderEmail(document.getElementById('content'))" class="filter-tab ${isActive ? 'active' : ''}">${label}</button>`;
+  };
+
+  let html = `<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Email</h1>
+    <span class="text-xs text-gray-400">Free tier: 100 emails/day</span>
+  </div>
+  <div class="flex gap-2 mb-5 flex-wrap">
+    ${tabBtn('subscribers', 'Subscribers')}
+    ${tabBtn('broadcast', 'Send Broadcast')}
+    ${tabBtn('templates', 'Templates')}
+    ${tabBtn('activity', 'Activity')}
+  </div>
+  <div id="emailContent"><p class="text-gray-400">Loading...</p></div>`;
+
+  el.innerHTML = html;
+
+  switch (_emailTab) {
+    case 'subscribers': await renderEmailSubscribers(); break;
+    case 'broadcast': await renderEmailBroadcast(); break;
+    case 'templates': await renderEmailTemplates(); break;
+    case 'activity': await renderEmailActivity(); break;
+  }
+}
+
+async function renderEmailSubscribers() {
+  const container = document.getElementById('emailContent');
+  try {
+    const data = await api('/admin/email/subscribers');
+    const contacts = data.data || [];
+
+    let html = `<div class="flex items-center justify-between mb-4">
+      <p class="text-sm text-gray-500"><span class="font-bold text-gray-800">${contacts.length}</span> subscriber${contacts.length !== 1 ? 's' : ''}</p>
+      <button onclick="showAddSubscriberForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ Add Subscriber</button>
     </div>`;
+
+    html += '<div id="addSubFormArea"></div>';
+
+    if (contacts.length === 0) {
+      html += `<div class="card p-10 text-center">
+        <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+        <p class="text-gray-400 font-semibold">No subscribers yet</p>
+        <p class="text-gray-300 text-sm mt-1">Add subscribers to start sending emails</p>
+      </div>`;
+    } else {
+      html += '<div class="space-y-2">';
+      contacts.forEach(c => {
+        const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || '';
+        const unsub = c.unsubscribed;
+        const created = c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        html += `<div class="card p-4 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl ${unsub ? 'bg-gray-100 text-gray-400' : 'bg-sage-100 text-sage-700'} flex items-center justify-center shrink-0">
+              <span class="text-sm font-bold">${(c.email || '?').charAt(0).toUpperCase()}</span>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-gray-900 truncate">${h(c.email)}</span>
+                ${unsub ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Unsubscribed</span>' : ''}
+              </div>
+              <p class="text-xs text-gray-400 truncate">${name ? h(name) + ' &bull; ' : ''}Added ${created}</p>
+            </div>
+          </div>
+          <button onclick="if(confirm('Remove this subscriber?')) removeSubscriber('${c.id}')" class="text-xs text-red-400 hover:underline shrink-0">Remove</button>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error loading subscribers: ' + h(e.message) + '</p>';
+  }
+}
+
+window.showAddSubscriberForm = function() {
+  document.getElementById('addSubFormArea').innerHTML = `<div class="card-warm p-5 mb-4 border border-sage-200" style="background:#f6f7f4;">
+    <h3 class="font-bold text-gray-900 mb-3 text-sm">Add Subscriber</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Email *</label><input id="subEmail" type="email" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="email@example.com"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">First Name</label><input id="subFirst" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Last Name</label><input id="subLast" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="addSubscriber()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Add</button>
+      <button onclick="document.getElementById('addSubFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
+    </div>
+  </div>`;
+};
+
+window.addSubscriber = async function() {
+  const email = document.getElementById('subEmail').value.trim();
+  if (!email) { alert('Email is required'); return; }
+  const res = await api('/admin/email/subscribers', { method: 'POST', body: {
+    email,
+    first_name: document.getElementById('subFirst').value.trim(),
+    last_name: document.getElementById('subLast').value.trim(),
+  }});
+  if (res.error) { alert(res.error); return; }
+  _emailTab = 'subscribers';
+  renderEmail(document.getElementById('content'));
+};
+
+window.removeSubscriber = async function(id) {
+  const res = await api('/admin/email/subscribers?id=' + encodeURIComponent(id), { method: 'DELETE' });
+  if (res.error) { alert(res.error); return; }
+  _emailTab = 'subscribers';
+  renderEmail(document.getElementById('content'));
+};
+
+// ── Email: Send Broadcast ──
+let _broadcastTemplateLoaded = false;
+
+async function renderEmailBroadcast() {
+  const container = document.getElementById('emailContent');
+  const topicOpts = EMAIL_TOPICS.map(t => `<option value="${t.id}">${h(t.name)}</option>`).join('');
+
+  container.innerHTML = `<div class="card p-6">
+    <h3 class="font-bold text-gray-900 mb-4">Compose Broadcast</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Subject *</label><input id="bcSubject" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="Your email subject"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">From Name</label><input id="bcFromName" value="WCAHS" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+    </div>
+    <div class="mb-4">
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Topic <span class="font-normal text-gray-400">(sent to all subscribers regardless — for reference only)</span></label>
+      <select id="bcTopic" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+        <option value="">All Subscribers</option>
+        ${topicOpts}
+      </select>
+    </div>
+    <div class="mb-4">
+      <div class="flex items-center justify-between mb-1">
+        <label class="block text-xs font-semibold text-gray-600">Body *</label>
+        <button onclick="loadTemplateForBroadcast()" class="text-xs text-sage-700 hover:underline font-semibold">Load Template</button>
+      </div>
+      <div id="bcBodyEditor"></div>
+    </div>
+    <div class="flex gap-3 items-center flex-wrap">
+      <button onclick="previewBroadcast()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm px-5 py-2.5 rounded-xl transition">Preview</button>
+      <button onclick="sendBroadcast()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Send Broadcast</button>
+      <span id="bcStatus" class="text-sm hidden"></span>
+    </div>
+  </div>
+  <div id="bcPreviewArea"></div>
+  <div id="bcTemplatePickerArea"></div>`;
+
+  initQuill('bcBodyEditor', '');
+}
+
+window.previewBroadcast = function() {
+  const subject = document.getElementById('bcSubject').value || '(No subject)';
+  const bodyHtml = getQuillHtml('bcBodyEditor');
+  const fromName = document.getElementById('bcFromName').value || 'WCAHS';
+  document.getElementById('bcPreviewArea').innerHTML = `<div class="card p-6 mt-5">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-gray-900 text-sm">Preview</h3>
+      <button onclick="document.getElementById('bcPreviewArea').innerHTML=''" class="text-xs text-gray-400 hover:text-gray-600">Close</button>
+    </div>
+    <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+      <p class="text-xs text-gray-400 mb-1">From: ${h(fromName)} &lt;info@wcahs.org&gt;</p>
+      <p class="text-xs text-gray-400 mb-3">Subject: <strong class="text-gray-700">${h(subject)}</strong></p>
+      <hr class="mb-3 border-gray-200">
+      <div class="text-sm text-gray-700">${bodyHtml || '<p class="text-gray-300 italic">Empty body</p>'}</div>
+    </div>
+  </div>`;
+};
+
+window.sendBroadcast = async function() {
+  const subject = document.getElementById('bcSubject').value.trim();
+  const bodyHtml = getQuillHtml('bcBodyEditor');
+  const fromName = document.getElementById('bcFromName').value.trim() || 'WCAHS';
+  const status = document.getElementById('bcStatus');
+
+  if (!subject || !bodyHtml) { alert('Subject and body are required'); return; }
+
+  if (!confirm('Send this broadcast to all subscribers?\n\nSubject: ' + subject)) return;
+
+  status.textContent = 'Sending...';
+  status.className = 'text-sm text-gray-500';
+  status.classList.remove('hidden');
+
+  const res = await api('/admin/email/broadcast', { method: 'POST', body: {
+    subject, html: bodyHtml, from_name: fromName,
+  }});
+
+  if (res.error) {
+    status.textContent = 'Error: ' + res.error;
+    status.className = 'text-sm text-red-600';
+  } else {
+    status.textContent = 'Broadcast sent!';
+    status.className = 'text-sm font-semibold';
+    status.style.color = '#5c6b4e';
+    document.getElementById('bcSubject').value = '';
+    if (_quillInstances['bcBodyEditor']) _quillInstances['bcBodyEditor'].root.innerHTML = '';
+  }
+};
+
+window.loadTemplateForBroadcast = async function() {
+  const area = document.getElementById('bcTemplatePickerArea');
+  area.innerHTML = '<p class="text-gray-400 text-sm mt-4">Loading templates...</p>';
+  try {
+    const data = await api('/admin/email/templates');
+    const templates = data.data || [];
+    if (templates.length === 0) {
+      area.innerHTML = '<p class="text-gray-400 text-sm mt-4">No templates saved yet. Create one in the Templates tab.</p>';
+      return;
+    }
+    let html = '<div class="card p-5 mt-5"><h3 class="font-bold text-gray-900 text-sm mb-3">Pick a Template</h3><div class="space-y-2">';
+    templates.forEach(t => {
+      html += `<div class="flex items-center justify-between p-3 bg-sage-50 rounded-xl">
+        <div>
+          <span class="text-sm font-semibold text-gray-900">${h(t.name)}</span>
+          ${t.subject ? '<span class="text-xs text-gray-400 ml-2">' + h(t.subject) + '</span>' : ''}
+        </div>
+        <button onclick="applyTemplate('${t.id}')" class="text-xs text-sage-700 hover:underline font-semibold">Use</button>
+      </div>`;
+    });
+    html += '</div><button onclick="document.getElementById(\'bcTemplatePickerArea\').innerHTML=\'\'" class="text-xs text-gray-400 hover:text-gray-600 mt-3">Cancel</button></div>';
+    area.innerHTML = html;
+  } catch (e) {
+    area.innerHTML = '<p class="text-red-500 text-sm mt-4">Failed to load templates</p>';
+  }
+};
+
+window.applyTemplate = async function(templateId) {
+  try {
+    // Fetch individual template to get HTML content
+    // The list endpoint might not include full HTML, so we fetch directly
+    const res = await fetch('/api/admin/email/templates', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    const templates = data.data || [];
+    const tmpl = templates.find(t => t.id === templateId);
+    if (tmpl) {
+      if (tmpl.subject) document.getElementById('bcSubject').value = tmpl.subject;
+      if (tmpl.html && _quillInstances['bcBodyEditor']) {
+        _quillInstances['bcBodyEditor'].root.innerHTML = tmpl.html;
+      }
+    }
+    document.getElementById('bcTemplatePickerArea').innerHTML = '';
+  } catch (e) {
+    alert('Failed to load template');
+  }
+};
+
+// ── Email: Templates ──
+async function renderEmailTemplates() {
+  const container = document.getElementById('emailContent');
+  try {
+    const data = await api('/admin/email/templates');
+    const templates = data.data || [];
+
+    let html = `<div class="flex items-center justify-between mb-4">
+      <p class="text-sm text-gray-500"><span class="font-bold text-gray-800">${templates.length}</span> template${templates.length !== 1 ? 's' : ''}</p>
+      <button onclick="showTemplateForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ New Template</button>
+    </div>`;
+    html += '<div id="templateFormArea"></div>';
+
+    if (templates.length === 0) {
+      html += `<div class="card p-10 text-center">
+        <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z"/></svg>
+        <p class="text-gray-400 font-semibold">No templates yet</p>
+        <p class="text-gray-300 text-sm mt-1">Save reusable email templates for broadcasts</p>
+      </div>`;
+    } else {
+      html += '<div class="space-y-2">';
+      templates.forEach(t => {
+        const created = t.created_at ? new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        html += `<div class="card p-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="font-bold text-gray-900 text-sm">${h(t.name)}</span>
+              ${t.subject ? '<p class="text-xs text-gray-400 mt-0.5">Subject: ' + h(t.subject) + '</p>' : ''}
+              ${created ? '<p class="text-xs text-gray-300 mt-0.5">' + created + '</p>' : ''}
+            </div>
+            <div class="flex gap-3">
+              <button onclick="editTemplate('${t.id}')" class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
+              <button onclick="if(confirm('Delete this template?')) deleteTemplate('${t.id}')" class="text-xs text-red-400 hover:underline">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error loading templates: ' + h(e.message) + '</p>';
+  }
+}
+
+window.showTemplateForm = function(tmpl) {
+  const t = tmpl || {};
+  const isEdit = !!t.id;
+  document.getElementById('templateFormArea').innerHTML = `<div class="card-warm p-6 mb-5 border border-sage-200" style="background:#f6f7f4;">
+    <h3 class="font-bold text-gray-900 mb-4">${isEdit ? 'Edit Template' : 'New Template'}</h3>
+    <input type="hidden" id="tmplId" value="${t.id || ''}">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Template Name *</label><input id="tmplName" value="${h(t.name || '')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Monthly Newsletter"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Default Subject</label><input id="tmplSubject" value="${h(t.subject || '')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="Optional subject line"></div>
+    </div>
+    <div class="mb-4">
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Body *</label>
+      <div id="tmplBodyEditor"></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="saveTemplate()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Save Template</button>
+      <button onclick="document.getElementById('templateFormArea').innerHTML=''; _quillInstances['tmplBodyEditor']=null;" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
+    </div>
+  </div>`;
+  initQuill('tmplBodyEditor', t.html || '');
+};
+
+window.editTemplate = async function(templateId) {
+  // We need to get the template data — fetch the list and find it
+  try {
+    const data = await api('/admin/email/templates');
+    const templates = data.data || [];
+    const tmpl = templates.find(t => t.id === templateId);
+    if (tmpl) {
+      window.showTemplateForm(tmpl);
+    } else {
+      alert('Template not found');
+    }
+  } catch (e) {
+    alert('Failed to load template');
+  }
+};
+
+window.saveTemplate = async function() {
+  const id = document.getElementById('tmplId').value;
+  const name = document.getElementById('tmplName').value.trim();
+  const subject = document.getElementById('tmplSubject').value.trim();
+  const htmlBody = getQuillHtml('tmplBodyEditor');
+
+  if (!name || !htmlBody) { alert('Name and body are required'); return; }
+
+  let res;
+  if (id) {
+    res = await api('/admin/email/templates', { method: 'PUT', body: { id, name, subject, html: htmlBody } });
+  } else {
+    res = await api('/admin/email/templates', { method: 'POST', body: { name, subject, html: htmlBody } });
+  }
+
+  if (res.error) { alert(res.error); return; }
+  _emailTab = 'templates';
+  renderEmail(document.getElementById('content'));
+};
+
+window.deleteTemplate = async function(id) {
+  const res = await api('/admin/email/templates?id=' + encodeURIComponent(id), { method: 'DELETE' });
+  if (res.error) { alert(res.error); return; }
+  _emailTab = 'templates';
+  renderEmail(document.getElementById('content'));
+};
+
+// ── Email: Activity ──
+async function renderEmailActivity() {
+  const container = document.getElementById('emailContent');
+  try {
+    const data = await api('/admin/email/activity');
+    const broadcasts = data.data || [];
+
+    if (broadcasts.length === 0) {
+      container.innerHTML = `<div class="card p-10 text-center">
+        <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <p class="text-gray-400 font-semibold">No emails sent yet</p>
+        <p class="text-gray-300 text-sm mt-1">Sent broadcasts will appear here</p>
+      </div>`;
+      return;
+    }
+
+    let html = '<div class="space-y-2">';
+    broadcasts.forEach(b => {
+      const date = b.created_at ? new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+      const statusColors = {
+        draft: 'bg-gray-100 text-gray-500',
+        sent: 'bg-sage-100 text-sage-700',
+        sending: 'bg-amber-100 text-amber-700',
+        delivered: 'bg-green-100 text-green-700',
+        queued: 'bg-blue-100 text-blue-700',
+      };
+      const statusClass = statusColors[b.status] || 'bg-gray-100 text-gray-500';
+
+      html += `<div class="card p-4">
+        <div class="flex items-start justify-between">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-semibold text-gray-900 text-sm">${h(b.name || b.subject || 'Untitled')}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full ${statusClass} capitalize">${b.status || 'unknown'}</span>
+            </div>
+            ${b.subject ? '<p class="text-xs text-gray-500 mt-0.5">' + h(b.subject) + '</p>' : ''}
+            <p class="text-xs text-gray-300 mt-0.5">${date}</p>
+          </div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error loading activity: ' + h(e.message) + '</p>';
+  }
 }
 
 // ── Events ──
@@ -1215,7 +1625,7 @@ async function renderAnalytics(el) {
     </div>
   </div>
 
-  <div class="grid md:grid-cols-3 gap-5">
+  <div class="grid md:grid-cols-2 gap-5 mb-5">
     <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Countries</h3>
       ${table(data.topCountries)}
@@ -1223,6 +1633,13 @@ async function renderAnalytics(el) {
     <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Browsers</h3>
       ${table(data.topBrowsers)}
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-5">
+    <div class="card p-6">
+      <h3 class="font-bold text-gray-900 text-sm mb-3">Operating Systems</h3>
+      ${table(data.topOS || [])}
     </div>
     <div class="card p-6">
       <h3 class="font-bold text-gray-900 text-sm mb-3">Devices</h3>
@@ -1241,44 +1658,49 @@ async function renderApiStatus(el) {
   if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">Could not load: ' + h(data.error) + '</p>'; return; }
 
   const lastSync = data.recent_syncs[0];
-  const isHealthy = lastSync?.status === 'success';
   const lastSuccessMin = data.last_success ? minutesAgo(data.last_success) : null;
+  const isHealthy = lastSync?.status === 'success' && lastSuccessMin !== null && lastSuccessMin < 20;
   const nextSyncMin = lastSuccessMin !== null ? Math.max(15 - lastSuccessMin, 0) : null;
 
   const lastSyncLabel = lastSuccessMin !== null
     ? (lastSuccessMin < 1 ? 'just now' : lastSuccessMin + ' min ago')
     : 'never';
-  const nextSyncLabel = nextSyncMin !== null
-    ? (nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
+  const nextSyncLabel = lastSuccessMin !== null
+    ? (lastSuccessMin >= 20 ? 'overdue' : nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
     : 'unknown';
+
+  const statusColor = isHealthy ? 'green' : (lastSuccessMin !== null && lastSuccessMin >= 20 ? 'red' : 'amber');
+  const statusLabel = isHealthy ? 'Healthy' : (lastSuccessMin !== null && lastSuccessMin >= 20 ? 'Overdue' : 'Issue');
+  const dotStyle = {green:'bg-green-500;box-shadow:0 0 0 4px rgba(34,197,94,0.2)',red:'bg-red-500;box-shadow:0 0 0 4px rgba(239,68,68,0.2)',amber:'bg-amber-500;box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}[statusColor];
+  const badgeStyle = {green:'bg-sage-100 text-sage-700',red:'bg-red-100 text-red-700',amber:'bg-amber-100 text-amber-700'}[statusColor];
 
   el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">API Status</h1>
 
   <div class="card p-5 mb-5">
-    <div class="flex items-center gap-3 mb-4">
-      <span class="w-3 h-3 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-amber-500'}" style="${isHealthy ? 'box-shadow:0 0 0 4px rgba(34,197,94,0.2)' : 'box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}"></span>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="w-3 h-3 rounded-full ${dotStyle.split(';')[0]}" style="${dotStyle.split(';')[1] || ''}"></span>
       <h2 class="font-bold text-gray-900">ShelterLuv Sync</h2>
-      <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${isHealthy ? 'bg-sage-100 text-sage-700' : 'bg-amber-100 text-amber-700'}">${isHealthy ? 'Healthy' : 'Issue'}</span>
+      <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${badgeStyle}">${statusLabel}</span>
     </div>
     <div class="flex items-center gap-6 text-sm text-gray-600 flex-wrap">
       <div><span class="text-gray-400">Animals:</span> <span class="font-semibold text-gray-800">${data.current_animals}</span></div>
-      <div><span class="text-gray-400">Last sync:</span> <span class="font-semibold text-gray-800">${lastSyncLabel}</span></div>
-      <div><span class="text-gray-400">Next sync:</span> <span class="font-semibold text-gray-800">${nextSyncLabel}</span></div>
+      <div><span class="text-gray-400">Last sync:</span> <span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
+      <div><span class="text-gray-400">Next sync:</span> <span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
     </div>
-    <p class="text-xs text-gray-400 mt-3">Syncs automatically every 15 minutes via GitHub Actions</p>
+    <p class="text-xs text-gray-400 mt-3">Syncs every 15 min via GitHub Actions</p>
   </div>
 
   <div class="card p-5">
-    <h3 class="font-bold text-gray-900 text-sm mb-3">Recent Syncs</h3>
+    <h3 class="font-bold text-gray-900 text-sm mb-2">Recent</h3>
     ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
-    '<div class="space-y-1">' + data.recent_syncs.slice(0, 8).map(s => `
-      <div class="flex items-center justify-between py-1.5 text-xs">
+    '<div class="space-y-0.5">' + data.recent_syncs.slice(0, 5).map(s => `
+      <div class="flex items-center justify-between py-1 text-xs">
         <div class="flex items-center gap-2">
           ${s.status === 'success'
-            ? '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
-            : '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+            ? '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
+            : '<svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
           }
-          <span class="text-gray-500">${localTime(s.synced_at)}</span>
+          <span class="text-gray-400">${localTime(s.synced_at)}</span>
         </div>
       </div>
     `).join('') + '</div>'}
