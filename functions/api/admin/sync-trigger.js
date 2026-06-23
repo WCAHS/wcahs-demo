@@ -1,7 +1,6 @@
 import { json, error } from '../_helpers.js';
 
 const API_BASE = 'https://www.shelterluv.com/api/v1';
-const API_KEY = 'XThePvRuzxbnBZKwXcLkHOuL6EwQAzzN44Du1W7u';
 
 function formatAge(months) {
   if (!months || months < 0) return 'Unknown';
@@ -18,7 +17,7 @@ export async function onRequestPost(context) {
   try {
     // Fetch from ShelterLuv
     const res = await fetch(`${API_BASE}/animals?status_type=publishable&limit=100`, {
-      headers: { 'X-Api-Key': API_KEY, 'Accept': 'application/json' },
+      headers: { 'X-Api-Key': env.SHELTERLUV_API_KEY, 'Accept': 'application/json' },
     });
 
     if (!res.ok) {

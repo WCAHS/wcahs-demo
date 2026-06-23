@@ -11,5 +11,4 @@ database_id = "2d709989-259d-441d-8e2e-b7cf03637fc0"
 binding = "UPLOADS"
 bucket_name = "wcahs-uploads"
 
-[vars]
-TURNSTILE_SECRET = "0x4AAAAAADpVDTD_WzfdVLgJ20lDH-3FO5o"
+# Secrets (SHELTERLUV_API_KEY, TURNSTILE_SECRET) set via `wrangler pages secret put`

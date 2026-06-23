@@ -101,6 +101,7 @@
         <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="users">Users</a>
+        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
         <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
       </nav>
       <div class="p-4 border-t border-sage-800 space-y-2">
@@ -219,6 +220,7 @@ function navigate(page) {
     case 'about': renderAbout(content); break;
     case 'users': renderUsers(content); break;
     case 'my-account': renderMyAccount(content); break;
+    case 'analytics': renderAnalytics(content); break;
     case 'api-status': renderApiStatus(content); break;
     default: content.innerHTML = '<p class="text-gray-400">Select a section</p>';
   }
@@ -885,6 +887,106 @@ window.saveAbout = async function() {
   saved.style.background = '#e8ebe3'; saved.style.padding = '6px 14px'; saved.style.borderRadius = '8px';
   setTimeout(() => { saved.classList.add('hidden'); saved.style.background = ''; saved.style.padding = ''; }, 3000);
 };
+
+// ── API Status ──
+// ── Analytics ──
+let analyticsRange = '7d';
+async function renderAnalytics(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Analytics</h1><p class="text-gray-400">Loading...</p>';
+  let data;
+  try { data = await api('/admin/analytics?range=' + analyticsRange); } catch(e) { data = { error: e.message }; }
+  if (data.error) {
+    el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Analytics</h1>
+      <p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">${h(data.error)}</p>
+      ${data.details ? '<pre class="text-xs text-gray-500 mt-2">' + h(JSON.stringify(data.details, null, 2)) + '</pre>' : ''}`;
+    return;
+  }
+
+  const rangeBtn = (val, label) => `<button onclick="analyticsRange='${val}';renderAnalytics(document.getElementById('content'))" class="px-3 py-1.5 rounded-full text-xs font-semibold transition ${analyticsRange === val ? 'bg-sage-700 text-white' : 'bg-white text-gray-600 hover:bg-sage-100'}">${label}</button>`;
+
+  // Sparkline bar chart
+  const dates = data.byDate || [];
+  const maxCount = Math.max(...dates.map(d => d.count), 1);
+  const bars = dates.map(d => {
+    const pct = Math.max((d.count / maxCount) * 100, 2);
+    const label = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+      <span class="text-[10px] text-gray-400">${d.count}</span>
+      <div class="w-full rounded-t" style="height:${pct}px;max-height:100px;background:linear-gradient(to top,#5c6b4e,#93a27e)"></div>
+      <span class="text-[9px] text-gray-400 truncate w-full text-center">${label}</span>
+    </div>`;
+  }).join('');
+
+  // Table builder
+  const table = (rows) => rows.length === 0 ? '<p class="text-gray-400 text-xs">No data yet</p>' :
+    rows.map((r, i) => {
+      const pct = Math.round((r.count / data.totalViews) * 100);
+      return `<div class="flex items-center gap-3 py-1.5">
+        <span class="text-xs text-gray-400 w-4">${i + 1}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between mb-0.5"><span class="text-xs text-gray-700 truncate">${h(r.name)}</span><span class="text-xs text-gray-400">${r.count}</span></div>
+          <div class="w-full bg-gray-100 rounded-full h-1"><div class="bg-sage-500 h-1 rounded-full" style="width:${pct}%"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+
+  el.innerHTML = `<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Analytics</h1>
+    <div class="flex gap-2">${rangeBtn('24h', '24h')}${rangeBtn('7d', '7 days')}${rangeBtn('30d', '30 days')}</div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <p class="text-2xl font-bold text-sage-700">${data.totalViews.toLocaleString()}</p>
+      <p class="text-gray-400 text-xs">Page Views</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <p class="text-2xl font-bold text-sage-700">${data.totalVisits.toLocaleString()}</p>
+      <p class="text-gray-400 text-xs">Visits</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <p class="text-2xl font-bold text-sage-700">${data.topPages.length}</p>
+      <p class="text-gray-400 text-xs">Pages Hit</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <p class="text-2xl font-bold text-sage-700">${data.topCountries.length}</p>
+      <p class="text-gray-400 text-xs">Countries</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="font-bold text-gray-900 text-sm mb-4">Page Views Over Time</h3>
+    <div class="flex items-end gap-1" style="height:120px">${bars || '<p class="text-gray-400 text-xs">No data yet</p>'}</div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-2xl p-6 shadow-sm">
+      <h3 class="font-bold text-gray-900 text-sm mb-3">Top Pages</h3>
+      ${table(data.topPages)}
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm">
+      <h3 class="font-bold text-gray-900 text-sm mb-3">Referrers</h3>
+      ${table(data.topReferrers)}
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-2xl p-6 shadow-sm">
+      <h3 class="font-bold text-gray-900 text-sm mb-3">Countries</h3>
+      ${table(data.topCountries)}
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm">
+      <h3 class="font-bold text-gray-900 text-sm mb-3">Browsers</h3>
+      ${table(data.topBrowsers)}
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm">
+      <h3 class="font-bold text-gray-900 text-sm mb-3">Devices</h3>
+      ${table(data.devices)}
+    </div>
+  </div>
+
+  <p class="text-xs text-gray-400 mt-4 text-center">Powered by Cloudflare Web Analytics — privacy-first, no cookies</p>`;
+}
 
 // ── API Status ──
 async function renderApiStatus(el) {
