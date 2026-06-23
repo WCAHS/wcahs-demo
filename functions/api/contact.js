@@ -13,9 +13,10 @@ export async function onRequestPost(context) {
     return error('Name, email, and message are required');
   }
 
+  const message = body.phone ? `Phone: ${body.phone}\n\n${body.message}` : body.message;
   await env.DB.prepare(
     'INSERT INTO form_submissions (type, name, email, subject, message) VALUES (?, ?, ?, ?, ?)'
-  ).bind('contact', body.name, body.email, body.subject || 'General Inquiry', body.message).run();
+  ).bind('contact', body.name, body.email, body.subject || 'General Inquiry', message).run();
 
   return json({ ok: true, message: 'Message sent! We\'ll get back to you soon.' });
 }
