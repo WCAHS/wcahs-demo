@@ -146,9 +146,13 @@
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
         <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
         <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
+        <div class="border-t border-sage-800 my-2"></div>
+        <a href="https://mail.zoho.com" target="_blank" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer flex items-center gap-2 text-sage-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Zoho Mail
+        </a>
       </nav>
       <div class="p-4 border-t border-sage-800 space-y-2">
-        <a href="https://accounts.zoho.com/signin" target="_blank" class="block text-center bg-sage-700 hover:bg-sage-600 text-sage-200 text-xs font-semibold py-2 px-3 rounded-lg transition">Check Email</a>
         <a onclick="navigate('my-account')" class="sidebar-link block px-3 py-2 rounded-lg text-xs cursor-pointer text-sage-300 hover:text-white" data-nav="my-account">My Account</a>
         <p class="text-sage-400 text-xs" id="loggedInAs"></p>
         <button onclick="logout()" class="text-sage-500 hover:text-white text-xs transition">Log out</button>
@@ -217,7 +221,8 @@ function showDashboard(user) {
   if (user.role !== 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
   }
-  navigate('submissions');
+  const savedPage = sessionStorage.getItem('wcahs_admin_page');
+  navigate(savedPage || 'submissions');
   loadBadgeCounts();
 }
 
@@ -255,8 +260,8 @@ function navigate(page) {
   const link = document.querySelector(`[data-nav="${page}"]`);
   if (link) link.classList.add('active');
   const content = document.getElementById('content');
-  // Destroy any Quill instances
   _quillInstances = {};
+  try { sessionStorage.setItem('wcahs_admin_page', page); } catch(e) {}
   switch(page) {
     case 'submissions': renderSubmissions(content); break;
     case 'events': renderEvents(content); break;
@@ -1546,7 +1551,7 @@ async function renderApiStatus(el) {
         <div class="flex justify-between"><span class="text-gray-400">Last sync</span><span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
         <div class="flex justify-between"><span class="text-gray-400">Next sync</span><span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
       </div>
-      <p class="text-[11px] text-gray-400 mt-3">Every 15 min via GitHub Actions</p>
+      <p class="text-[11px] text-gray-400 mt-3">Every 15 min via GitHub Actions &bull; <a href="https://github.com/WCAHS/wcahs-demo/actions" target="_blank" class="text-sage-600 hover:underline">Manage on GitHub</a></p>
     </div>
 
     <div class="card p-5">

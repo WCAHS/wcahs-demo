@@ -3,7 +3,7 @@ name: ShelterLuv Sync
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Every 15 minutes
+    - cron: '2,17,32,47 * * * *'  # Every 15 minutes (offset to avoid GitHub's :00 congestion)
   workflow_dispatch: {}      # Manual trigger from GitHub UI
 
 jobs:
