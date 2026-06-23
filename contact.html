@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="favicon.png">
   <title>Contact & Donate - WCAHS</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -80,6 +81,11 @@
     </div>
   </nav>
 
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
   <!-- Header -->
   <section class="bg-sage-700 py-16 relative overflow-hidden">
     <img src="images/dogs/dog_02.png" alt="" style="position:absolute; bottom:-5px; right:40px; height:120px; opacity:0.08; filter:invert(1);">
@@ -132,7 +138,7 @@
           </div>
         </div>
 
-        <div class="mt-10 rounded-2xl overflow-hidden h-64">
+        <div class="mt-10 rounded-2xl overflow-hidden aspect-[16/9] md:aspect-auto md:h-64">
           <img src="images/photos/IMG_1595.JPEG" alt="WCAHS cat peeking from cat house" class="w-full h-full object-cover">
         </div>
       </div>
@@ -140,32 +146,66 @@
       <!-- Contact Form -->
       <div>
         <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">Send Us a Message</h2>
-        <form class="space-y-5" onsubmit="event.preventDefault(); alert('This is a demo — form submissions are disabled.');">
+        <form id="contactForm" class="space-y-5">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
-            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Your name">
+            <input id="cfName" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Your name" required>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-            <input type="email" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="your@email.com">
+            <input id="cfEmail" type="email" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="your@email.com" required>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Subject</label>
-            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+            <select id="cfSubject" onchange="if(this.value==='stray'){window.location.href='lost-found.html#report';}" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
               <option>General Inquiry</option>
               <option>Adoption Question</option>
               <option>Fostering</option>
-              <option>Fostering</option>
               <option>Donation</option>
-              <option>Found a Stray</option>
+              <option value="stray">Found a Stray</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Message</label>
-            <textarea rows="5" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition resize-none" placeholder="How can we help?"></textarea>
+            <textarea id="cfMessage" rows="5" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition resize-none" placeholder="How can we help?" required></textarea>
           </div>
-          <button type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Send Message</button>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+          <div id="cfStatus" class="hidden"></div>
+          <button id="cfSubmit" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Send Message</button>
         </form>
+        <script>
+          document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var status = document.getElementById('cfStatus');
+            var btn = document.getElementById('cfSubmit');
+            var turnstile = document.querySelector('#contactForm [name="cf-turnstile-response"]');
+            btn.disabled = true; btn.textContent = 'Sending...';
+            status.classList.add('hidden');
+            try {
+              var res = await fetch('/api/contact', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                  name: document.getElementById('cfName').value,
+                  email: document.getElementById('cfEmail').value,
+                  subject: document.getElementById('cfSubject').value,
+                  message: document.getElementById('cfMessage').value,
+                  turnstile_token: turnstile ? turnstile.value : ''
+                })
+              });
+              var data = await res.json();
+              if (data.ok) {
+                status.innerHTML = '<div class="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center"><svg class="w-10 h-10 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="font-bold text-green-800 text-lg">Message Sent!</p><p class="text-green-600 text-sm mt-1">' + (data.message || "We'll get back to you soon.") + '</p></div>';
+                status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none';
+              } else {
+                status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (data.error || 'Something went wrong') + '</p><p class="text-red-500 text-sm mt-1">Please try again.</p></div>';
+                status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Send Message';
+              }
+            } catch(err) {
+              status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">Could not send</p><p class="text-red-500 text-sm mt-1">Please check your connection and try again.</p></div>';
+              status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Send Message';
+            }
+          });
+        </script>
       </div>
 
     </div>
@@ -213,7 +253,9 @@
     <img src="images/dogs/dog_10.png" alt="" style="position:absolute; bottom:0; right:-10px; height:100px; opacity:0.04;">
     <img src="images/paws/paw_02.png" alt="" style="position:absolute; top:10px; left:20px; height:50px; opacity:0.03; transform:rotate(-10deg);">
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col md:flex-row">
-      <img src="images/photos/IMG_1603.JPEG" alt="WCAHS foster puppy" class="w-full h-56 md:h-full md:w-72 lg:w-80 object-cover">
+      <div class="w-full aspect-[16/9] md:aspect-auto md:h-auto md:w-72 lg:w-80 shrink-0">
+        <img src="images/photos/IMG_1603.JPEG" alt="WCAHS foster puppy" class="w-full h-full object-cover">
+      </div>
       <div class="p-10 md:p-14 text-center flex-1">
       <h2 class="font-display text-3xl font-bold text-gray-900 mb-4">Become a Foster Family</h2>
       <p class="text-gray-500 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
@@ -233,9 +275,50 @@
           <p class="text-gray-500 text-sm">Animals thrive and find their forever families</p>
         </div>
       </div>
-      <a href="#" onclick="alert('This is a demo — foster application would be linked here.')" class="inline-block bg-sage-600 hover:bg-sage-700 text-white font-bold px-8 py-4 rounded-full transition shadow-md">
+      <div id="fosterFormWrap" class="max-w-md mx-auto text-left hidden mt-8">
+        <form id="fosterForm" class="space-y-4">
+          <div><label class="block text-sm font-semibold text-gray-700 mb-1">Your Name</label><input id="ffName" type="text" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 transition" placeholder="Your name"></div>
+          <div><label class="block text-sm font-semibold text-gray-700 mb-1">Email</label><input id="ffEmail" type="email" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 transition" placeholder="your@email.com"></div>
+          <div><label class="block text-sm font-semibold text-gray-700 mb-1">Tell us about yourself</label><textarea id="ffMessage" rows="4" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 transition resize-none" placeholder="Your experience with animals, living situation, what types of animals you'd like to foster..."></textarea></div>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+          <div id="ffStatus" class="hidden"></div>
+          <button id="ffSubmit" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Submit Application</button>
+        </form>
+      </div>
+      <button id="fosterToggle" onclick="document.getElementById('fosterFormWrap').classList.remove('hidden'); this.classList.add('hidden');" class="inline-block bg-sage-600 hover:bg-sage-700 text-white font-bold px-8 py-4 rounded-full transition shadow-md cursor-pointer mt-2">
         Apply to Foster
-      </a>
+      </button>
+      <script>
+        document.getElementById('fosterForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          var status = document.getElementById('ffStatus');
+          var btn = document.getElementById('ffSubmit');
+          var turnstile = document.querySelector('#fosterForm [name="cf-turnstile-response"]');
+          btn.disabled = true; btn.textContent = 'Submitting...';
+          status.classList.add('hidden');
+          try {
+            var res = await fetch('/api/foster', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                name: document.getElementById('ffName').value,
+                email: document.getElementById('ffEmail').value,
+                message: document.getElementById('ffMessage').value,
+                turnstile_token: turnstile ? turnstile.value : ''
+              })
+            });
+            var data = await res.json();
+            if (data.ok) {
+              status.innerHTML = '<div class="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center"><svg class="w-10 h-10 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="font-bold text-green-800 text-lg">Application Submitted!</p><p class="text-green-600 text-sm mt-1">' + (data.message || "We'll be in touch soon.") + '</p></div>';
+              status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none';
+            } else {
+              status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (data.error || 'Something went wrong') + '</p></div>';
+              status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Submit Application';
+            }
+          } catch(err) {
+            status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">Could not submit. Please try again.</p></div>';
+            status.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Submit Application';
+        });
+      </script>
       </div>
     </div>
   </section>
@@ -260,9 +343,9 @@
       <div>
         <h4 class="font-bold text-white mb-4">Contact</h4>
         <ul class="space-y-2 text-sm">
-          <li>Waseca, MN 56093</li>
-          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
-          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
         </ul>
       </div>
     </div>
@@ -272,6 +355,7 @@
     </div>
   </footer>
 
+<script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>
 </html>

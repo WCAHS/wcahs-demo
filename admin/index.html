@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <title>WCAHS Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #f6f7f4; }
+    .sidebar-link { transition: background 0.15s; }
+    .sidebar-link:hover, .sidebar-link.active { background: rgba(255,255,255,0.15); }
+    .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 6px; }
+    @media (max-width: 767px) {
+      #dashboard { flex-direction: column; }
+      #sidebar { position: fixed; inset: 0; z-index: 50; transform: translateX(-100%); transition: transform 0.2s ease; width: 100%; max-width: 280px; height: 100vh; }
+      #sidebar.open { transform: translateX(0); }
+      #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 49; }
+      #sidebar.open + #sidebarOverlay { display: block; }
+      #mobileHeader { display: flex !important; }
+    }
+    @media (min-width: 768px) {
+      #mobileHeader { display: none !important; }
+      #sidebarOverlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+      <div class="text-center mb-6">
+        <img src="../images/logo.png" alt="WCAHS" class="h-12 mx-auto mb-3">
+        <h1 class="font-bold text-xl text-gray-900">Admin Login</h1>
+      </div>
+      <div id="setupForm" class="hidden mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <p class="text-amber-800 text-sm font-semibold mb-2">First-time setup</p>
+        <p class="text-amber-700 text-xs mb-3">Create your admin account.</p>
+      </div>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+          <input id="loginUser" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-700" required>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+          <input id="loginPass" type="password" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-700" required>
+        </div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+        <div id="loginError" class="hidden text-red-600 text-sm"></div>
+        <button type="submit" class="w-full bg-green-800 hover:bg-green-900 text-white font-bold py-3 rounded-xl transition">Log In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (hidden until authenticated) -->
+  <div id="dashboard" class="hidden min-h-screen md:flex">
+    <!-- Mobile Header -->
+    <div id="mobileHeader" class="hidden bg-green-900 text-white px-4 py-3 items-center justify-between sticky top-0 z-40">
+      <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <img src="../images/logo.png" alt="WCAHS" class="h-7 brightness-200">
+      <span class="text-green-300 text-xs">Admin</span>
+    </div>
+    <!-- Sidebar -->
+    <div id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.remove('open')"></div>
+    <aside id="sidebar" class="w-56 bg-green-900 text-white flex flex-col shrink-0 md:sticky top-0 h-screen">
+      <div class="p-4 border-b border-green-800">
+        <img src="../images/logo.png" alt="WCAHS" class="h-8 brightness-200">
+        <p class="text-green-300 text-xs mt-1">Admin Panel</p>
+      </div>
+      <nav class="flex-1 py-3 space-y-0.5 px-2 overflow-y-auto">
+        <a onclick="navigate('submissions')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer flex items-center justify-between" data-nav="submissions">
+          <span>Inbox</span>
+          <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
+        </a>
+        <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer flex items-center justify-between" data-nav="lost-found">
+          <span>Lost & Found</span>
+          <span id="lfBadge" class="badge bg-amber-500 text-white hidden">0</span>
+        </a>
+        <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer" data-nav="events">Events</a>
+        <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a>
+        <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
+        <a onclick="navigate('about')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="about">About Page</a>
+        <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 rounded-lg text-sm cursor-pointer admin-only" data-nav="users">Users</a>
+      </nav>
+      <div class="p-4 border-t border-green-800 space-y-2">
+        <a href="https://accounts.zoho.com/signin" target="_blank" class="block text-center bg-green-800 hover:bg-green-700 text-green-200 text-xs font-semibold py-2 px-3 rounded-lg transition">Check Email</a>
+        <a onclick="navigate('my-account')" class="sidebar-link block px-3 py-2 rounded-lg text-xs cursor-pointer text-green-300 hover:text-white" data-nav="my-account">My Account</a>
+        <p class="text-green-300 text-xs" id="loggedInAs"></p>
+        <button onclick="logout()" class="text-green-400 hover:text-white text-xs transition">Log out</button>
+      </div>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto min-w-0">
+      <div id="content"></div>
+    </main>
+  </div>
+
+<script>
+// ── API helpers ──
+async function api(path, opts = {}) {
+  const res = await fetch('/api' + path, {
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return res.json();
+}
+
+// ── Auth ──
+let isSetup = false;
+
+async function checkAuth() {
+  try {
+    const res = await api('/auth/me');
+    if (res.username) { showDashboard(res); return; }
+  } catch(e) {}
+  // Check if setup needed
+  try {
+    const res = await api('/auth/setup', { method: 'POST', body: { username: '', password: '' } });
+  } catch(e) {}
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const user = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+
+  const turnstileEl = document.querySelector('[name="cf-turnstile-response"]');
+  const turnstileToken = turnstileEl ? turnstileEl.value : '';
+
+  // Try setup first (creates account if no users exist)
+  const setupRes = await api('/auth/setup', { method: 'POST', body: { username: user, password: pass } });
+
+  const loginRes = await api('/auth/login', { method: 'POST', body: { username: user, password: pass, turnstile_token: turnstileToken } });
+  if (loginRes.ok) {
+    showDashboard(loginRes);
+  } else {
+    errEl.textContent = loginRes.error || 'Login failed';
+    errEl.classList.remove('hidden');
+  }
+});
+
+let currentRole = 'staff';
+
+function showDashboard(user) {
+  currentRole = user.role;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('loggedInAs').textContent = user.username + ' (' + user.role + ')';
+  // Hide admin-only nav items for staff
+  if (user.role !== 'admin') {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+  }
+  navigate('submissions');
+  loadBadgeCounts();
+}
+
+async function logout() {
+  await api('/auth/logout', { method: 'POST' });
+  location.reload();
+}
+
+async function loadBadgeCounts() {
+  try {
+    const subs = await api('/admin/submissions');
+    const unread = subs.filter(s => !s.is_read).length;
+    const badge = document.getElementById('inboxBadge');
+    if (unread > 0) { badge.textContent = unread; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+
+    const reports = await api('/admin/lost-found');
+    const pending = reports.filter(r => r.status === 'pending').length;
+    const lfBadge = document.getElementById('lfBadge');
+    if (pending > 0) { lfBadge.textContent = pending; lfBadge.classList.remove('hidden'); }
+    else { lfBadge.classList.add('hidden'); }
+  } catch(e) {}
+}
+
+// ── Navigation ──
+function navigate(page) {
+  // Close sidebar on mobile
+  var sb = document.getElementById('sidebar');
+  if (sb) sb.classList.remove('open');
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  const link = document.querySelector(`[data-nav="${page}"]`);
+  if (link) link.classList.add('active');
+  const content = document.getElementById('content');
+  switch(page) {
+    case 'submissions': renderSubmissions(content); break;
+    case 'lost-found': renderLostFound(content); break;
+    case 'events': renderEvents(content); break;
+    case 'faq': renderFaq(content); break;
+    case 'settings': renderSettings(content); break;
+    case 'about': renderAbout(content); break;
+    case 'users': renderUsers(content); break;
+    case 'my-account': renderMyAccount(content); break;
+    default: content.innerHTML = '<p class="text-gray-400">Select a section</p>';
+  }
+}
+
+// ── Helpers ──
+function h(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function fmtPhone(p) { if(!p)return''; const d=p.replace(/\D/g,''); if(d.length===10)return'('+d.substring(0,3)+') '+d.substring(3,6)+'-'+d.substring(6); if(d.length===11&&d[0]==='1')return'('+d.substring(1,4)+') '+d.substring(4,7)+'-'+d.substring(7); return p; }
+function formatDate(d) { if (!d) return ''; return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function timeAgo(dt) {
+  const d = new Date(dt); const now = new Date(); const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago'; return Math.floor(diff/86400) + 'd ago';
+}
+
+// ── Submissions ──
+async function renderSubmissions(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Inbox</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/submissions');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  const tabs = `<div class="flex gap-2 mb-6">
+    <button onclick="filterSubs('all')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-green-800 text-white">All (${data.length})</button>
+    <button onclick="filterSubs('contact')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">Contact (${data.filter(s=>s.type==='contact').length})</button>
+    <button onclick="filterSubs('foster')" class="sub-tab px-4 py-2 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">Foster (${data.filter(s=>s.type==='foster').length})</button>
+  </div>`;
+
+  let html = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Inbox</h1>' + tabs;
+  if (data.length === 0) {
+    html += '<div class="bg-white rounded-xl p-8 text-center text-gray-400">No submissions yet</div>';
+  } else {
+    html += '<div id="subsList" class="space-y-3">';
+    data.forEach(s => {
+      const unread = !s.is_read;
+      html += `<div class="sub-item bg-white rounded-xl p-5 shadow-sm ${unread ? 'border-l-4 border-amber-400' : ''}" data-type="${s.type}">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <span class="font-bold text-gray-900">${h(s.name)}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${s.type==='foster' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${s.type}</span>
+            ${unread ? '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">new</span>' : ''}
+          </div>
+          <span class="text-xs text-gray-400">${timeAgo(s.created_at)}</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-1">${h(s.email)}${s.subject ? ' &bull; ' + h(s.subject) : ''}</p>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">${h(s.message)}</p>
+        <div class="flex gap-2 mt-3">
+          ${unread ? `<button onclick="markRead(${s.id}, true)" class="text-xs text-green-700 hover:underline">Mark read</button>` : `<button onclick="markRead(${s.id}, false)" class="text-xs text-gray-400 hover:underline">Mark unread</button>`}
+          <button onclick="if(confirm('Delete this submission?')) deleteSub(${s.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+  window._subsData = data;
+}
+
+window.filterSubs = function(type) {
+  document.querySelectorAll('.sub-item').forEach(el => {
+    el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
+  });
+  document.querySelectorAll('.sub-tab').forEach(b => { b.className = b.className.replace(/bg-green-800 text-white|bg-gray-200 text-gray-700/g, ''); });
+  event.target.classList.add('bg-green-800', 'text-white');
+};
+
+window.markRead = async function(id, read) {
+  await api('/admin/submissions/' + id, { method: 'PUT', body: { is_read: read } });
+  navigate('submissions'); loadBadgeCounts();
+};
+
+window.deleteSub = async function(id) {
+  await api('/admin/submissions/' + id, { method: 'DELETE' });
+  navigate('submissions'); loadBadgeCounts();
+};
+
+// ── Lost & Found ──
+async function renderLostFound(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Lost & Found Reports</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/lost-found');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  let html = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Lost & Found Reports</h1>';
+  const statuses = { pending: 'Pending Review', approved: 'Approved', resolved: 'Resolved', rejected: 'Rejected' };
+  const statusColors = { pending: 'bg-amber-100 text-amber-700', approved: 'bg-green-100 text-green-700', resolved: 'bg-blue-100 text-blue-700', rejected: 'bg-red-100 text-red-700' };
+
+  if (data.length === 0) {
+    html += '<div class="bg-white rounded-xl p-8 text-center text-gray-400">No reports submitted</div>';
+  } else {
+    html += '<div class="space-y-3">';
+    data.forEach(r => {
+      html += `<div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-bold text-gray-900">${h(r.pet_name || 'Unknown')}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full ${r.type==='lost' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${r.type}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full ${statusColors[r.status]}">${statuses[r.status]}</span>
+          </div>
+          <span class="text-xs text-gray-400">${timeAgo(r.created_at)}</span>
+        </div>
+        <p class="text-sm text-gray-500">${h(r.species)}${r.breed ? ' &bull; ' + h(r.breed) : ''}${r.color ? ' &bull; ' + h(r.color) : ''} &bull; ${h(r.gender || 'Unknown')}</p>
+        <p class="text-sm text-gray-500 mt-1">Reporter: ${h(r.reporter_name)}${r.reporter_phone ? ' &bull; ' + h(fmtPhone(r.reporter_phone)) : ''}</p>
+        ${r.location_details ? '<p class="text-sm text-gray-600 mt-1">Location: ' + h(r.location_details) + '</p>' : ''}
+        ${r.description ? '<p class="text-sm text-gray-700 mt-2">' + h(r.description) + '</p>' : ''}
+        <div class="flex gap-2 mt-3 flex-wrap">
+          ${r.status==='pending' ? `<button onclick="updateReport(${r.id},'approved')" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200">Approve</button><button onclick="updateReport(${r.id},'rejected')" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full hover:bg-red-200">Reject</button>` : ''}
+          ${r.status==='approved' ? `<button onclick="resolveReport(${r.id})" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200">Mark Resolved</button>` : ''}
+          <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full hover:bg-purple-200">Generate Poster</button>
+          <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+window.updateReport = async function(id, status) {
+  await api('/admin/lost-found/' + id, { method: 'PUT', body: { status } });
+  navigate('lost-found'); loadBadgeCounts();
+};
+
+window.resolveReport = async function(id) {
+  const note = prompt('Resolution note (e.g., "Reunited with owner"):');
+  await api('/admin/lost-found/' + id, { method: 'PUT', body: { status: 'resolved', resolved_note: note || '' } });
+  navigate('lost-found'); loadBadgeCounts();
+};
+
+window.generatePoster = function(report) {
+  sessionStorage.setItem('wcahs_poster_data', JSON.stringify(report));
+  window.open('/admin/poster.html', '_blank');
+};
+
+window.deleteReport = async function(id) {
+  await api('/admin/lost-found/' + id, { method: 'DELETE' });
+  navigate('lost-found'); loadBadgeCounts();
+};
+
+// ── Events ──
+async function renderEvents(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Events</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/events');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  let html = `<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Events</h1>
+    <button onclick="showEventForm()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Event</button>
+  </div>`;
+  html += '<div id="eventFormArea"></div>';
+
+  if (data.length === 0) {
+    html += '<div class="bg-white rounded-xl p-8 text-center text-gray-400">No events yet</div>';
+  } else {
+    html += '<div class="space-y-3">';
+    data.forEach(ev => {
+      const past = new Date(ev.date + 'T23:59:59') < new Date();
+      html += `<div class="bg-white rounded-xl p-5 shadow-sm ${past ? 'opacity-60' : ''}">
+        <div class="flex items-start justify-between mb-1">
+          <div>
+            <span class="font-bold text-gray-900">${h(ev.title)}</span>
+            ${ev.badge ? `<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 ml-2">${h(ev.badge)}</span>` : ''}
+            ${!ev.published ? '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 ml-2">Draft</span>' : ''}
+            ${past ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 ml-2">Past</span>' : ''}
+          </div>
+        </div>
+        <p class="text-sm text-gray-500">${formatDate(ev.date)}${ev.time ? ' &bull; ' + h(ev.time) : ''}${ev.location ? ' &bull; ' + h(ev.location) : ''}</p>
+        ${ev.description ? '<p class="text-sm text-gray-600 mt-2">' + h(ev.description) + '</p>' : ''}
+        <div class="flex gap-2 mt-3">
+          <button onclick='editEvent(${JSON.stringify(ev).replace(/'/g,"&#39;")})' class="text-xs text-green-700 hover:underline">Edit</button>
+          <button onclick="if(confirm('Delete this event?')) deleteEvent(${ev.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function eventFormHtml(ev) {
+  const e = ev || {};
+  return `<div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+    <h3 class="font-bold text-gray-900 mb-4">${ev ? 'Edit Event' : 'New Event'}</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Title *</label><input id="evTitle" value="${h(e.title||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Date *</label><input id="evDate" type="date" value="${e.date||''}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Time</label><input id="evTime" value="${h(e.time||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. 10:00 AM - 2:00 PM"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Location</label><input id="evLocation" value="${h(e.location||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Badge</label><input id="evBadge" value="${h(e.badge||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. Adoption Event, Fundraiser"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Color</label>
+        <select id="evColor" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="sage" ${e.color==='sage'?'selected':''}>Sage (green)</option>
+          <option value="amber" ${e.color==='amber'?'selected':''}>Amber (gold)</option>
+        </select></div>
+    </div>
+    <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="evDesc" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${h(e.description||'')}</textarea></div>
+    <div class="flex items-center gap-4 mb-4">
+      <label class="flex items-center gap-2 text-sm"><input id="evPublished" type="checkbox" ${e.published!==0?'checked':''}> Published</label>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="saveEvent(${e.id||'null'})" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
+      <button onclick="document.getElementById('eventFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
+    </div>
+  </div>`;
+}
+
+window.showEventForm = function() { document.getElementById('eventFormArea').innerHTML = eventFormHtml(); };
+window.editEvent = function(ev) { document.getElementById('eventFormArea').innerHTML = eventFormHtml(ev); window.scrollTo(0,0); };
+
+window.saveEvent = async function(id) {
+  const body = {
+    title: document.getElementById('evTitle').value,
+    date: document.getElementById('evDate').value,
+    time: document.getElementById('evTime').value,
+    location: document.getElementById('evLocation').value,
+    description: document.getElementById('evDesc').value,
+    badge: document.getElementById('evBadge').value,
+    color: document.getElementById('evColor').value,
+    published: document.getElementById('evPublished').checked,
+  };
+  if (!body.title || !body.date) { alert('Title and date are required'); return; }
+  if (id) { await api('/admin/events/' + id, { method: 'PUT', body }); }
+  else { await api('/admin/events', { method: 'POST', body }); }
+  navigate('events');
+};
+
+window.deleteEvent = async function(id) {
+  await api('/admin/events/' + id, { method: 'DELETE' });
+  navigate('events');
+};
+
+// ── FAQ ──
+async function renderFaq(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">FAQ</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/faq');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  const sections = { adoption: 'Adoption', fostering: 'Fostering', general: 'General' };
+  let html = `<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">FAQ</h1>
+    <button onclick="showFaqForm()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add Question</button>
+  </div>`;
+  html += '<div id="faqFormArea"></div>';
+
+  for (const [key, label] of Object.entries(sections)) {
+    const items = data.filter(f => f.section === key);
+    html += `<h2 class="font-bold text-lg text-gray-800 mt-6 mb-3">${label}</h2>`;
+    if (items.length === 0) {
+      html += '<p class="text-gray-400 text-sm mb-4">No questions in this section</p>';
+    } else {
+      html += '<div class="space-y-2 mb-4">';
+      items.forEach(f => {
+        html += `<div class="bg-white rounded-xl p-4 shadow-sm">
+          <p class="font-semibold text-gray-900 text-sm">${h(f.question)}</p>
+          <p class="text-gray-500 text-xs mt-1 line-clamp-2">${f.answer.substring(0, 200)}...</p>
+          <div class="flex gap-2 mt-2">
+            <button onclick='editFaq(${JSON.stringify(f).replace(/'/g,"&#39;")})' class="text-xs text-green-700 hover:underline">Edit</button>
+            <button onclick="if(confirm('Delete this FAQ?')) deleteFaq(${f.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+  }
+  el.innerHTML = html;
+}
+
+function faqFormHtml(fq) {
+  const f = fq || {};
+  return `<div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+    <h3 class="font-bold text-gray-900 mb-4">${fq ? 'Edit FAQ' : 'New FAQ'}</h3>
+    <div class="grid grid-cols-1 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Section *</label>
+        <select id="fqSection" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="adoption" ${f.section==='adoption'?'selected':''}>Adoption</option>
+          <option value="fostering" ${f.section==='fostering'?'selected':''}>Fostering</option>
+          <option value="general" ${f.section==='general'?'selected':''}>General</option>
+        </select></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Question *</label><input id="fqQuestion" value="${h(f.question||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Answer *</label><textarea id="fqAnswer" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm">${f.answer||''}</textarea>
+        <p class="text-xs text-gray-400 mt-1">HTML is allowed (links, bold, etc.)</p></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="saveFaq(${f.id||'null'}, ${f.sort_order||0})" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Save</button>
+      <button onclick="document.getElementById('faqFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
+    </div>
+  </div>`;
+}
+
+window.showFaqForm = function() { document.getElementById('faqFormArea').innerHTML = faqFormHtml(); };
+window.editFaq = function(fq) { document.getElementById('faqFormArea').innerHTML = faqFormHtml(fq); window.scrollTo(0,0); };
+
+window.saveFaq = async function(id, sortOrder) {
+  const body = {
+    section: document.getElementById('fqSection').value,
+    question: document.getElementById('fqQuestion').value,
+    answer: document.getElementById('fqAnswer').value,
+    sort_order: sortOrder,
+  };
+  if (!body.question || !body.answer) { alert('Question and answer required'); return; }
+  if (id) { await api('/admin/faq/' + id, { method: 'PUT', body }); }
+  else { await api('/admin/faq', { method: 'POST', body }); }
+  navigate('faq');
+};
+
+window.deleteFaq = async function(id) {
+  await api('/admin/faq/' + id, { method: 'DELETE' });
+  navigate('faq');
+};
+
+// ── Site Settings ──
+async function renderSettings(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Site Settings</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/settings');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  const partners = Array.isArray(data.partners) ? data.partners.join(', ') : (data.partners || '');
+
+  el.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-6">Site Settings</h1>
+
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Contact Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label><input id="setPhone" value="${h(data.phone||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Email</label><input id="setEmail" value="${h(data.email||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="setAddress" value="${h(data.address||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address Note</label><input id="setAddressNote" value="${h(data.address_note||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Social & Partners</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Facebook URL</label><input id="setFb" value="${h(data.facebook_url||'')}" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Partners</label>
+        <div id="partnersList" class="space-y-2 mb-2"></div>
+        <div class="flex gap-2">
+          <input id="newPartner" class="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="Partner name">
+          <button onclick="addPartner()" class="bg-green-800 text-white text-xs font-semibold px-3 py-2 rounded-lg">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
+    <div class="flex items-center gap-4 mb-3">
+      <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
+    </div>
+    <p class="text-xs text-gray-400">Shows a one-time popup per session with "Pardon Our Muddy Paws!" message. Visitors dismiss it to continue browsing.</p>
+    <div class="mt-3"><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
+      <div class="flex flex-wrap gap-3" id="ucPages">
+        ${['all','home','pets','events','lost-found','about','contact','faq'].map(p => {
+          const pages = data.under_construction_pages || 'all';
+          const checked = pages === 'all' ? p === 'all' : pages.split(',').includes(p);
+          const label = p === 'all' ? 'All Pages' : p.charAt(0).toUpperCase() + p.slice(1).replace('-',' & ');
+          return '<label class="flex items-center gap-1.5 text-xs"><input type="checkbox" value="'+p+'" '+(checked?'checked':'')+' onchange="handleUcPageToggle(this)"> '+label+'</label>';
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Site Announcement Banner</h2>
+    <div class="flex items-center gap-4 mb-3">
+      <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
+    </div>
+    <div class="mb-3"><label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label><input id="setAnnText" value="${h(data.announcement_text||'')}" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="e.g. We're closed Dec 24-26 for the holidays"></div>
+    <div><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
+      <div class="flex flex-wrap gap-3" id="annPages">
+        ${['all','home','pets','events','lost-found','about','contact','faq'].map(p => {
+          const pages = data.announcement_pages || 'all';
+          const checked = pages === 'all' ? p === 'all' : pages.split(',').includes(p);
+          const label = p === 'all' ? 'All Pages' : p.charAt(0).toUpperCase() + p.slice(1).replace('-',' & ');
+          return '<label class="flex items-center gap-1.5 text-xs"><input type="checkbox" value="'+p+'" '+(checked?'checked':'')+' onchange="handleAnnPageToggle(this)"> '+label+'</label>';
+        }).join('')}
+      </div>
+      <p class="text-xs text-gray-400 mt-1">Select "All Pages" or pick specific pages</p>
+    </div>
+  </div>
+
+  <button onclick="saveSettings()" class="bg-green-800 hover:bg-green-900 text-white font-bold px-6 py-3 rounded-lg transition">Save Settings</button>
+  <span id="settingsSaved" class="text-green-700 text-sm ml-3 hidden">Saved!</span>`;
+
+  // Render partners list
+  const partnerArr = Array.isArray(data.partners) ? data.partners : (data.partners ? data.partners.split(',').map(s=>s.trim()).filter(Boolean) : []);
+  setTimeout(() => renderPartnersList(partnerArr), 0);
+}
+
+// Partners list management
+let _partners = [];
+window.renderPartnersList = function(partners) {
+  _partners = partners;
+  const el = document.getElementById('partnersList');
+  if (!el) return;
+  el.innerHTML = partners.map((p, i) =>
+    `<div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+      <span class="text-sm text-gray-800">${h(p)}</span>
+      <button onclick="removePartner(${i})" class="text-red-500 text-xs hover:underline">Remove</button>
+    </div>`
+  ).join('') || '<p class="text-gray-400 text-xs">No partners added</p>';
+};
+window.addPartner = function() {
+  const input = document.getElementById('newPartner');
+  const val = input.value.trim();
+  if (!val) return;
+  _partners.push(val);
+  input.value = '';
+  renderPartnersList(_partners);
+};
+window.removePartner = function(i) {
+  _partners.splice(i, 1);
+  renderPartnersList(_partners);
+};
+
+window.handleUcPageToggle = function(el) {
+  const checks = document.querySelectorAll('#ucPages input');
+  if (el.value === 'all' && el.checked) {
+    checks.forEach(c => { if (c.value !== 'all') c.checked = false; });
+  } else if (el.value !== 'all') {
+    checks.forEach(c => { if (c.value === 'all') c.checked = false; });
+  }
+};
+
+window.handleAnnPageToggle = function(el) {
+  const checks = document.querySelectorAll('#annPages input');
+  if (el.value === 'all' && el.checked) {
+    checks.forEach(c => { if (c.value !== 'all') c.checked = false; });
+  } else if (el.value !== 'all') {
+    checks.forEach(c => { if (c.value === 'all') c.checked = false; });
+  }
+};
+
+window.saveSettings = async function() {
+  const annChecks = [...document.querySelectorAll('#annPages input:checked')].map(c => c.value);
+  const annPages = annChecks.includes('all') ? 'all' : annChecks.join(',');
+  const ucChecks = [...document.querySelectorAll('#ucPages input:checked')].map(c => c.value);
+  const ucPages = ucChecks.includes('all') ? 'all' : ucChecks.join(',');
+  await api('/admin/settings', { method: 'PUT', body: {
+    phone: document.getElementById('setPhone').value,
+    email: document.getElementById('setEmail').value,
+    address: document.getElementById('setAddress').value,
+    address_note: document.getElementById('setAddressNote').value,
+    facebook_url: document.getElementById('setFb').value,
+    partners: _partners,
+    under_construction: document.getElementById('setUcEnabled').checked ? 'true' : 'false',
+    under_construction_pages: ucPages,
+    announcement_enabled: document.getElementById('setAnnEnabled').checked ? 'true' : 'false',
+    announcement_text: document.getElementById('setAnnText').value,
+    announcement_pages: annPages,
+  }});
+  const saved = document.getElementById('settingsSaved');
+  saved.classList.remove('hidden');
+  setTimeout(() => saved.classList.add('hidden'), 2000);
+};
+
+// ── About Page ──
+async function renderAbout(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">About Page Content</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/settings');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+
+  el.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-6">About Page Content</h1>
+
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Mission Statement</h2>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 1</label><textarea id="abMission1" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text||''}</textarea></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 2</label><textarea id="abMission2" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text_2||''}</textarea></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Paragraph 3</label><textarea id="abMission3" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm">${data.mission_text_3||''}</textarea></div>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">HTML allowed (e.g. &lt;strong&gt;bold&lt;/strong&gt;, &lt;a href="..."&gt;links&lt;/a&gt;)</p>
+  </div>
+
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+    <h2 class="font-bold text-gray-900 mb-4">Why Foster-Based?</h2>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Home Environment</label><textarea id="abFoster1" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_home||''}</textarea></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Better Matches</label><textarea id="abFoster2" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_matches||''}</textarea></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Lower Costs</label><textarea id="abFoster3" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm">${data.why_foster_costs||''}</textarea></div>
+    </div>
+  </div>
+
+  <button onclick="saveAbout()" class="bg-green-800 hover:bg-green-900 text-white font-bold px-6 py-3 rounded-lg transition">Save</button>
+  <span id="aboutSaved" class="text-green-700 text-sm ml-3 hidden">Saved!</span>`;
+}
+
+window.saveAbout = async function() {
+  await api('/admin/settings', { method: 'PUT', body: {
+    mission_text: document.getElementById('abMission1').value,
+    mission_text_2: document.getElementById('abMission2').value,
+    mission_text_3: document.getElementById('abMission3').value,
+    why_foster_home: document.getElementById('abFoster1').value,
+    why_foster_matches: document.getElementById('abFoster2').value,
+    why_foster_costs: document.getElementById('abFoster3').value,
+  }});
+  const saved = document.getElementById('aboutSaved');
+  saved.classList.remove('hidden');
+  setTimeout(() => saved.classList.add('hidden'), 2000);
+};
+
+// ── My Account ──
+async function renderMyAccount(el) {
+  const me = await api('/auth/me');
+  el.innerHTML = `<h1 class="text-2xl font-bold text-gray-900 mb-6">My Account</h1>
+  <div class="bg-white rounded-xl p-6 shadow-sm mb-6 max-w-md">
+    <div class="mb-4">
+      <p class="text-sm text-gray-500">Username</p>
+      <p class="font-bold text-gray-900">${h(me.username)}</p>
+    </div>
+    <div class="mb-6">
+      <p class="text-sm text-gray-500">Role</p>
+      <p class="font-bold text-gray-900">${me.role}</p>
+    </div>
+    <h3 class="font-bold text-gray-900 mb-3">Change Password</h3>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Current Password</label><input id="cpCurrent" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">New Password (min 8 characters)</label><input id="cpNew" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Confirm New Password</label><input id="cpConfirm" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div id="cpStatus" class="hidden text-sm"></div>
+      <button onclick="changeMyPassword()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Change Password</button>
+    </div>
+  </div>`;
+}
+
+window.changeMyPassword = async function() {
+  const current = document.getElementById('cpCurrent').value;
+  const newPass = document.getElementById('cpNew').value;
+  const confirm = document.getElementById('cpConfirm').value;
+  const status = document.getElementById('cpStatus');
+
+  if (!current || !newPass) { status.className = 'text-sm text-red-600'; status.textContent = 'All fields required'; status.classList.remove('hidden'); return; }
+  if (newPass !== confirm) { status.className = 'text-sm text-red-600'; status.textContent = 'New passwords don\'t match'; status.classList.remove('hidden'); return; }
+
+  const res = await api('/admin/change-password', { method: 'POST', body: { current_password: current, new_password: newPass } });
+  if (res.ok) {
+    status.className = 'text-sm text-green-700'; status.textContent = res.message || 'Password changed!';
+    document.getElementById('cpCurrent').value = '';
+    document.getElementById('cpNew').value = '';
+    document.getElementById('cpConfirm').value = '';
+  } else {
+    status.className = 'text-sm text-red-600'; status.textContent = res.error || 'Failed';
+  }
+  status.classList.remove('hidden');
+};
+
+// ── Users ──
+async function renderUsers(el) {
+  el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Users</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/users');
+  if (data.error) { el.innerHTML = '<h1 class="text-2xl font-bold text-gray-900 mb-6">Users</h1><p class="text-red-500">' + data.error + '</p>'; return; }
+
+  const roleColors = { admin: 'bg-purple-100 text-purple-700', staff: 'bg-blue-100 text-blue-700' };
+
+  let html = `<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Users</h1>
+    <button onclick="showUserForm()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">+ Add User</button>
+  </div>`;
+  html += '<div id="userFormArea"></div>';
+  html += '<div class="space-y-3">';
+  data.forEach(u => {
+    html += `<div class="bg-white rounded-xl p-5 shadow-sm flex items-center justify-between">
+      <div>
+        <span class="font-bold text-gray-900">${h(u.username)}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${roleColors[u.role] || 'bg-gray-100 text-gray-600'}">${u.role}</span>
+        <span class="text-xs text-gray-400 ml-2">Created ${new Date(u.created_at).toLocaleDateString()}</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="resetUserPassword(${u.id}, '${h(u.username)}')" class="text-xs text-green-700 hover:underline">Reset password</button>
+        <button onclick="if(confirm('Delete user ${h(u.username)}?')) deleteUser(${u.id})" class="text-xs text-red-500 hover:underline">Delete</button>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  html += '<div class="mt-8 bg-gray-50 rounded-xl p-5 text-sm text-gray-500"><strong>Roles:</strong><br><span class="text-purple-700 font-semibold">Admin</span> — full access to everything<br><span class="text-blue-700 font-semibold">Staff</span> — Inbox, Lost & Found, and Events only (no site settings, FAQ, about page, or user management)</div>';
+  el.innerHTML = html;
+}
+
+window.showUserForm = function() {
+  document.getElementById('userFormArea').innerHTML = `<div class="bg-green-50 rounded-xl p-6 mb-6 border border-green-200">
+    <h3 class="font-bold text-gray-900 mb-4">New User</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Username *</label><input id="nuUser" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Password * (min 8 chars)</label><input id="nuPass" type="password" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Role *</label>
+        <select id="nuRole" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="createUser()" class="bg-green-800 hover:bg-green-900 text-white font-semibold text-sm px-4 py-2 rounded-lg">Create User</button>
+      <button onclick="document.getElementById('userFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2">Cancel</button>
+    </div>
+  </div>`;
+};
+
+window.createUser = async function() {
+  const username = document.getElementById('nuUser').value;
+  const password = document.getElementById('nuPass').value;
+  const role = document.getElementById('nuRole').value;
+  if (!username || !password) { alert('Username and password required'); return; }
+  const res = await api('/admin/users', { method: 'POST', body: { username, password, role } });
+  if (res.ok) { navigate('users'); }
+  else { alert(res.error || 'Failed to create user'); }
+};
+
+window.resetUserPassword = async function(id, username) {
+  const newPass = prompt('New password for ' + username + ' (min 8 characters):');
+  if (!newPass) return;
+  const res = await api('/admin/users/' + id, { method: 'PUT', body: { password: newPass } });
+  if (res.ok) { alert('Password reset for ' + username); }
+  else { alert(res.error || 'Failed to reset password'); }
+};
+
+window.deleteUser = async function(id) {
+  const res = await api('/admin/users/' + id, { method: 'DELETE' });
+  if (res.ok) { navigate('users'); }
+  else { alert(res.error || 'Failed to delete user'); }
+};
+
+// ── Init ──
+checkAuth();
+</script>
+</body>
+</html>

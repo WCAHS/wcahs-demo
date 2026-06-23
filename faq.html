@@ -83,6 +83,11 @@
     </div>
   </nav>
 
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
   <!-- Header -->
   <section class="bg-sage-700 py-16 relative overflow-hidden">
     <img src="images/cats/cat_02.png" alt="" style="position:absolute; bottom:-5px; right:50px; height:115px; opacity:0.08; filter:invert(1);">
@@ -105,48 +110,7 @@
         <h2 class="absolute bottom-4 left-6 font-display text-2xl md:text-3xl font-bold text-white">Adoption</h2>
       </div>
     </div>
-
-    <div class="space-y-3 mb-16">
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          How do I adopt an animal from WCAHS?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          Browse our <a href="pets.html" class="text-sage-600 underline">adoptable pets</a>, then contact us to fill out an adoption application. Our board reviews every application to ensure the best match. Once approved, you'll meet the animal at their foster home before finalizing.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          What are the adoption fees?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          Fees vary by animal and cover spaying/neutering, vaccinations, microchipping, and any medical care received. Qualifying seniors receive 50% off through our Pets for Seniors program. Contact us for specific fees.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          What are the requirements to adopt?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          All existing pets in your home must be current on vaccinations and spayed/neutered. Adopted pets must live primarily indoors. A background check is required. Our board reviews every application individually.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          Can I meet the animal before adopting?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          Absolutely! Once your application is approved, we arrange a meet and greet at the animal's foster home. This lets you see how the animal behaves in a home environment and make sure it's a good fit for your family.
-        </div>
-      </details>
-    </div>
+    <div id="faq-adoption" class="space-y-3 mb-16"></div>
 
     <!-- Fostering Banner -->
     <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
@@ -156,38 +120,7 @@
         <h2 class="absolute bottom-4 left-6 font-display text-2xl md:text-3xl font-bold text-white">Fostering</h2>
       </div>
     </div>
-
-    <div class="space-y-3 mb-16">
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          What does fostering involve?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          You provide a safe, loving home for an animal until they find their forever family. WCAHS covers all costs &mdash; food, supplies, and veterinary care. You provide the love, socialization, and a safe space.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          How long do I foster an animal?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          It depends on the animal. Some find homes within a few weeks, others may take a few months. We work with you on timing and never pressure foster families. You can also choose to foster short-term for specific situations.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          Can I adopt the animal I'm fostering?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          Yes! We call them "foster fails" and we love them. If you bond with your foster animal and want to make it permanent, you'll go through the standard adoption process with priority consideration.
-        </div>
-      </details>
-    </div>
+    <div id="faq-fostering" class="space-y-3 mb-16"></div>
 
     <!-- General Banner -->
     <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
@@ -197,48 +130,23 @@
         <h2 class="absolute bottom-4 left-6 font-display text-2xl md:text-3xl font-bold text-white">General</h2>
       </div>
     </div>
+    <div id="faq-general" class="space-y-3 mb-16"></div>
 
-    <div class="space-y-3 mb-16">
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          Do you have a physical shelter?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          No. WCAHS is 100% foster-based. All of our animals live in volunteer foster homes throughout the Waseca area. This means every animal gets individualized care and attention in a real home environment.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          How is WCAHS funded?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          We're entirely community funded. We do not receive any county or government support. Every dollar comes from donations, fundraisers, and adoption fees. 100% of funds go directly to animal care.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          I found a stray animal. What should I do?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          Check our <a href="lost-found.html" class="text-sage-600 underline">Lost & Found</a> page first to see if anyone is looking for the animal. Then contact us at <a href="tel:5072017287" class="text-sage-600 underline">(507) 201-7287</a>. If you can safely contain the animal, keep it in a secure area until we can help coordinate next steps.
-        </div>
-      </details>
-
-      <details class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <summary class="flex items-center justify-between p-6 font-semibold text-gray-900">
-          What is the Barn Cat Program?
-          <svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </summary>
-        <div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
-          Some cats aren't suited for indoor living but thrive with a purpose. Our Barn Cat Program places spayed/neutered, vaccinated cats with farm families for a donation. They keep barns mouse-free while enjoying outdoor life. Contact us if you're interested.
-        </div>
-      </details>
-    </div>
+    <script>
+      fetch('/api/faq').then(r=>r.json()).then(function(data) {
+        var arrow = '<svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
+        ['adoption','fostering','general'].forEach(function(section) {
+          var items = data[section] || [];
+          var container = document.getElementById('faq-' + section);
+          if (!items.length) { container.innerHTML = '<p class="text-gray-400 text-sm">No questions in this section yet.</p>'; return; }
+          container.innerHTML = items.map(function(f) {
+            return '<details class="bg-white rounded-2xl shadow-sm overflow-hidden">' +
+              '<summary class="flex items-center justify-between p-6 font-semibold text-gray-900">' + f.question + arrow + '</summary>' +
+              '<div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">' + f.answer + '</div></details>';
+          }).join('');
+        });
+      }).catch(function(){});
+    </script>
 
     <!-- Still have questions -->
     <div class="bg-sage-50 rounded-2xl p-10 text-center">
@@ -283,9 +191,9 @@
       <div>
         <h4 class="font-bold text-white mb-4">Contact</h4>
         <ul class="space-y-2 text-sm">
-          <li>Waseca, MN 56093</li>
-          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
-          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
         </ul>
       </div>
     </div>
@@ -295,6 +203,7 @@
     </div>
   </footer>
 
+<script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>
 </html>

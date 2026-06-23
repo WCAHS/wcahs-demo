@@ -1,0 +1,15 @@
+name = "wcahs"
+compatibility_date = "2026-06-22"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wcahs-db"
+database_id = "2d709989-259d-441d-8e2e-b7cf03637fc0"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "wcahs-uploads"
+
+[vars]
+TURNSTILE_SECRET = "0x4AAAAAADpVDTD_WzfdVLgJ20lDH-3FO5o"

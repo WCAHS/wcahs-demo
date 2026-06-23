@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="favicon.png">
   <title>Lost & Found Pets - WCAHS</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -81,6 +82,11 @@
     </div>
   </nav>
 
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
   <!-- Header -->
   <section class="bg-sage-700 py-16 relative overflow-hidden">
     <img src="images/dogs/dog_06.png" alt="" style="position:absolute; bottom:-5px; right:40px; height:120px; opacity:0.08; filter:invert(1);">
@@ -96,11 +102,11 @@
   <section class="max-w-3xl mx-auto px-4 -mt-6 relative z-20">
     <div class="bg-white rounded-2xl shadow-md p-5 flex flex-col sm:flex-row gap-3 items-center justify-center">
       <span class="text-gray-500 text-sm font-semibold">Need to report?</span>
-      <a href="#report" class="inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition" style="border:2px solid #d4a057; color:#92690d; background:transparent;" onmouseover="this.style.background='#fef9f0'" onmouseout="this.style.background='transparent'">
+      <a href="#report" onclick="selectReportType('lost')" class="inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition" style="border:2px solid #d4a057; color:#92690d; background:transparent;" onmouseover="this.style.background='#fef9f0'" onmouseout="this.style.background='transparent'">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
         Lost Pet
       </a>
-      <a href="#report" class="inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition" style="border:2px solid #93a27e; color:#48543e; background:transparent;" onmouseover="this.style.background='#f6f7f4'" onmouseout="this.style.background='transparent'">
+      <a href="#report" onclick="selectReportType('found')" class="inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition" style="border:2px solid #93a27e; color:#48543e; background:transparent;" onmouseover="this.style.background='#f6f7f4'" onmouseout="this.style.background='transparent'">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         Found Pet
       </a>
@@ -116,24 +122,39 @@
   </section>
 
   <!-- Lost Pets Grid -->
-  <section id="lostGrid" class="max-w-6xl mx-auto px-4 py-8 pb-20 relative">
-    <img src="images/paws/paw_03.png" alt="" style="position:absolute; top:20px; right:10px; height:60px; opacity:0.03; transform:rotate(-20deg);">
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Populated by real reports -->
-    </div>
-    <p class="text-gray-400 text-center py-12">No lost pets reported right now. We hope it stays that way!</p>
+  <section id="lostGrid" class="max-w-6xl mx-auto px-4 py-8 pb-20">
+    <div id="lostCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    <p id="lostEmpty" class="text-gray-400 text-center py-12">No lost pets reported right now. We hope it stays that way!</p>
   </section>
 
   <!-- Found Pets Grid (hidden by default) -->
-  <section id="foundGrid" class="max-w-6xl mx-auto px-4 py-8 pb-20 hidden relative">
-    <img src="images/dogs/dog_12.png" alt="" style="position:absolute; bottom:10px; left:0; height:90px; opacity:0.03;">
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Populated by real reports -->
-    </div>
-    <p class="text-gray-400 text-center py-12">No found pets reported right now.</p>
+  <section id="foundGrid" class="max-w-6xl mx-auto px-4 py-8 pb-20 hidden">
+    <div id="foundCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    <p id="foundEmpty" class="text-gray-400 text-center py-12">No found pets reported right now.</p>
   </section>
+
+  <script>
+    fetch('/api/lost-found').then(r=>r.json()).then(function(reports) {
+      var lost = reports.filter(r=>r.type==='lost');
+      var found = reports.filter(r=>r.type==='found');
+      function renderCards(items, containerId, emptyId) {
+        if (!items.length) return;
+        document.getElementById(emptyId).classList.add('hidden');
+        document.getElementById(containerId).innerHTML = items.map(function(r) {
+          return '<div class="bg-white rounded-2xl overflow-hidden shadow-md">' +
+            (function(){ var u=r.photo_url; if(!u)return''; try{var arr=JSON.parse(u);u=arr[0];}catch(e){} return '<div class="h-48 overflow-hidden"><img src="'+u+'" alt="" class="w-full h-full object-cover"></div>'; })() +
+            '<div class="p-6"><h3 class="font-bold text-lg text-gray-900">'+(r.pet_name||'Unknown Pet')+'</h3>' +
+            '<p class="text-gray-500 text-sm mt-1">'+r.species+(r.breed?' &bull; '+r.breed:'')+(r.color?' &bull; '+r.color:'')+'</p>' +
+            (r.location_details?'<p class="text-gray-600 text-sm mt-2">'+r.location_details+'</p>':'') +
+            (r.description?'<p class="text-gray-600 text-sm mt-2">'+r.description+'</p>':'') +
+            '<p class="text-gray-400 text-xs mt-3">Reported '+new Date(r.created_at).toLocaleDateString()+'</p>' +
+            '</div></div>';
+        }).join('');
+      }
+      renderCards(lost, 'lostCards', 'lostEmpty');
+      renderCards(found, 'foundCards', 'foundEmpty');
+    }).catch(function(){});
+  </script>
 
   <!-- Report Form -->
   <section id="report" class="bg-white py-20 relative overflow-hidden">
@@ -154,7 +175,7 @@
         </ul>
       </div>
 
-      <form class="space-y-5" onsubmit="event.preventDefault(); alert('This is a demo — reports would be submitted and posted here.');">
+      <form class="space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Your Name</label>
@@ -162,7 +183,7 @@
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
-            <input type="tel" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="(507) 555-1234">
+            <input type="tel" oninput="formatPhone(this)" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="(507) 555-1234">
           </div>
         </div>
 
@@ -170,14 +191,14 @@
           <label class="block text-sm font-semibold text-gray-700 mb-2">Report Type</label>
           <div class="grid grid-cols-2 gap-3">
             <label class="flex items-center gap-3 border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-amber-300 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
-              <input type="radio" name="type" value="lost" class="accent-amber-600" checked>
+              <input type="radio" name="type" value="lost" class="accent-amber-600" checked onchange="updateFormType()">
               <div>
                 <div class="font-bold text-gray-900">Lost Pet</div>
                 <div class="text-xs text-gray-500">My pet is missing</div>
               </div>
             </label>
             <label class="flex items-center gap-3 border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-sage-400 transition has-[:checked]:border-sage-500 has-[:checked]:bg-sage-50">
-              <input type="radio" name="type" value="found" class="accent-sage-600" style="accent-color:#5c6b4e;">
+              <input type="radio" name="type" value="found" class="accent-sage-600" style="accent-color:#5c6b4e;" onchange="updateFormType()">
               <div>
                 <div class="font-bold text-gray-900">Found Pet</div>
                 <div class="text-xs text-gray-500">I found a stray</div>
@@ -188,8 +209,8 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Pet Name (if known)</label>
-            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Pet's name">
+            <label id="nameLabel" class="block text-sm font-semibold text-gray-700 mb-1">Pet Name</label>
+            <input id="nameInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Pet's name">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Species</label>
@@ -221,27 +242,154 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Date & Location Last Seen / Found</label>
-          <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="e.g. June 15 near 3rd Ave NE, Waseca">
+          <label id="locationLabel" class="block text-sm font-semibold text-gray-700 mb-1">Date & Location Last Seen</label>
+          <input id="locationInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="e.g. June 15 near 3rd Ave NE, Waseca">
         </div>
 
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
-          <textarea rows="4" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition resize-none" placeholder="Any identifying details — collar, microchip, temperament, size, distinguishing marks..."></textarea>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Upload a Photo</label>
-          <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-sage-400 transition cursor-pointer">
-            <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <p class="text-gray-500 text-sm">Click to upload or drag and drop</p>
-            <p class="text-gray-400 text-xs mt-1">PNG, JPG up to 10MB</p>
+        <!-- Lost-only: collar/microchip -->
+        <div id="lostFields">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Collar & Microchip Details</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Collar color, tag info, microchip number if known">
           </div>
+        </div>
+
+        <!-- Found-only: temperament & current location -->
+        <div id="foundFields" class="hidden space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Temperament</label>
+            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+              <option>Friendly / Approachable</option>
+              <option>Scared / Skittish</option>
+              <option>Aggressive / Do Not Approach</option>
+              <option>Unknown / Couldn't Get Close</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Where Is the Animal Now?</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="e.g. In my garage, still roaming the area, brought to vet">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Visible Collar or Tags?</label>
+            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+              <option>No collar</option>
+              <option>Collar but no tags</option>
+              <option>Collar with tags</option>
+              <option>Couldn't tell</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label id="descLabel" class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+          <textarea id="descInput" rows="4" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition resize-none" placeholder="Any identifying details — collar, microchip, temperament, size, distinguishing marks..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Photos <span class="font-normal text-gray-400">(up to 5)</span></label>
+          <div id="photoDropzone" onclick="document.getElementById('photoInput').click()" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-sage-400 transition cursor-pointer">
+            <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p class="text-gray-500 text-sm">Click to select photos or drag and drop</p>
+            <p class="text-gray-400 text-xs mt-1">PNG, JPG, WebP &bull; Up to 10MB each</p>
+          </div>
+          <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" onchange="handlePhotoSelect(this.files)">
+          <div id="photoPreviews" class="flex flex-wrap gap-3 mt-3"></div>
           <p class="text-gray-400 text-xs mt-2">Use a clear, well-lit original photo &mdash; not a screenshot from Facebook or a blurry zoomed-in crop. Show the full body if possible. Multiple angles help.</p>
         </div>
+        <script>
+          var _selectedPhotos = [];
+          function handlePhotoSelect(files) {
+            for (var i = 0; i < files.length && _selectedPhotos.length < 5; i++) {
+              if (files[i].size > 10*1024*1024) { alert('File "' + files[i].name + '" is too large (max 10MB)'); continue; }
+              _selectedPhotos.push(files[i]);
+            }
+            if (_selectedPhotos.length >= 5) document.getElementById('photoDropzone').style.display = 'none';
+            renderPreviews();
+          }
+          function removePhoto(idx) {
+            _selectedPhotos.splice(idx, 1);
+            document.getElementById('photoDropzone').style.display = '';
+            renderPreviews();
+          }
+          function renderPreviews() {
+            var el = document.getElementById('photoPreviews');
+            el.innerHTML = _selectedPhotos.map(function(f, i) {
+              var url = URL.createObjectURL(f);
+              return '<div class="relative"><img src="' + url + '" class="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"><button type="button" onclick="removePhoto(' + i + ')" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs leading-none flex items-center justify-center">&times;</button></div>';
+            }).join('');
+          }
+          // Drag and drop
+          var dz = document.getElementById('photoDropzone');
+          dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('border-sage-500', 'bg-sage-50'); });
+          dz.addEventListener('dragleave', function() { dz.classList.remove('border-sage-500', 'bg-sage-50'); });
+          dz.addEventListener('drop', function(e) { e.preventDefault(); dz.classList.remove('border-sage-500', 'bg-sage-50'); handlePhotoSelect(e.dataTransfer.files); });
+        </script>
 
-        <button type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg">Submit Report</button>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+        <div id="lfStatus" class="hidden"></div>
+        <button id="submitBtn" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg">Submit Lost Pet Report</button>
       </form>
+      <script>
+        document.querySelector('#report form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          var status = document.getElementById('lfStatus');
+          var btn = document.getElementById('submitBtn');
+          var turnstile = document.querySelector('#report [name="cf-turnstile-response"]');
+          var isLost = document.querySelector('input[name="type"][value="lost"]').checked;
+          btn.disabled = true; btn.textContent = 'Submitting...';
+          status.classList.add('hidden');
+          var body = {
+            type: isLost ? 'lost' : 'found',
+            reporter_name: e.target.querySelector('input[placeholder="Your name"]').value,
+            reporter_phone: e.target.querySelector('input[type="tel"]').value,
+            pet_name: document.getElementById('nameInput').value,
+            species: e.target.querySelector('select').value,
+            breed: e.target.querySelector('input[placeholder="Breed or mix"]').value,
+            color: e.target.querySelector('input[placeholder="Color/markings"]').value,
+            gender: e.target.querySelectorAll('select')[1].value,
+            location_details: document.getElementById('locationInput').value,
+            description: document.getElementById('descInput').value,
+            turnstile_token: turnstile ? turnstile.value : ''
+          };
+          if (isLost) { body.collar_details = e.target.querySelector('#lostFields input') ? e.target.querySelector('#lostFields input').value : ''; }
+          else {
+            var foundSelects = document.querySelectorAll('#foundFields select');
+            body.temperament = foundSelects[0] ? foundSelects[0].value : '';
+            body.current_location = document.querySelector('#foundFields input') ? document.querySelector('#foundFields input').value : '';
+            body.collar_status = foundSelects[1] ? foundSelects[1].value : '';
+          }
+          try {
+            // Upload photos first if any
+            if (_selectedPhotos.length > 0) {
+              btn.textContent = 'Uploading photos...';
+              var formData = new FormData();
+              formData.append('turnstile_token', body.turnstile_token);
+              _selectedPhotos.forEach(function(f) { formData.append('photos', f); });
+              var upRes = await fetch('/api/upload', { method: 'POST', body: formData });
+              var upData = await upRes.json();
+              if (upData.ok && upData.urls) { body.photo_url = upData.urls[0]; body.photo_urls = upData.urls; }
+              else if (upData.error) {
+                status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (upData.error) + '</p></div>';
+                status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
+                return;
+              }
+              btn.textContent = 'Submitting report...';
+            }
+            var res = await fetch('/api/lost-found', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            var data = await res.json();
+            if (data.ok) {
+              status.innerHTML = '<div class="bg-green-50 border-2 border-green-200 rounded-xl p-5 text-center"><svg class="w-10 h-10 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="font-bold text-green-800 text-lg">Report Submitted!</p><p class="text-green-600 text-sm mt-1">' + (data.message || 'Your report will appear after review.') + '</p></div>';
+              status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none';
+            } else {
+              status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">' + (data.error || 'Something went wrong') + '</p></div>';
+              status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
+            }
+          } catch(err) {
+            status.innerHTML = '<div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-center"><p class="font-bold text-red-700">Could not submit. Please try again.</p></div>';
+            status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
+          }
+        });
+      </script>
     </div>
   </section>
 
@@ -377,9 +525,9 @@
       <div>
         <h4 class="font-bold text-white mb-4">Contact</h4>
         <ul class="space-y-2 text-sm">
-          <li>Waseca, MN 56093</li>
-          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
-          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
         </ul>
       </div>
     </div>
@@ -390,6 +538,30 @@
   </footer>
 
   <script>
+    function selectReportType(type) {
+      var radio = document.querySelector('input[name="type"][value="' + type + '"]');
+      if (radio) { radio.checked = true; updateFormType(); }
+    }
+
+    function updateFormType() {
+      var isLost = document.querySelector('input[name="type"][value="lost"]').checked;
+      // Toggle field sections
+      document.getElementById('lostFields').classList.toggle('hidden', !isLost);
+      document.getElementById('foundFields').classList.toggle('hidden', isLost);
+      // Swap labels
+      document.getElementById('nameLabel').textContent = isLost ? 'Pet Name' : 'Pet Name (if known)';
+      document.getElementById('nameInput').placeholder = isLost ? "Pet's name" : "Pet's name, if known";
+      document.getElementById('locationLabel').textContent = isLost ? 'Date & Location Last Seen' : 'Date & Location Found';
+      document.getElementById('locationInput').placeholder = isLost
+        ? 'e.g. June 15 near 3rd Ave NE, Waseca'
+        : 'e.g. June 18 behind Walmart on State St, Waseca';
+      document.getElementById('descLabel').textContent = isLost ? 'Description' : 'Additional Details';
+      document.getElementById('descInput').placeholder = isLost
+        ? 'Any identifying details — size, distinguishing marks, where they might be heading...'
+        : 'Condition of the animal, any injuries, behavior when approached...';
+      document.getElementById('submitBtn').textContent = isLost ? 'Submit Lost Pet Report' : 'Submit Found Pet Report';
+    }
+
     function showTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
@@ -403,6 +575,7 @@
     }
   </script>
 
+<script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>
 </html>

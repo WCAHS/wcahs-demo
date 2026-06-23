@@ -80,6 +80,11 @@
     </div>
   </nav>
 
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
   <!-- Header -->
   <section class="bg-sage-700 py-16 relative overflow-hidden">
     <img src="images/dogs/dog_11.png" alt="" style="position:absolute; bottom:-5px; right:30px; height:115px; opacity:0.08; filter:invert(1);">
@@ -92,72 +97,49 @@
   </section>
 
   <!-- Upcoming Events -->
-  <section class="max-w-5xl mx-auto px-4 py-20 relative">
-    <img src="images/dogs/dog_03.png" alt="" style="position:absolute; top:30px; right:-20px; height:120px; opacity:0.04;">
-    <img src="images/cats/cat_02.png" alt="" style="position:absolute; bottom:40px; left:-15px; height:100px; opacity:0.03;">
-    <img src="images/paws/paw_05.png" alt="" style="position:absolute; top:50%; right:10%; height:40px; opacity:0.025; transform:rotate(-15deg);">
+  <section class="max-w-5xl mx-auto px-4 py-20">
     <h2 class="font-display text-3xl font-bold text-gray-900 mb-10">Upcoming Events</h2>
-
-    <div class="space-y-6">
-
-      <!-- Event 1 -->
-      <div class="bg-white rounded-2xl shadow-sm overflow-hidden card-hover flex flex-col md:flex-row">
-        <div class="bg-sage-700 text-white p-6 md:p-8 flex flex-col items-center justify-center md:w-40 shrink-0">
-          <span class="text-sm font-semibold uppercase tracking-wider opacity-80">Jul</span>
-          <span class="text-4xl font-bold leading-none">12</span>
-          <span class="text-sm opacity-80 mt-1">2026</span>
-        </div>
-        <div class="p-6 md:p-8 flex-1">
-          <div class="flex flex-wrap items-center gap-3 mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Adoption Day at Tractor Supply</h3>
-            <span class="text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full">Adoption Event</span>
-          </div>
-          <p class="text-gray-500 text-sm mb-3">10:00 AM &ndash; 2:00 PM &bull; Tractor Supply Co., Waseca</p>
-          <p class="text-gray-600 text-sm leading-relaxed">Come meet some of our adoptable animals in person! Our foster families will be on-site with dogs and cats ready to find their forever homes. No appointment needed.</p>
-        </div>
+    <div id="eventsContainer">
+      <div class="bg-white rounded-2xl shadow-sm p-10 text-center">
+        <p class="text-gray-400 text-lg mb-2">No upcoming events scheduled right now.</p>
+        <p class="text-gray-400 text-sm">Follow us on <a href="https://facebook.com/WasecaCAHS/" class="text-sage-600 underline hover:text-sage-800 transition" target="_blank">Facebook</a> to be the first to know when new events are announced!</p>
       </div>
-
-      <!-- Event 2 -->
-      <div class="bg-white rounded-2xl shadow-sm overflow-hidden card-hover flex flex-col md:flex-row">
-        <div class="bg-amber-500 text-white p-6 md:p-8 flex flex-col items-center justify-center md:w-40 shrink-0">
-          <span class="text-sm font-semibold uppercase tracking-wider opacity-80">Aug</span>
-          <span class="text-4xl font-bold leading-none">9</span>
-          <span class="text-sm opacity-80 mt-1">2026</span>
-        </div>
-        <div class="p-6 md:p-8 flex-1">
-          <div class="flex flex-wrap items-center gap-3 mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Annual WCAHS Fundraiser</h3>
-            <span class="text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full">Fundraiser</span>
-          </div>
-          <p class="text-gray-500 text-sm mb-3">5:00 PM &ndash; 9:00 PM &bull; Location TBD, Waseca</p>
-          <p class="text-gray-600 text-sm leading-relaxed">Our biggest fundraiser of the year! Join us for food, raffles, silent auction, and stories from adopters. All proceeds go directly to animal care. Details coming soon.</p>
-        </div>
-      </div>
-
-      <!-- Event 3 -->
-      <div class="bg-white rounded-2xl shadow-sm overflow-hidden card-hover flex flex-col md:flex-row">
-        <div class="bg-sage-700 text-white p-6 md:p-8 flex flex-col items-center justify-center md:w-40 shrink-0">
-          <span class="text-sm font-semibold uppercase tracking-wider opacity-80">Sep</span>
-          <span class="text-4xl font-bold leading-none">20</span>
-          <span class="text-sm opacity-80 mt-1">2026</span>
-        </div>
-        <div class="p-6 md:p-8 flex-1">
-          <div class="flex flex-wrap items-center gap-3 mb-2">
-            <h3 class="font-bold text-xl text-gray-900">Pet Expo Mankato</h3>
-            <span class="text-xs bg-sage-100 text-sage-700 font-bold px-3 py-1 rounded-full">Community Event</span>
-          </div>
-          <p class="text-gray-500 text-sm mb-3">11:00 AM &ndash; 4:00 PM &bull; Pet Expo, Mankato</p>
-          <p class="text-gray-600 text-sm leading-relaxed">Visit our booth at Pet Expo Mankato! Learn about fostering, pick up some WCAHS merch, and meet a few of our adoptable animals. A great family outing.</p>
-        </div>
-      </div>
-
     </div>
   </section>
+
+  <script>
+    fetch('/api/events').then(r=>r.json()).then(function(events) {
+      if (!events.length) return;
+      var colors = { sage: 'bg-sage-700', amber: 'bg-amber-500' };
+      var container = document.getElementById('eventsContainer');
+      container.innerHTML = '<div class="space-y-6">' + events.map(function(ev) {
+        var d = new Date(ev.date + 'T00:00:00');
+        var month = d.toLocaleString('en-US', {month:'short'});
+        var day = d.getDate();
+        var year = d.getFullYear();
+        var colorClass = colors[ev.color] || 'bg-sage-700';
+        return '<div class="bg-white rounded-2xl shadow-sm overflow-hidden card-hover flex flex-col md:flex-row">' +
+          '<div class="' + colorClass + ' text-white p-6 md:p-8 flex flex-col items-center justify-center md:w-40 shrink-0">' +
+            '<span class="text-sm font-semibold uppercase tracking-wider opacity-80">' + month + '</span>' +
+            '<span class="text-4xl font-bold leading-none">' + day + '</span>' +
+            '<span class="text-sm opacity-80 mt-1">' + year + '</span>' +
+          '</div>' +
+          '<div class="p-6 md:p-8 flex-1">' +
+            '<div class="flex flex-wrap items-center gap-3 mb-2">' +
+              '<h3 class="font-bold text-xl text-gray-900">' + ev.title + '</h3>' +
+              (ev.badge ? '<span class="text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full">' + ev.badge + '</span>' : '') +
+            '</div>' +
+            '<p class="text-gray-500 text-sm mb-3">' + (ev.time||'') + (ev.time && ev.location ? ' &bull; ' : '') + (ev.location||'') + '</p>' +
+            (ev.description ? '<p class="text-gray-600 text-sm leading-relaxed">' + ev.description + '</p>' : '') +
+          '</div></div>';
+      }).join('') + '</div>';
+    }).catch(function(){});
+  </script>
 
   <!-- Host / Suggest -->
   <section class="max-w-4xl mx-auto px-4 py-20">
     <div class="bg-sage-50 rounded-2xl overflow-hidden flex flex-col md:flex-row md:items-center">
-      <div class="w-full h-40 md:w-48 lg:w-56 md:h-auto shrink-0">
+      <div class="w-full aspect-[16/9] md:aspect-auto md:w-48 lg:w-56 md:h-auto shrink-0">
         <img src="images/photos/IMG_1592.JPEG" alt="WCAHS tabby kitten" class="w-full h-full object-cover">
       </div>
       <div class="p-10 md:p-14 text-center flex-1">
@@ -193,9 +175,9 @@
       <div>
         <h4 class="font-bold text-white mb-4">Contact</h4>
         <ul class="space-y-2 text-sm">
-          <li>Waseca, MN 56093</li>
-          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
-          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
         </ul>
       </div>
     </div>
@@ -205,6 +187,7 @@
     </div>
   </footer>
 
+<script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>
 </html>

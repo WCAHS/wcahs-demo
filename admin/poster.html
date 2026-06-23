@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pet Poster - WCAHS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Nunito', sans-serif; background: #f0f0f0; }
+
+    .poster {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 20px auto;
+      background: #fff;
+      padding: 0;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    }
+
+    /* Header banner */
+    .header {
+      padding: 28px 40px 24px;
+      text-align: center;
+    }
+    .header.lost { background: #dc2626; color: #fff; }
+    .header.found { background: #16a34a; color: #fff; }
+    .header h1 {
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .header .subtitle {
+      font-size: 18px;
+      font-weight: 700;
+      opacity: 0.9;
+      letter-spacing: 1px;
+    }
+
+    /* Photo area */
+    .photo-area {
+      padding: 24px 40px 16px;
+      text-align: center;
+    }
+    .photo-area img {
+      max-width: 100%;
+      max-height: 4.5in;
+      border-radius: 12px;
+      border: 4px solid #333;
+      object-fit: cover;
+    }
+    .no-photo {
+      width: 100%;
+      height: 3in;
+      background: #f3f3f3;
+      border: 3px dashed #ccc;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Pet name */
+    .pet-name {
+      text-align: center;
+      padding: 12px 40px 8px;
+      font-size: 42px;
+      font-weight: 900;
+      color: #111;
+      line-height: 1.1;
+    }
+    .pet-name .responds-to {
+      font-size: 16px;
+      font-weight: 600;
+      color: #666;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Details grid */
+    .details {
+      padding: 12px 40px 16px;
+    }
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 24px;
+    }
+    .detail-item {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+    .detail-item .label {
+      font-weight: 800;
+      color: #333;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .detail-item .value {
+      color: #111;
+      font-weight: 600;
+      font-size: 17px;
+    }
+
+    /* Description */
+    .description {
+      padding: 8px 40px 16px;
+      font-size: 15px;
+      color: #333;
+      line-height: 1.5;
+    }
+    .description strong {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    /* Location banner */
+    .location-banner {
+      margin: 8px 40px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 17px;
+    }
+    .location-banner.lost { background: #fef2f2; color: #dc2626; border: 2px solid #fca5a5; }
+    .location-banner.found { background: #f0fdf4; color: #16a34a; border: 2px solid #86efac; }
+
+    /* Contact */
+    .contact {
+      padding: 16px 40px;
+      text-align: center;
+    }
+    .contact .phone {
+      font-size: 36px;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: 2px;
+    }
+    .contact .org {
+      font-size: 14px;
+      color: #666;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* Tear strips */
+    .tear-strips {
+      padding: 16px 40px 24px;
+      display: flex;
+      gap: 0;
+    }
+    .tear-strip {
+      flex: 1;
+      border: 1px dashed #ccc;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 10px;
+      color: #666;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+    }
+    .tear-strip strong {
+      font-size: 11px;
+      color: #333;
+    }
+
+    /* Footer */
+    .poster-footer {
+      padding: 12px 40px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+      border-top: 1px solid #eee;
+    }
+
+    /* Print styles */
+    @media print {
+      body { background: #fff; }
+      .poster { box-shadow: none; margin: 0; width: 100%; }
+      .no-print { display: none !important; }
+      @page { margin: 0; size: letter; }
+    }
+
+    /* Controls bar */
+    .controls {
+      text-align: center;
+      padding: 20px;
+      background: #333;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .controls button {
+      background: #fff;
+      color: #333;
+      border: none;
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0 6px;
+    }
+    .controls button:hover { background: #eee; }
+  </style>
+</head>
+<body>
+  <div class="controls no-print">
+    <button onclick="window.print()">Print Poster</button>
+    <button onclick="window.close()">Close</button>
+  </div>
+
+  <div class="poster" id="poster"></div>
+
+<script>
+  // Read report data from sessionStorage (set by admin panel)
+  const data = JSON.parse(sessionStorage.getItem('wcahs_poster_data') || '{}');
+  if (!data.type) { document.getElementById('poster').innerHTML = '<p style="padding:40px;text-align:center;color:#999;">No report data found. Generate a poster from the admin panel.</p>'; }
+  else { renderPoster(data); }
+
+  function renderPoster(r) {
+    const isLost = r.type === 'lost';
+    const typeClass = isLost ? 'lost' : 'found';
+    const headline = isLost ? 'MISSING' : 'FOUND';
+    const subtitle = isLost
+      ? (r.species || 'Pet') + ' needs your help getting home'
+      : (r.species || 'Pet') + ' found — is this yours?';
+
+    const phone = fmtPhone(r.reporter_phone) || r.org_phone || '(507) 201-7287';
+    const contactName = r.reporter_name || 'WCAHS';
+
+    let detailsHtml = '';
+    if (r.species) detailsHtml += detail('Species', r.species);
+    if (r.breed) detailsHtml += detail('Breed', r.breed);
+    if (r.color) detailsHtml += detail('Color', r.color);
+    if (r.gender) detailsHtml += detail('Gender', r.gender);
+    if (r.collar_details) detailsHtml += detail('Collar', r.collar_details);
+    if (r.temperament) detailsHtml += detail('Temperament', r.temperament);
+
+    const locationText = r.location_details
+      ? (isLost ? 'Last seen: ' : 'Found at: ') + r.location_details
+      : '';
+
+    const tearText = (r.pet_name || r.species || 'Pet') + ' — ' + phone;
+
+    document.getElementById('poster').innerHTML = `
+      <div class="header ${typeClass}">
+        <h1>${headline}</h1>
+        <div class="subtitle">${subtitle}</div>
+      </div>
+
+      <div class="photo-area">
+        ${r.photo_url
+          ? `<img src="${r.photo_url}" alt="${r.pet_name || 'Pet'}">`
+          : '<div class="no-photo">No Photo Available</div>'}
+      </div>
+
+      ${r.pet_name ? `<div class="pet-name">${esc(r.pet_name)}${isLost ? '<span class="responds-to">Responds to "' + esc(r.pet_name) + '"</span>' : ''}</div>` : ''}
+
+      ${detailsHtml ? `<div class="details"><div class="details-grid">${detailsHtml}</div></div>` : ''}
+
+      ${r.description ? `<div class="description"><strong>Description</strong>${esc(r.description)}</div>` : ''}
+
+      ${locationText ? `<div class="location-banner ${typeClass}">${esc(locationText)}</div>` : ''}
+
+      <div class="contact">
+        <div class="phone">${esc(phone)}</div>
+        <div class="org">Contact: ${esc(contactName)} &bull; Waseca County Animal Humane Society</div>
+        <div class="org">facebook.com/WasecaCAHS</div>
+      </div>
+
+      <div class="tear-strips">
+        ${Array(7).fill(`<div class="tear-strip"><strong>${esc(tearText)}</strong></div>`).join('')}
+      </div>
+
+      <div class="poster-footer">
+        Generated by Waseca County Animal Humane Society &bull; wcahs.org
+      </div>
+    `;
+  }
+
+  function detail(label, value) {
+    return `<div class="detail-item"><div class="label">${label}</div><div class="value">${esc(value)}</div></div>`;
+  }
+
+  function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function fmtPhone(p) { if(!p)return''; const d=p.replace(/\D/g,''); if(d.length===10)return'('+d.substring(0,3)+') '+d.substring(3,6)+'-'+d.substring(6); if(d.length===11&&d[0]==='1')return'('+d.substring(1,4)+') '+d.substring(4,7)+'-'+d.substring(7); return p; }
+</script>
+</body>
+</html>

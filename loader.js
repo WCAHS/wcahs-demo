@@ -97,21 +97,19 @@
       setTimeout(function() { loader.remove(); }, 500);
     }, 800);
 
-    // Under construction popup — shows once per session
+    // Under construction popup — controlled via admin settings
     if (!sessionStorage.getItem('wcahs_banner_dismissed')) {
-      var banner = document.createElement('div');
-      banner.id = 'constructionBanner';
-      banner.innerHTML = `
-        <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;">
-          <div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:440px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative;">
-            <div style="font-size:40px; margin-bottom:12px;">🐾</div>
-            <h2 style="font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:#3b4434; margin-bottom:8px;">Pardon Our Muddy Paws!</h2>
-            <p style="color:#666; font-size:0.95rem; line-height:1.6; margin-bottom:24px;">We're still housebreaking this new website. You might spot a few accidents here and there &mdash; bear with us while we get everything cleaned up!</p>
-            <button onclick="document.getElementById('constructionBanner').remove(); sessionStorage.setItem('wcahs_banner_dismissed','1');" style="background:#5c6b4e; color:#fff; border:none; padding:12px 32px; border-radius:50px; font-family:'Nunito',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer;">Got it, let me sniff around!</button>
-          </div>
-        </div>
-      `;
-      setTimeout(function() { document.body.appendChild(banner); }, 1200);
+      fetch('/api/settings').then(function(r){return r.json();}).then(function(s) {
+        if (s.under_construction !== 'true') return;
+        var pages = s.under_construction_pages || 'all';
+        var currentPage = location.pathname.replace(/.*\//, '').replace('.html', '') || 'home';
+        if (currentPage === 'index') currentPage = 'home';
+        if (pages !== 'all' && pages.split(',').indexOf(currentPage) === -1) return;
+        var banner = document.createElement('div');
+        banner.id = 'constructionBanner';
+        banner.innerHTML = '<div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;"><div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:440px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative;"><div style="font-size:40px; margin-bottom:12px;">\uD83D\uDC3E</div><h2 style="font-family:Playfair Display,serif; font-size:1.5rem; font-weight:700; color:#3b4434; margin-bottom:8px;">Pardon Our Muddy Paws!</h2><p style="color:#666; font-size:0.95rem; line-height:1.6; margin-bottom:24px;">We\'re still housebreaking this new website. You might spot a few accidents here and there \u2014 bear with us while we get everything cleaned up!</p><button onclick="document.getElementById(\'constructionBanner\').remove(); sessionStorage.setItem(\'wcahs_banner_dismissed\',\'1\');" style="background:#5c6b4e; color:#fff; border:none; padding:12px 32px; border-radius:50px; font-family:Nunito,sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer;">Got it, let me sniff around!</button></div></div>';
+        document.body.appendChild(banner);
+      }).catch(function(){});
     }
   });
 

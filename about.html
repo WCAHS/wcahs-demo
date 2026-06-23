@@ -61,6 +61,7 @@
         <a href="pets.html" class="text-gray-600 hover:text-sage-700 transition">Adopt</a>
         <a href="events.html" class="text-gray-600 hover:text-sage-700 transition">Events</a>
         <a href="lost-found.html" class="text-gray-600 hover:text-sage-700 transition">Lost & Found</a>
+        <a href="about.html" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">About</a>
         <a href="contact.html" class="text-gray-600 hover:text-sage-700 transition">Contact</a>
         <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donate</a>
       </div>
@@ -78,6 +79,11 @@
     </div>
   </nav>
 
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
   <!-- Header -->
   <section class="bg-sage-700 py-16 relative overflow-hidden">
     <img src="images/cats/cat_06.png" alt="" style="position:absolute; bottom:-5px; right:50px; height:115px; opacity:0.08; filter:invert(1);">
@@ -94,18 +100,18 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
       <div>
         <div class="rounded-2xl overflow-hidden shadow-lg">
-          <img src="images/photos/IMG_1606.JPEG" alt="WCAHS foster puppy at home" class="w-full h-80 object-cover" style="object-position: center 30%;">
+          <img src="images/photos/IMG_1606.JPEG" alt="WCAHS foster puppy at home" class="w-full aspect-[4/3] md:h-80 md:aspect-auto object-cover" style="object-position: center 30%;">
         </div>
       </div>
       <div>
         <h2 class="font-display text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
-        <p class="text-gray-600 leading-relaxed mb-4">
+        <p id="mission1" class="text-gray-600 leading-relaxed mb-4">
           The Waseca County Animal Humane Society is a <strong>No-Kill 501(c)(3) nonprofit</strong> composed of individuals from our community and beyond, who have come together to be the voice for those who cannot speak for themselves.
         </p>
-        <p class="text-gray-600 leading-relaxed mb-4">
+        <p id="mission2" class="text-gray-600 leading-relaxed mb-4">
           We independently serve southern Minnesota through community funding &mdash; we do not receive county support. Every dollar comes from people like you who believe every animal deserves a chance.
         </p>
-        <p class="text-gray-600 leading-relaxed">
+        <p id="mission3" class="text-gray-600 leading-relaxed">
           Rather than maintaining a traditional shelter, <strong>all our animals live in foster homes</strong> where they receive personalized attention, socialization, and love while they wait for their forever families.
         </p>
       </div>
@@ -125,21 +131,21 @@
             <svg class="w-7 h-7 text-sage-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
           </div>
           <h3 class="font-bold text-lg mb-2">Home Environment</h3>
-          <p class="text-gray-500 text-sm leading-relaxed">Animals recover and thrive in a real home, not a kennel. Foster families provide the individual attention each animal needs.</p>
+          <p id="fosterHome" class="text-gray-500 text-sm leading-relaxed">Animals recover and thrive in a real home, not a kennel. Foster families provide the individual attention each animal needs.</p>
         </div>
         <div class="bg-amber-50 rounded-2xl p-8">
           <div class="w-14 h-14 bg-amber-200 rounded-xl flex items-center justify-center mb-5">
             <svg class="w-7 h-7 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <h3 class="font-bold text-lg mb-2">Better Matches</h3>
-          <p class="text-gray-500 text-sm leading-relaxed">Foster families know each animal's personality, quirks, and needs &mdash; so we can match you with the perfect companion.</p>
+          <p id="fosterMatches" class="text-gray-500 text-sm leading-relaxed">Foster families know each animal's personality, quirks, and needs &mdash; so we can match you with the perfect companion.</p>
         </div>
         <div class="bg-sage-50 rounded-2xl p-8">
           <div class="w-14 h-14 bg-sage-200 rounded-xl flex items-center justify-center mb-5">
             <svg class="w-7 h-7 text-sage-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <h3 class="font-bold text-lg mb-2">Lower Costs</h3>
-          <p class="text-gray-500 text-sm leading-relaxed">Without building overhead, more of every donated dollar goes directly to veterinary care, food, and supplies for the animals.</p>
+          <p id="fosterCosts" class="text-gray-500 text-sm leading-relaxed">Without building overhead, more of every donated dollar goes directly to veterinary care, food, and supplies for the animals.</p>
         </div>
       </div>
     </div>
@@ -193,7 +199,7 @@
           <h3 class="font-bold text-lg text-sage-800 mb-1">Fostering FAQ</h3>
           <p class="text-gray-500 text-sm">Everything you need to know about becoming a foster family.</p>
         </a>
-        <a href="#" class="block bg-sage-50 hover:bg-sage-100 rounded-xl p-6 transition">
+        <a href="lost-found.html#report" class="block bg-sage-50 hover:bg-sage-100 rounded-xl p-6 transition">
           <h3 class="font-bold text-lg text-sage-800 mb-1">I Found a Stray</h3>
           <p class="text-gray-500 text-sm">Steps to take if you've found a stray animal in Waseca County.</p>
         </a>
@@ -207,7 +213,7 @@
         </a>
       </div>
       <div class="rounded-2xl overflow-hidden shadow-lg mt-10">
-        <img src="images/photos/IMG_1594.JPEG" alt="WCAHS cat on cat tree" class="w-full h-64 md:h-96 object-cover">
+        <img src="images/photos/IMG_1594.JPEG" alt="WCAHS cat on cat tree" class="w-full aspect-[16/9] md:h-96 md:aspect-auto object-cover">
       </div>
     </div>
   </section>
@@ -232,9 +238,9 @@
       <div>
         <h4 class="font-bold text-white mb-4">Contact</h4>
         <ul class="space-y-2 text-sm">
-          <li>Waseca, MN 56093</li>
-          <li><a href="tel:5072017287" class="hover:text-white transition">(507) 201-7287</a></li>
-          <li><a href="https://facebook.com/WasecaCAHS/" class="hover:text-white transition">Facebook</a></li>
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
         </ul>
       </div>
     </div>
@@ -244,6 +250,18 @@
     </div>
   </footer>
 
+<script>
+  // Load editable about page content from settings
+  fetch('/api/settings').then(r=>r.json()).then(function(s) {
+    if (s.mission_text) document.getElementById('mission1').innerHTML = s.mission_text;
+    if (s.mission_text_2) document.getElementById('mission2').innerHTML = s.mission_text_2;
+    if (s.mission_text_3) document.getElementById('mission3').innerHTML = s.mission_text_3;
+    if (s.why_foster_home) document.getElementById('fosterHome').textContent = s.why_foster_home;
+    if (s.why_foster_matches) document.getElementById('fosterMatches').textContent = s.why_foster_matches;
+    if (s.why_foster_costs) document.getElementById('fosterCosts').textContent = s.why_foster_costs;
+  }).catch(function(){});
+</script>
+<script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>
 </html>
