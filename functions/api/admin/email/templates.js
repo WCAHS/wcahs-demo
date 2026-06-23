@@ -14,34 +14,18 @@ async function resendFetch(env, path, opts = {}) {
   return res.json();
 }
 
-// GET — list all templates (with full details) or single template (?id=xxx)
+// GET — list templates or get single template (?id=xxx)
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const templateId = url.searchParams.get('id');
 
   try {
-    if (templateId) {
-      // Fetch single template with full HTML
-      const data = await resendFetch(context.env, `/templates/${templateId}`);
-      if (data.statusCode && data.statusCode >= 400) {
-        return error(data.message || 'Failed to fetch template', data.statusCode);
-      }
-      return json(data);
+    const path = templateId ? `/templates/${templateId}` : '/templates';
+    const data = await resendFetch(context.env, path);
+    if (data.statusCode && data.statusCode >= 400) {
+      return error(data.message || 'Failed to fetch templates', data.statusCode);
     }
-
-    // Fetch list, then fetch each one for full details
-    const list = await resendFetch(context.env, '/templates');
-    if (list.statusCode && list.statusCode >= 400) {
-      return error(list.message || 'Failed to fetch templates', list.statusCode);
-    }
-
-    const templates = list.data || [];
-    // Fetch full details for each (subject + html)
-    const detailed = await Promise.all(
-      templates.map(t => resendFetch(context.env, `/templates/${t.id}`))
-    );
-
-    return json({ ...list, data: detailed });
+    return json(data);
   } catch (e) {
     return error('Failed to fetch templates: ' + e.message, 500);
   }
