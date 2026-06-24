@@ -262,10 +262,24 @@ function showDashboard(user) {
     if (user.role !== 'admin') {
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
     }
-    const validPages = ['submissions','pets','events','faq','settings','about','users','my-account','analytics'];
+    // Foster role: hide all nav, show only My Pets + My Account
+    if (user.role === 'foster') {
+      document.querySelectorAll('#sidebar nav > *').forEach(el => el.style.display = 'none');
+      // Insert foster-only nav items
+      const nav = document.querySelector('#sidebar nav');
+      const fosterNav = document.createElement('div');
+      fosterNav.id = 'fosterNavItems';
+      fosterNav.innerHTML = `
+        <a onclick="navigate('foster-pets')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="foster-pets">My Pets</a>
+        <a onclick="navigate('my-account')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="my-account">My Account</a>
+      `;
+      nav.prepend(fosterNav);
+    }
+    const validPages = ['submissions','pets','events','faq','settings','about','users','my-account','analytics','foster-pets'];
     const savedPage = sessionStorage.getItem('wcahs_admin_page');
-    navigate(validPages.includes(savedPage) ? savedPage : 'submissions');
-    loadBadgeCounts();
+    const defaultPage = user.role === 'foster' ? 'foster-pets' : 'submissions';
+    navigate(validPages.includes(savedPage) ? savedPage : defaultPage);
+    if (user.role !== 'foster') loadBadgeCounts();
   } catch(e) {
     console.error('Dashboard error:', e);
     document.getElementById('content').innerHTML = '<p class="text-red-500">Error loading dashboard: ' + e.message + '</p>';
@@ -319,6 +333,7 @@ function navigate(page) {
     case 'users': renderUsers(content); break;
     case 'my-account': renderMyAccount(content); break;
     case 'analytics': renderAnalytics(content); break;
+    case 'foster-pets': renderFosterPets(content); break;
     default: sessionStorage.removeItem('wcahs_admin_page'); renderSubmissions(content); break;
   }
 }
@@ -1649,6 +1664,9 @@ function petCard(pet, showActions) {
     if (pet.is_manual) {
       actions += `<button onclick="if(confirm('Delete this pet?')) deleteManualPet('${h(pet.id)}')" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>`;
     }
+    if (currentRole === 'admin') {
+      actions += `<button onclick="showAssignFoster('${h(pet.id)}','${h(pet.name)}')" class="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition font-semibold ml-auto">Assign Foster</button>`;
+    }
     actions += '</div>';
   }
 
@@ -2015,6 +2033,223 @@ window.deleteManualPet = async function(id) {
 
 // Sync status is now shown as a header indicator in renderPets()
 
+// ── Foster Assignment (Admin) ──
+window.showAssignFoster = async function(animalId, petName) {
+  // Fetch foster users
+  const users = await api('/admin/users');
+  if (users.error) { alert(users.error); return; }
+  const fosters = (Array.isArray(users) ? users : []).filter(u => u.role === 'foster');
+
+  // Fetch existing assignments for this pet
+  const assignments = await api('/admin/pets/assign');
+  const assigned = (Array.isArray(assignments) ? assignments : []).filter(a => a.animal_id === animalId);
+  const assignedUserIds = assigned.map(a => a.user_id);
+
+  // Build a modal overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'assignFosterOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  let bodyHtml = '';
+  if (fosters.length === 0) {
+    bodyHtml = '<p class="text-gray-500 text-sm py-4">No foster users yet. Create a user with the "foster" role first.</p>';
+  } else {
+    bodyHtml = '<div class="space-y-2 max-h-64 overflow-y-auto">';
+    fosters.forEach(f => {
+      const isAssigned = assignedUserIds.includes(f.id);
+      bodyHtml += `<div class="flex items-center justify-between p-3 rounded-xl border ${isAssigned ? 'border-amber-300 bg-amber-50' : 'border-sage-200 bg-white'}">
+        <div>
+          <span class="font-bold text-sm text-gray-900">${h(f.username)}</span>
+          ${isAssigned ? '<span class="text-xs text-amber-600 ml-2 font-semibold">Assigned</span>' : ''}
+        </div>
+        ${isAssigned
+          ? '<button onclick="unassignFoster(\'' + h(animalId) + '\',' + f.id + ',\'' + h(petName) + '\')" class="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition font-semibold">Remove</button>'
+          : '<button onclick="assignFoster(\'' + h(animalId) + '\',' + f.id + ',\'' + h(petName) + '\')" class="text-xs bg-sage-700 text-white px-3 py-1.5 rounded-lg hover:bg-sage-800 transition font-semibold">Assign</button>'
+        }
+      </div>`;
+    });
+    bodyHtml += '</div>';
+  }
+
+  overlay.innerHTML = `<div class="bg-white rounded-2xl shadow-lg border border-sage-100 w-full max-w-sm overflow-hidden">
+    <div class="p-5 border-b border-sage-100">
+      <h3 class="font-display font-bold text-lg text-sage-800">Assign Foster</h3>
+      <p class="text-sm text-gray-500 mt-0.5">${h(petName)}</p>
+    </div>
+    <div class="p-5">${bodyHtml}</div>
+    <div class="p-4 border-t border-sage-100 text-right">
+      <button onclick="document.getElementById('assignFosterOverlay').remove()" class="text-sm text-gray-500 hover:text-gray-700 font-semibold px-4 py-2">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+};
+
+window.assignFoster = async function(animalId, userId, petName) {
+  const res = await api('/admin/pets/assign', { method: 'POST', body: { animal_id: animalId, user_id: userId } });
+  if (res.error) { alert(res.error); return; }
+  // Refresh the modal
+  document.getElementById('assignFosterOverlay').remove();
+  showAssignFoster(animalId, petName);
+};
+
+window.unassignFoster = async function(animalId, userId, petName) {
+  const res = await api('/admin/pets/assign', { method: 'DELETE', body: { animal_id: animalId, user_id: userId } });
+  if (res.error) { alert(res.error); return; }
+  document.getElementById('assignFosterOverlay').remove();
+  showAssignFoster(animalId, petName);
+};
+
+// ── Foster Dashboard (My Pets) ──
+async function renderFosterPets(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">My Pets</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/foster-pets');
+  if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">My Pets</h1><p class="text-red-500">' + h(data.error) + '</p>'; return; }
+
+  const pets = data.pets || [];
+
+  if (pets.length === 0) {
+    el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">My Pets</h1>
+    <div class="card p-10 text-center max-w-lg mx-auto">
+      <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19c-4.3 0-7.5-3.2-7.5-7S7.7 5 12 5s7.5 3.2 7.5 7-3.2 7-7.5 7zm-2-9a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2zm-5 3s1.5 2 3 2 3-2 3-2"/>
+      </svg>
+      <p class="font-semibold text-gray-600 text-lg">No pets assigned to you yet</p>
+      <p class="text-gray-400 text-sm mt-2">Your admin will assign pets to you when you start fostering.</p>
+    </div>`;
+    return;
+  }
+
+  let html = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-1">My Pets</h1>
+  <p class="text-sm text-gray-500 mb-6">You have <strong>${pets.length}</strong> pet${pets.length !== 1 ? 's' : ''} assigned to you</p>`;
+
+  pets.forEach((pet, idx) => {
+    const photoHtml = pet.cover_photo
+      ? `<img src="${h(pet.cover_photo)}" class="w-full h-52 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
+      : `<div class="w-full h-40 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-12 h-12 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
+
+    const statusColor = pet.status === 'Available' ? 'bg-sage-100 text-sage-700' : 'bg-amber-50 text-amber-700';
+    const updates = pet.updates || [];
+
+    let timelineHtml = '';
+    if (updates.length > 0) {
+      timelineHtml = '<div class="space-y-3 mt-3">';
+      updates.forEach(u => {
+        const typeIcon = u.update_type === 'testimonial'
+          ? '<span class="text-amber-500 text-xs font-bold uppercase tracking-wide">Testimonial</span>'
+          : u.update_type === 'photo'
+          ? '<span class="text-blue-500 text-xs font-bold uppercase tracking-wide">Photo</span>'
+          : '<span class="text-sage-600 text-xs font-bold uppercase tracking-wide">Note</span>';
+
+        const photoBlock = u.photo_url
+          ? `<img src="${h(u.photo_url)}" class="w-full max-w-xs rounded-xl mt-2 border border-sage-100" onerror="this.style.display='none'">`
+          : '';
+
+        const bgColor = u.update_type === 'testimonial' ? 'bg-amber-50 border-amber-200' : 'bg-white border-sage-100';
+
+        timelineHtml += `<div class="p-3 rounded-xl border ${bgColor}">
+          <div class="flex items-center justify-between mb-1">
+            ${typeIcon}
+            <span class="text-[11px] text-gray-400">${localTime(u.created_at)}</span>
+          </div>
+          ${u.content ? '<p class="text-sm text-gray-700">' + h(u.content) + '</p>' : ''}
+          ${photoBlock}
+        </div>`;
+      });
+      timelineHtml += '</div>';
+    }
+
+    html += `<div class="card overflow-hidden mb-5">
+      ${photoHtml}
+      <div class="p-5">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <h2 class="font-display font-bold text-xl text-gray-900">${h(pet.name || 'Unknown')}</h2>
+            <p class="text-sm text-gray-500">${h(pet.type || '')}${pet.breed ? ' &bull; ' + h(pet.breed) : ''}</p>
+            <p class="text-xs text-gray-400">${h(pet.age_display || '')}${pet.sex ? ' &bull; ' + h(pet.sex) : ''}</p>
+          </div>
+          <span class="inline-block px-2.5 py-1 rounded-full ${statusColor} font-semibold text-xs">${h(pet.status || 'Available')}</span>
+        </div>
+        ${pet.description ? '<p class="text-sm text-gray-600 mt-2 mb-3">' + h(pet.description) + '</p>' : ''}
+
+        <div class="flex flex-wrap gap-2 mt-4">
+          <button onclick="showFosterNoteForm('${h(pet.animal_id)}','note')" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">Add Note</button>
+          <button onclick="showFosterPhotoUpload('${h(pet.animal_id)}')" class="bg-sage-100 hover:bg-sage-200 text-sage-800 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Add Photo</button>
+          <button onclick="showFosterNoteForm('${h(pet.animal_id)}','testimonial')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Write Testimonial</button>
+        </div>
+        <div id="fosterForm_${idx}"></div>
+
+        ${updates.length > 0 ? `<details class="mt-4" open>
+          <summary class="text-sm font-bold text-gray-700 cursor-pointer hover:text-sage-700">Updates (${updates.length})</summary>
+          ${timelineHtml}
+        </details>` : '<p class="text-xs text-gray-400 mt-4">No updates yet — add a note or photo above.</p>'}
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+window.showFosterNoteForm = function(animalId, updateType) {
+  // Find the form container for this pet
+  const containers = document.querySelectorAll('[id^="fosterForm_"]');
+  containers.forEach(c => c.innerHTML = '');
+
+  // Find the right container by matching animal_id in the buttons near it
+  const btns = document.querySelectorAll(`button[onclick*="'${animalId}'"]`);
+  let formContainer = null;
+  btns.forEach(btn => {
+    const sibling = btn.parentElement.nextElementSibling;
+    if (sibling && sibling.id && sibling.id.startsWith('fosterForm_')) {
+      formContainer = sibling;
+    }
+  });
+  if (!formContainer) return;
+
+  const label = updateType === 'testimonial' ? 'Write your testimonial' : 'Add a note';
+  const btnLabel = updateType === 'testimonial' ? 'Save Testimonial' : 'Save Note';
+  const accentClass = updateType === 'testimonial' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-sage-700 hover:bg-sage-800';
+
+  formContainer.innerHTML = `<div class="card-warm p-4 mt-3 border border-sage-200" style="background:#f6f7f4;">
+    <label class="block text-xs font-semibold text-gray-600 mb-1">${label}</label>
+    <textarea id="fosterNoteText" rows="3" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="${updateType === 'testimonial' ? 'Share your experience fostering this pet...' : 'How is the pet doing today?'}"></textarea>
+    <div class="flex gap-2 mt-2">
+      <button onclick="submitFosterNote('${animalId}','${updateType}')" class="${accentClass} text-white font-semibold text-sm px-4 py-2 rounded-xl transition">${btnLabel}</button>
+      <button onclick="this.closest('[id^=fosterForm_]').innerHTML=''" class="text-gray-500 text-sm px-3 py-2 hover:text-gray-700 transition">Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById('fosterNoteText').focus();
+};
+
+window.submitFosterNote = async function(animalId, updateType) {
+  const content = document.getElementById('fosterNoteText').value.trim();
+  if (!content) { alert('Please write something'); return; }
+  const res = await api('/admin/foster-pets', { method: 'POST', body: { animal_id: animalId, content, update_type: updateType } });
+  if (res.error) { alert(res.error); return; }
+  renderFosterPets(document.getElementById('content'));
+};
+
+window.showFosterPhotoUpload = function(animalId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async function() {
+    if (!input.files[0]) return;
+    const url = await uploadPhotoFile(input);
+    if (!url) { alert('Upload failed'); return; }
+    const caption = prompt('Add a caption (optional):') || '';
+    const res = await api('/admin/foster-pets', { method: 'POST', body: {
+      animal_id: animalId,
+      update_type: 'photo',
+      content: caption,
+      photo_url: url,
+    }});
+    if (res.error) { alert(res.error); return; }
+    renderFosterPets(document.getElementById('content'));
+  };
+  input.click();
+};
+
 // ── My Account ──
 async function renderMyAccount(el) {
   const me = await api('/auth/me');
@@ -2077,7 +2312,7 @@ async function renderUsers(el) {
   html += '<div class="space-y-2">';
   data.forEach(u => {
     const isAdmin = u.role === 'admin';
-    const dotColor = isAdmin ? 'bg-sage-500' : 'bg-blue-500';
+    const dotColor = isAdmin ? 'bg-sage-500' : u.role === 'foster' ? 'bg-amber-500' : 'bg-blue-500';
     html += `<div class="card p-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span>
@@ -2097,7 +2332,8 @@ async function renderUsers(el) {
   html += `<div class="mt-6 card p-5 text-sm text-gray-500">
     <strong class="text-gray-700">Roles</strong><br>
     <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-sage-500"></span> <strong>Admin</strong></span> &mdash; full access to everything<br>
-    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox and Events only
+    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox and Events only<br>
+    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> <strong>Foster</strong></span> &mdash; My Pets only (assigned animals + updates)
   </div>`;
   el.innerHTML = html;
 }
@@ -2111,6 +2347,7 @@ window.showUserForm = function() {
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Role *</label>
         <select id="nuRole" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
           <option value="staff">Staff</option>
+          <option value="foster">Foster</option>
           <option value="admin">Admin</option>
         </select></div>
     </div>

@@ -16,7 +16,7 @@ export async function onRequestPost(context) {
     return error('Username, password, and role required');
   }
   if (body.password.length < 8) return error('Password must be at least 8 characters');
-  if (!['admin', 'staff'].includes(body.role)) return error('Role must be admin or staff');
+  if (!['admin', 'staff', 'foster'].includes(body.role)) return error('Role must be admin, staff, or foster');
 
   const existing = await context.env.DB.prepare('SELECT id FROM users WHERE username = ?').bind(body.username).first();
   if (existing) return error('Username already exists');

@@ -9,6 +9,13 @@ const STAFF_ALLOWED = [
   '/api/admin/change-password',
 ];
 
+// Foster-allowed paths
+const FOSTER_ALLOWED = [
+  '/api/admin/foster-pets',
+  '/api/admin/change-password',
+  '/api/admin/pets/photo',
+];
+
 export async function onRequest(context) {
   const session = await getSession(context.request, context.env.DB);
   if (!session) {
@@ -16,11 +23,20 @@ export async function onRequest(context) {
   }
   context.data.user = session;
 
+  const url = new URL(context.request.url);
+  const path = url.pathname;
+
   // Staff role restrictions
   if (session.role === 'staff') {
-    const url = new URL(context.request.url);
-    const path = url.pathname;
     const allowed = STAFF_ALLOWED.some(p => path.startsWith(p));
+    if (!allowed) {
+      return error('You don\'t have permission to access this', 403);
+    }
+  }
+
+  // Foster role restrictions
+  if (session.role === 'foster') {
+    const allowed = FOSTER_ALLOWED.some(p => path.startsWith(p));
     if (!allowed) {
       return error('You don\'t have permission to access this', 403);
     }
