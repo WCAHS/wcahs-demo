@@ -1591,7 +1591,7 @@ async function renderPets(el) {
     syncHtml = `<div class="flex items-center gap-2 text-xs text-gray-400">
       <span class="w-2 h-2 rounded-full ${dot}"></span>
       <span>${label}</span>
-      <a href="https://github.com/WCAHS/wcahs-demo/actions/workflows/shelterluv-sync.yml" target="_blank" class="text-sage-600 hover:underline ml-1 font-semibold">Sync Now</a>
+      <button onclick="manualSync()" id="syncBtn" class="text-sage-600 hover:underline ml-1 font-semibold">Sync Now</button>
     </div>`;
   } catch(e) {}
 
@@ -1752,14 +1752,15 @@ window.togglePetVisibility = async function(id, hide) {
 
 window.manualSync = async function() {
   const btn = document.getElementById('syncBtn');
-  if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Triggering...'; btn.disabled = true; }
   try {
-    const res = await api('/admin/sync-trigger', { method: 'POST' });
+    const res = await api('/admin/sync-dispatch', { method: 'POST' });
     if (res.error) {
-      if (btn) btn.textContent = 'Failed — try GitHub';
+      if (btn) btn.textContent = 'Failed';
     } else {
-      if (btn) btn.textContent = 'Done! ' + (res.count || 0) + ' pets';
-      setTimeout(() => renderPets(document.getElementById('content')), 1500);
+      if (btn) btn.textContent = 'Triggered!';
+      // GitHub Action takes ~10-15s to run, then refresh
+      setTimeout(() => renderPets(document.getElementById('content')), 15000);
     }
   } catch(e) {
     if (btn) btn.textContent = 'Error';
