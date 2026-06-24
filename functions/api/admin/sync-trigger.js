@@ -16,7 +16,7 @@ export async function onRequestPost(context) {
 
   try {
     // Fetch from ShelterLuv
-    const res = await fetch(`${API_BASE}/animals?status_type=publishable&limit=100`, {
+    const res = await fetch(`${API_BASE}/animals?limit=100`, {
       headers: { 'X-Api-Key': env.SHELTERLUV_API_KEY, 'Accept': 'application/json' },
     });
 

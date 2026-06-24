@@ -24,7 +24,7 @@ jobs:
           # Fetch publishable animals from ShelterLuv
           echo "Fetching from ShelterLuv..."
           RESPONSE=$(curl -sf -H "X-Api-Key: $SHELTERLUV_API_KEY" \
-            "https://www.shelterluv.com/api/v1/animals?status_type=publishable&limit=100")
+            "https://www.shelterluv.com/api/v1/animals?limit=100")
 
           ANIMAL_COUNT=$(echo "$RESPONSE" | jq '.animals | length')
           echo "Found $ANIMAL_COUNT publishable animals"
