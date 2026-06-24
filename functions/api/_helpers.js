@@ -100,6 +100,29 @@ export async function sendAutoReply(env, { to, subject, bodyHtml }) {
   }
 }
 
+const AUDIENCE_ID = '39382335-2d39-4734-9231-6aa080c7cd5b';
+
+export async function addToAudience(env, { email, firstName, lastName }) {
+  if (!env.RESEND_API_KEY || !email) return;
+  try {
+    await fetch(`https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        first_name: firstName || '',
+        last_name: lastName || '',
+        unsubscribed: false,
+      }),
+    });
+  } catch (e) {
+    console.error('Audience add error:', e.message);
+  }
+}
+
 export async function verifyPassword(password, stored) {
   const [saltB64, expectedB64] = stored.split(':');
   const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));

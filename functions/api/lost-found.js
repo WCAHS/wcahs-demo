@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience } from './_helpers.js';
 
 export async function onRequestGet(context) {
   const { results } = await context.env.DB.prepare(
@@ -40,6 +40,16 @@ export async function onRequestPost(context) {
     body.current_location || null, body.collar_status || null
   ).run();
 
+  // Add to newsletter audience if opted in
+  if (body.subscribe && body.reporter_email) {
+    const nameParts = (body.reporter_name || '').split(' ');
+    await addToAudience(env, {
+      email: body.reporter_email,
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
+    });
+  }
+
   const typeLabel = body.type === 'lost' ? 'Lost Pet' : 'Found Pet';
   await sendNotification(env, {
     subject: `New ${typeLabel} Report — ${body.pet_name || body.species}`,
@@ -52,7 +62,7 @@ export async function onRequestPost(context) {
         ${body.location_details ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Location</td><td style="padding:8px 12px">${body.location_details}</td></tr>` : ''}
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Reporter</td><td style="padding:8px 12px">${body.reporter_name}${body.reporter_email ? ' &lt;' + body.reporter_email + '&gt;' : ''}</td></tr>
       </table>
-      <p style="margin-top:20px;font-size:12px;color:#999">Review this report at <a href="https://wcahs.org/admin/">wcahs.org/admin</a></p>`,
+      <p style="margin-top:20px;font-size:12px;color:#999"><a href="https://wcahs.org/admin/#inbox-lf" style="color:#5c6b4e;font-weight:600">Review in Admin &rarr;</a></p>`,
   });
 
   if (body.reporter_email) {

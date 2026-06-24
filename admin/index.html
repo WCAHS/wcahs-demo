@@ -58,9 +58,9 @@
     .inbox-item.type-lost { border-left-color: #ef4444; }
     .inbox-item.type-found { border-left-color: #22c55e; }
     .inbox-item.unread { background: #fffcf8; border-left-width: 4px; }
-    .inbox-item.unread .inbox-name { font-weight: 800; }
-    .inbox-item.read { opacity: 0.75; }
-    .inbox-item.read:hover { opacity: 1; }
+    .inbox-item.unread .inbox-name { font-weight: 800; color: #1f2937; }
+    .inbox-item.read { background: #fff; }
+    .inbox-item.read .inbox-name { font-weight: 600; color: #6b7280; }
 
     /* Status dots */
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -160,14 +160,14 @@
         <!-- <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a> -->
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
-        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
-        <div class="border-t border-sage-800 my-2 admin-only"></div>
-        <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mb-1 admin-only">Quick Links</p>
-        <a href="https://mail.zoho.com" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white admin-only">
+        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer staff-visible" data-nav="analytics">Analytics</a>
+        <div class="border-t border-sage-800 my-2 staff-visible"></div>
+        <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mb-1 staff-visible">Quick Links</p>
+        <a href="https://mail.zoho.com/signin" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white staff-visible">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           Zoho Mail
         </a>
-        <a href="https://resend.com/overview" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white admin-only">
+        <a href="https://resend.com/overview" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white staff-visible">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
           Resend
         </a>
@@ -267,6 +267,9 @@ function showDashboard(user) {
     if (user.role !== 'admin') {
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
     }
+    if (user.role !== 'admin' && user.role !== 'staff') {
+      document.querySelectorAll('.staff-visible').forEach(el => el.style.display = 'none');
+    }
     // Foster role: hide all nav, show only My Pets + My Account
     if (user.role === 'foster') {
       document.querySelectorAll('#sidebar nav > *').forEach(el => el.style.display = 'none');
@@ -285,6 +288,7 @@ function showDashboard(user) {
     const defaultPage = user.role === 'foster' ? 'foster-pets' : 'submissions';
     navigate(validPages.includes(savedPage) ? savedPage : defaultPage);
     if (user.role !== 'foster') loadBadgeCounts();
+    setTimeout(handleDeepLink, 100);
   } catch(e) {
     console.error('Dashboard error:', e);
     document.getElementById('content').innerHTML = '<p class="text-red-500">Error loading dashboard: ' + e.message + '</p>';
@@ -500,63 +504,66 @@ async function renderSubmissions(el) {
       <p class="text-gray-300 text-sm mt-1">New submissions and reports will appear here</p>
     </div>`;
   } else {
-    html += '<div id="inboxList" class="space-y-2">';
+    html += '<div id="inboxList" class="space-y-1">';
     allItems.forEach(item => {
       const unread = !item.is_read;
       const readClass = unread ? 'unread' : 'read';
 
-      // Avatar colors by type
-      const avatarColors = { contact: 'bg-blue-50 text-blue-600', foster: 'bg-sage-100 text-sage-700', lost: 'bg-red-50 text-red-600', found: 'bg-green-50 text-green-700' };
-      const avatarClass = avatarColors[item.itemType] || 'bg-gray-100 text-gray-600';
+      // Type labels and colors
+      const typeLabels = { contact: 'Contact', foster: 'Foster App', lost: 'Lost Pet', found: 'Found Pet' };
+      const typePillColors = { contact: 'bg-blue-100 text-blue-700', foster: 'bg-sage-100 text-sage-700', lost: 'bg-red-100 text-red-700', found: 'bg-green-100 text-green-700' };
+      const typeLabel = typeLabels[item.itemType] || item.itemType;
+      const typePillClass = typePillColors[item.itemType] || 'bg-gray-100 text-gray-600';
 
-      // Thumbnail for L&F
+      // Thumbnail for L&F with photos
       let thumbHtml = '';
       if (item.kind === 'lf' && item.photo_url) {
         let photos = [];
         try { photos = JSON.parse(item.photo_url); } catch(e) { photos = [item.photo_url]; }
         if (photos[0]) {
-          thumbHtml = `<img src="${photos[0]}" class="w-10 h-10 rounded-xl object-cover shrink-0">`;
+          thumbHtml = `<img src="${photos[0]}" class="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100">`;
         }
       }
       if (!thumbHtml) {
-        const initial = item.name ? item.name.charAt(0).toUpperCase() : '?';
-        thumbHtml = `<div class="w-10 h-10 rounded-xl ${avatarClass} flex items-center justify-center shrink-0"><span class="text-sm font-bold">${h(initial)}</span></div>`;
+        // Two-letter initials with type-colored border
+        const borderColors = { contact: 'border-blue-200', foster: 'border-sage-200', lost: 'border-red-200', found: 'border-green-200' };
+        const nameParts = (item.name || '?').split(' ');
+        const initials = nameParts.length > 1 ? nameParts[0].charAt(0) + nameParts[nameParts.length-1].charAt(0) : nameParts[0].charAt(0);
+        thumbHtml = `<div class="w-10 h-10 rounded-lg bg-gray-50 border-2 ${borderColors[item.itemType] || 'border-gray-200'} flex items-center justify-center shrink-0"><span class="text-xs font-bold text-gray-500">${h(initials.toUpperCase())}</span></div>`;
       }
 
-      // Title line
-      let titleExtra = '';
-      if (item.kind === 'lf') {
-        const petLabel = item.petName || ('Unknown ' + (item.species || 'Pet'));
-        titleExtra = ` &mdash; <span class="text-gray-500 font-normal">${h(petLabel)}</span>`;
-      }
-
-      // Subtitle
-      let subtitle = '';
+      // Preview snippet
+      let snippet = '';
       if (item.kind === 'submission') {
-        subtitle = h(item.email);
-        if (item.subject && item.subject !== 'General Inquiry') subtitle += ' &bull; ' + h(item.subject);
+        snippet = item.message ? item.message.substring(0, 80) : (item.subject || '');
+        if (item.message && item.message.length > 80) snippet += '...';
       } else {
-        subtitle = h(item.species || '');
-        if (item.breed) subtitle += ' &bull; ' + h(item.breed);
-        if (item.location_details) subtitle += ' &bull; ' + h(item.location_details);
+        const petLabel = item.petName || ('Unknown ' + (item.species || 'Pet'));
+        const parts = [petLabel];
+        if (item.breed) parts.push(item.breed);
+        if (item.location_details) parts.push(item.location_details);
+        snippet = parts.join(' \u2022 ');
       }
-      subtitle += ' &bull; ' + timeAgo(item.created_at);
 
       const clickId = item.kind === 'submission' ? 'sub-' + item.id : 'lf-' + item.id;
       const arrowId = item.kind === 'submission' ? 'sub-arrow-' + item.id : 'lf-arrow-' + item.id;
-      const markReadCall = (item.kind === 'submission' && unread) ? `markRead(${item.id}, true);` : '';
+      // Auto-mark read on click for both submissions and L&F
+      let markReadCall = '';
+      if (item.kind === 'submission' && unread) markReadCall = `markRead(${item.id}, true);`;
+      else if (item.kind === 'lf' && item.status === 'pending') markReadCall = `updateReport(${item.id},'pending');`;
 
       html += `<div class="inbox-item card type-${item.itemType} ${readClass} overflow-hidden" data-type="${item.itemType}">
-        <div class="flex items-center gap-3 p-4 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('${clickId}', '${arrowId}'); ${markReadCall}">
+        <div class="flex items-center gap-3 p-3.5 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('${clickId}', '${arrowId}'); ${markReadCall}">
           ${thumbHtml}
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="status-dot ${item.status}" title="${item.status}"></span>
-              <span class="inbox-name text-gray-900 text-sm">${h(item.name)}${titleExtra}</span>
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="inbox-name text-gray-900 text-sm ${unread ? '' : 'font-normal'}">${h(item.name)}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${typePillClass} font-bold shrink-0">${typeLabel}</span>
+              <span class="text-[11px] text-gray-300 ml-auto shrink-0">${timeAgo(item.created_at)}</span>
             </div>
-            <p class="text-xs text-gray-400 mt-0.5 truncate">${subtitle}</p>
+            <p class="text-xs text-gray-400 truncate">${h(snippet)}</p>
           </div>
-          <svg class="w-5 h-5 text-gray-300 shrink-0 transition-transform" id="${arrowId}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <svg class="w-4 h-4 text-gray-300 shrink-0 transition-transform ml-1" id="${arrowId}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
         <div id="${clickId}" class="hidden border-t border-sage-100">`;
 
@@ -612,6 +619,7 @@ function renderSubExpanded(item) {
 function subActionBar(item, statusLabels, st) {
   const unread = !item.is_read;
   return `<div class="flex items-center gap-3 flex-wrap pt-3 border-t border-sage-100">
+    ${item.email ? `<a href="mailto:${h(item.email)}?subject=Re: ${encodeURIComponent(item.subject || 'Your inquiry')}" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-7 9 7v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"/></svg>Reply</a>` : ''}
     <select onchange="updateSubStatus(${item.id}, this.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-sage-400">
       ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
     </select>
@@ -1253,26 +1261,20 @@ async function renderSettings(el) {
 
   let settingsHtml = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Site Settings</h1>
 
-  <div class="card p-6 mb-5">
-    <h2 class="font-bold text-gray-900 mb-4">Contact Information</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label><input id="setPhone" value="${h(data.phone||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Email</label><input id="setEmail" value="${h(data.email||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
-    </div>
-  </div>
 
   <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Integrations</h2>
     <div class="grid grid-cols-1 gap-4 mb-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Zeffy Donation Form URL</label><input id="setZeffy" value="${h(data.zeffy_url||'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://www.zeffy.com/embed/donation-form/...">
         <p class="text-xs text-gray-400 mt-1">Used for donate buttons and sponsor links across the site</p></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Amazon Wish List URL <span class="font-normal text-gray-400">(optional)</span></label><input id="setWishlist" value="${h(data.wishlist_url||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://www.amazon.com/hz/wishlist/ls/...">
+        <p class="text-xs text-gray-400 mt-1">Shows on the donate page when set. Leave blank to hide.</p></div>
     </div>
   </div>
 
   <div class="card p-6 mb-5">
-    <h2 class="font-bold text-gray-900 mb-4">Social & Partners</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Facebook URL</label><input id="setFb" value="${h(data.facebook_url||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+    <h2 class="font-bold text-gray-900 mb-4">Partners</h2>
+    <div class="grid grid-cols-1 gap-4">
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-1">Partners</label>
         <div id="partnersList" class="space-y-2 mb-2"></div>
@@ -1287,19 +1289,25 @@ async function renderSettings(el) {
   <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Site Announcement Banner</h2>
     <div class="flex items-center gap-4 mb-3">
-      <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled===true||data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
+      <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled===true||data.announcement_enabled==='true'?'checked':''} onchange="updateAnnPreview()"> Enable announcement</label>
     </div>
     <div class="mb-3">
       <label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label>
-      <input id="setAnnText" value="${h(data.announcement_text||'')}" maxlength="120" oninput="updateAnnCharCount()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. We're closed Dec 24-26 for the holidays">
+      <input id="setAnnText" value="${h(data.announcement_text||'')}" maxlength="120" oninput="updateAnnCharCount();updateAnnPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. We're closed Dec 24-26 for the holidays">
       <p class="text-xs text-gray-400 mt-1"><span id="annCharCount">${annTextLen}</span>/120 characters</p>
     </div>
-    <div>
+    <div class="mb-4">
       <label class="block text-xs font-semibold text-gray-600 mb-1">Banner Color</label>
-      <select id="setAnnColor" class="w-full md:w-auto border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+      <select id="setAnnColor" class="w-full md:w-auto border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" onchange="updateAnnColorPreview();updateAnnPreview()">
         ${colorOptions.map(c => '<option value="' + c.value + '"' + (annColor === c.value ? ' selected' : '') + '>' + c.label + '</option>').join('')}
       </select>
       <div id="annColorPreview" class="inline-block w-5 h-5 rounded-md ml-2 align-middle" style="background:${(colorOptions.find(c=>c.value===annColor)||colorOptions[0]).bg}"></div>
+    </div>
+    <div id="annPreview" class="rounded-xl overflow-hidden ${data.announcement_enabled===true||data.announcement_enabled==='true'?'':'hidden'}">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">Preview</p>
+      <div id="annPreviewBanner" class="text-white text-center py-3 px-4 text-sm font-semibold rounded-lg" style="background:${(colorOptions.find(c=>c.value===annColor)||colorOptions[0]).bg}">
+        ${h(data.announcement_text||'Your announcement text here...')}
+      </div>
     </div>
   </div>`;
 
@@ -1322,8 +1330,6 @@ async function renderSettings(el) {
   const partnerArr = Array.isArray(data.partners) ? data.partners : (data.partners ? data.partners.split(',').map(s=>s.trim()).filter(Boolean) : []);
   setTimeout(() => {
     renderPartnersList(partnerArr);
-    const sel = document.getElementById('setAnnColor');
-    if (sel) sel.addEventListener('change', window.updateAnnColorPreview);
   }, 0);
 }
 
@@ -1369,14 +1375,29 @@ window.updateAnnColorPreview = function() {
   if (select && preview) preview.style.background = colors[select.value] || colors.sage;
 };
 
+window.updateAnnPreview = function() {
+  const enabled = document.getElementById('setAnnEnabled');
+  const text = document.getElementById('setAnnText');
+  const color = document.getElementById('setAnnColor');
+  const wrap = document.getElementById('annPreview');
+  const banner = document.getElementById('annPreviewBanner');
+  if (!wrap || !banner) return;
+  const colors = { sage: '#48543e', amber: '#d97706', red: '#dc2626', blue: '#2563eb', dark: '#1f2937' };
+  if (enabled && enabled.checked) {
+    wrap.classList.remove('hidden');
+    banner.style.background = colors[color.value] || colors.sage;
+    banner.textContent = text.value || 'Your announcement text here...';
+  } else {
+    wrap.classList.add('hidden');
+  }
+};
+
 
 window.saveSettings = async function() {
   try {
   const body = {
-    phone: document.getElementById('setPhone').value,
-    email: document.getElementById('setEmail').value,
     zeffy_url: document.getElementById('setZeffy').value,
-    facebook_url: document.getElementById('setFb').value,
+    wishlist_url: document.getElementById('setWishlist').value,
     partners: _partners,
     announcement_enabled: document.getElementById('setAnnEnabled').checked ? 'true' : 'false',
     announcement_text: document.getElementById('setAnnText').value,
@@ -1662,8 +1683,8 @@ function petCard(pet, showActions) {
   const isInactive = !pet.is_manual && INACTIVE_STATUSES.includes(pet.status);
   const photoUrl = pet.cover_photo || '';
   const photoHtml = photoUrl
-    ? `<img src="${h(photoUrl)}" class="w-full h-48 sm:h-36 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
-    : `<div class="w-full h-48 sm:h-36 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-10 h-10 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
+    ? `<img src="${h(photoUrl)}" class="w-full h-48 sm:h-52 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
+    : `<div class="w-full h-48 sm:h-52 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-10 h-10 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
 
   const statusColor = isHidden ? 'bg-gray-100 text-gray-500'
     : isInactive ? 'bg-amber-50 text-amber-700'
@@ -1873,16 +1894,65 @@ window.dismissInactivePet = async function(id) {
   renderPetsInactive();
 };
 
-window.moveToHappyTails = async function(id, name, type, breed, photoUrl) {
-  const date = prompt('Adoption date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-  if (!date) return;
-  const desc = prompt('Short happy tails note (optional):');
+window.moveToHappyTails = function(id, name, type, breed, photoUrl) {
+  const today = new Date().toISOString().split('T')[0];
+  const overlay = document.createElement('div');
+  overlay.id = 'happyTailsOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  overlay.innerHTML = `<div class="bg-white rounded-2xl shadow-lg border border-sage-100 w-full max-w-md overflow-hidden">
+    <div class="p-5 border-b border-sage-100">
+      <h3 class="font-display font-bold text-lg text-sage-800">Move to Happy Tails</h3>
+      <p class="text-sm text-gray-500 mt-0.5">${h(name)} is going home!</p>
+    </div>
+    <div class="p-5 space-y-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Adoption Date *</label>
+        <input id="htmDate" type="date" value="${today}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">New Family Name</label>
+        <input id="htmFamily" type="text" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. The Johnson Family"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Going Home Photo</label>
+        <input id="htmPhoto" type="file" accept="image/*" class="text-sm"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Farewell Note</label>
+        <textarea id="htmNote" rows="3" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" placeholder="A goodbye from the foster family, fun facts about their stay, how they grew..."></textarea></div>
+    </div>
+    <div class="p-4 border-t border-sage-100 flex justify-end gap-2">
+      <button onclick="document.getElementById('happyTailsOverlay').remove()" class="text-sm text-gray-500 hover:text-gray-700 font-semibold px-4 py-2.5">Cancel</button>
+      <button onclick="submitHappyTailTransition('${h(id)}','${h(name)}','${h(type)}','${h(breed)}','${h(photoUrl)}')" class="text-sm bg-amber-500 hover:bg-amber-600 text-white font-bold px-5 py-2.5 rounded-xl transition">Move to Happy Tails</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+};
+
+window.submitHappyTailTransition = async function(id, name, type, breed, origPhotoUrl) {
+  const date = document.getElementById('htmDate').value;
+  if (!date) { alert('Adoption date is required'); return; }
+  const family = document.getElementById('htmFamily').value.trim();
+  const note = document.getElementById('htmNote').value.trim();
+
+  let familyPhotoUrl = '';
+  const photoInput = document.getElementById('htmPhoto');
+  if (photoInput.files[0]) {
+    familyPhotoUrl = await uploadPhotoFile(photoInput);
+  }
+
+  // Build description with family name and note
+  let desc = '';
+  if (family) desc += family;
+  if (note) desc += (desc ? ' — ' : '') + note;
+
   await api('/admin/pets/happy-tails', { method: 'POST', body: {
-    pet_name: name, pet_type: type, breed: breed, photo_url: photoUrl,
+    pet_name: name, pet_type: type, breed: breed, photo_url: origPhotoUrl,
+    family_photo_url: familyPhotoUrl,
     adoption_date: date, description: desc || ''
   }});
-  alert(name + ' moved to Happy Tails!');
-  renderPetsActive();
+
+  // Also dismiss the pet from inactive
+  await api('/admin/pets', { method: 'PUT', body: { id, hidden: true } });
+
+  document.getElementById('happyTailsOverlay').remove();
+  _petsTab = 'happy-tails';
+  renderPets(document.getElementById('content'));
 };
 
 async function renderPetsHappyTails() {
@@ -2410,7 +2480,7 @@ async function renderUsers(el) {
   html += `<div class="mt-6 card p-5 text-sm text-gray-500">
     <strong class="text-gray-700">Roles</strong><br>
     <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-sage-500"></span> <strong>Admin</strong></span> &mdash; full access to everything<br>
-    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox and Events only<br>
+    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox, Pets, Events, and Analytics<br>
     <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> <strong>Foster</strong></span> &mdash; My Pets only (assigned animals + updates)
   </div>`;
   el.innerHTML = html;
@@ -2459,6 +2529,26 @@ window.deleteUser = async function(id) {
   if (res.ok) { navigate('users'); }
   else { alert(res.error || 'Failed to delete user'); }
 };
+
+// ── Deep link handling ──
+function handleDeepLink() {
+  const hash = window.location.hash;
+  if (!hash || !hash.startsWith('#inbox-')) return;
+  // Format: #inbox-sub-42 or #inbox-lf
+  navigate('submissions');
+  const itemId = hash.replace('#inbox-', '');
+  // Wait for inbox to render, then open the item
+  setTimeout(() => {
+    const el = document.getElementById(itemId);
+    const arrow = document.getElementById(itemId.replace('sub-', 'sub-arrow-').replace('lf-', 'lf-arrow-'));
+    if (el) {
+      el.classList.remove('hidden');
+      if (arrow) arrow.style.transform = 'rotate(180deg)';
+      el.closest('.inbox-item')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    window.location.hash = '';
+  }, 500);
+}
 
 // ── Init ──
 checkAuth();

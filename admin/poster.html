@@ -14,27 +14,26 @@
     body{font-family:'Nunito',sans-serif;background:#e8e8e8;color:#333;overflow:hidden;height:100vh}
 
     /* ── Action Bar ── */
-    .bar{position:sticky;top:0;z-index:100;background:#1e1e1e;display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:2px solid #48543e;height:44px}
+    .bar{position:sticky;top:0;z-index:100;background:#1e1e1e;display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:2px solid #48543e;height:44px;flex-wrap:nowrap}
     .bar-back{color:#aaa;font-size:18px;text-decoration:none;padding:4px 8px;border-radius:4px;line-height:1}
     .bar-back:hover{color:#fff;background:#333}
-    .pills{display:flex;border-radius:6px;overflow:hidden;border:1px solid #555}
-    .pill{background:#333;color:#999;border:none;padding:4px 12px;font:700 12px/1.4 'Nunito',sans-serif;cursor:pointer;transition:all .15s}
-    .pill.on{background:#48543e;color:#fff}
     .bar-spacer{flex:1}
-    .bar-btn{background:none;border:none;color:#aaa;font-size:17px;padding:6px 8px;cursor:pointer;border-radius:4px;position:relative}
+    .bar-btn{background:none;border:none;color:#aaa;font:700 11px 'Nunito',sans-serif;padding:6px 10px;cursor:pointer;border-radius:6px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
     .bar-btn:hover{color:#fff;background:#333}
-    .bar-btn .tip{display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap;pointer-events:none}
-    @media(hover:hover){.bar-btn:hover .tip{display:block}}
+    .bar-btn.primary{background:#48543e;color:#fff}
+    .bar-btn.primary:hover{background:#5c6b4e}
+    .bar-btn:disabled{opacity:.4;pointer-events:none}
+    .bar-divider{width:1px;height:20px;background:#444}
 
     /* ── Layout ── */
-    .layout{display:grid;grid-template-columns:350px 1fr;height:calc(100vh - 44px)}
+    .layout{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 44px)}
     @media(max-width:800px){
       .layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}
     }
 
     /* ── Editor ── */
     .editor{background:#fff;border-right:1px solid #ddd;overflow-y:auto;padding:12px 14px 20px}
-    .editor-toggle{display:none;background:#f5f5f5;border:none;width:100%;padding:8px;font:700 13px 'Nunito',sans-serif;color:#48543e;cursor:pointer;border-bottom:1px solid #ddd}
+    .editor-toggle{display:none;background:#f5f5f5;border:none;width:100%;padding:10px;font:700 13px 'Nunito',sans-serif;color:#48543e;cursor:pointer;border-bottom:1px solid #ddd}
     @media(max-width:800px){
       .editor-toggle{display:block}
       .editor-body.collapsed{display:none}
@@ -49,6 +48,7 @@
     .f input,.f textarea,.f select{width:100%;padding:5px 8px;border:1.5px solid #ddd;border-radius:5px;font:600 13px/1.4 'Nunito',sans-serif;color:#333;background:#fafafa}
     .f input:focus,.f textarea:focus,.f select:focus{outline:none;border-color:#48543e;background:#fff}
     .f textarea{resize:vertical}
+    .f .req{color:#cc1f1f;font-size:9px;margin-left:2px}
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
     .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
     .thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
@@ -63,57 +63,35 @@
     .preview-wrap{background:#e0e0e0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px}
     .preview-scaler{transform-origin:top center}
 
-    /* ── POSTER (Print Mode) ── */
-    .poster{width:8.5in;background:#fff;font-family:'Nunito',sans-serif;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.12)}
-    .p-head{padding:24px 36px 20px;text-align:center;color:#fff}
+    /* ── POSTER (Fixed 8.5x11) ── */
+    .poster{width:8.5in;height:11in;background:#fff;font-family:'Nunito',sans-serif;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.12);display:flex;flex-direction:column}
+    .p-head{padding:20px 36px 16px;text-align:center;color:#fff;flex-shrink:0}
     .p-head.lost{background:#cc1f1f}
     .p-head.found{background:#2d7a3a}
     .p-head h1{font-size:48px;font-weight:900;letter-spacing:6px;line-height:1;text-transform:uppercase}
     .p-head .sub{font-size:15px;font-weight:700;opacity:.9;letter-spacing:.5px;margin-top:2px}
-    .p-photo{text-align:center;padding:16px 36px 8px}
-    .p-photo img{max-width:100%;max-height:3.6in;border-radius:10px;border:3px solid #333;object-fit:cover}
+    .p-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .p-photo{text-align:center;padding:12px 36px 6px;flex-shrink:0}
+    .p-photo img{max-width:100%;max-height:3.2in;border-radius:10px;border:3px solid #333;object-fit:cover}
     .p-photo .none{height:2.5in;background:#f3f3f3;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#999;font-size:16px;font-weight:600}
-    .p-name{text-align:center;padding:8px 36px 2px;font-size:36px;font-weight:900;color:#111;line-height:1.1}
+    .p-name{text-align:center;padding:6px 36px 2px;font-size:34px;font-weight:900;color:#111;line-height:1.1;flex-shrink:0}
     .p-name .responds{display:block;font-size:13px;font-weight:600;color:#666;margin-top:1px}
-    .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;padding:8px 36px}
+    .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;padding:6px 36px;flex-shrink:0}
     .p-grid .dl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#555}
-    .p-grid .dv{font-size:15px;font-weight:700;color:#111}
-    .p-desc{padding:6px 36px;font-size:13px;color:#333;line-height:1.45;border-left:3px solid #ddd;margin:4px 36px;padding:4px 0 4px 12px}
-    .p-loc{margin:6px 36px;padding:12px 16px;border-radius:8px;text-align:center;font-weight:700;font-size:15px}
+    .p-grid .dv{font-size:14px;font-weight:700;color:#111}
+    .p-grid .empty{font-size:14px;font-weight:700;color:#ccc;font-style:italic}
+    .p-details{flex:1;padding:4px 36px;display:flex;flex-direction:column;gap:6px;overflow:hidden;min-height:0}
+    .p-desc{font-size:13px;color:#333;line-height:1.4;border-left:3px solid #ddd;padding:4px 0 4px 12px;overflow:hidden}
+    .p-loc{padding:10px 16px;border-radius:8px;text-align:center;font-weight:700;font-size:14px;flex-shrink:0}
     .p-loc.lost{background:#fef9e7;color:#92660e;border:1.5px solid #f5d67a}
     .p-loc.found{background:#eef8f0;color:#1e6a31;border:1.5px solid #8cd4a0}
     .p-loc .ll{font-size:9px;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:1px;opacity:.7}
     .p-loc .ld{font-size:11px;font-weight:600;opacity:.7;margin-top:2px}
-    .p-contact{margin:10px 36px;padding:16px 20px;border-radius:10px;background:#1a56a0;color:#fff;text-align:center;position:relative}
-    .p-contact .phone{font-size:30px;font-weight:900;letter-spacing:1px}
-    .p-contact .cname{font-size:14px;font-weight:600;opacity:.9;margin-top:2px}
-    .p-contact .cemail{font-size:12px;opacity:.75;margin-top:1px}
-    .p-reward{position:absolute;top:-12px;right:14px;background:#f59e0b;color:#fff;font-weight:900;font-size:13px;padding:4px 14px;border-radius:16px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
-    .p-foot{padding:8px 36px 12px;text-align:center;border-top:1.5px solid #e8ece4;background:#f5f7f3}
+    .p-contact{margin:6px 36px;padding:14px 20px;border-radius:10px;background:#1a56a0;color:#fff;text-align:center;flex-shrink:0}
+    .p-contact .phone{font-size:28px;font-weight:900;letter-spacing:1px}
+    .p-contact .cname{font-size:13px;font-weight:600;opacity:.9;margin-top:2px}
+    .p-foot{padding:6px 36px 10px;text-align:center;border-top:1.5px solid #e8ece4;background:#f5f7f3;flex-shrink:0;margin-top:auto}
     .p-foot .org{font-weight:800;color:#48543e;font-size:11px;letter-spacing:.3px}
-    .p-foot .ref{font-size:9px;color:#aaa;margin-top:1px}
-
-    /* ── Social Card (1200x630) ── */
-    .social{width:1200px;height:630px;display:grid;grid-template-columns:60% 40%;background:#fff;overflow:hidden;font-family:'Nunito',sans-serif;box-shadow:0 2px 20px rgba(0,0,0,.12)}
-    .social .s-photo{width:100%;height:100%;object-fit:cover}
-    .social .s-nophoto{width:100%;height:100%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:22px;font-weight:700}
-    .social .s-right{display:flex;flex-direction:column;justify-content:center;padding:36px 32px}
-    .social .s-badge{display:inline-block;padding:6px 16px;border-radius:6px;font-size:22px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#fff;margin-bottom:12px;align-self:flex-start}
-    .social .s-badge.lost{background:#cc1f1f}
-    .social .s-badge.found{background:#2d7a3a}
-    .social .s-name{font-size:36px;font-weight:900;color:#111;line-height:1.1;margin-bottom:8px}
-    .social .s-breed{font-size:16px;color:#555;margin-bottom:12px}
-    .social .s-details{font-size:14px;color:#666;line-height:1.7;margin-bottom:16px}
-    .social .s-details strong{color:#333}
-    .social .s-loc{padding:10px 14px;border-radius:6px;font-weight:700;font-size:14px;margin-bottom:16px}
-    .social .s-loc.lost{background:#fef9e7;color:#92660e}
-    .social .s-loc.found{background:#eef8f0;color:#1e6a31}
-    .social .s-contact{background:#1a56a0;color:#fff;padding:14px 18px;border-radius:8px}
-    .social .s-contact .s-phone{font-size:24px;font-weight:900}
-    .social .s-contact .s-org{font-size:12px;opacity:.8;margin-top:2px}
-
-    /* ── Text Mode ── */
-    .text-box{width:600px;max-width:100%;background:#fff;padding:24px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);font-family:'Courier New',monospace;font-size:13px;line-height:1.6;white-space:pre-wrap;color:#333;min-height:300px}
 
     /* ── Print ── */
     @media print{
@@ -123,7 +101,6 @@
       .preview-wrap{background:#fff!important;padding:0!important;overflow:visible!important}
       .preview-scaler{transform:none!important}
       .poster{box-shadow:none!important;width:100%!important;margin:0!important}
-      .social,.text-box{display:none!important}
       @page{size:letter;margin:.3in}
     }
 
@@ -133,6 +110,19 @@
     .saving{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
     .saving.show{display:flex}
     .saving div{background:#fff;padding:20px 36px;border-radius:10px;font-size:15px;font-weight:700}
+
+    /* ── Publish modal ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal{background:#fff;border-radius:16px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2);overflow:hidden}
+    .modal-head{padding:16px 20px;border-bottom:1px solid #e8ece4}
+    .modal-head h3{font-size:16px;font-weight:800;color:#333}
+    .modal-body{padding:20px}
+    .modal-foot{padding:12px 20px;border-top:1px solid #e8ece4;display:flex;justify-content:flex-end;gap:8px}
+    .modal-btn{padding:8px 18px;border:none;border-radius:8px;font:700 13px 'Nunito',sans-serif;cursor:pointer;transition:all .15s}
+    .modal-btn.cancel{background:#f5f5f5;color:#666}
+    .modal-btn.cancel:hover{background:#e5e5e5}
+    .modal-btn.confirm{background:#48543e;color:#fff}
+    .modal-btn.confirm:hover{background:#5c6b4e}
   </style>
 </head>
 <body>
@@ -140,15 +130,14 @@
 <!-- Action Bar -->
 <div class="bar">
   <a href="/admin/" class="bar-back" title="Back to Admin">&#8592;</a>
-  <div class="pills">
-    <button class="pill on" data-mode="print">Print</button>
-    <button class="pill" data-mode="social">Social</button>
-    <button class="pill" data-mode="text">Text</button>
-  </div>
   <div class="bar-spacer"></div>
-  <button class="bar-btn" onclick="doSave()" title="Save Image">&#128247;<span class="tip">Save Image</span></button>
-  <button class="bar-btn" onclick="doCopy()" title="Copy Text">&#128203;<span class="tip">Copy</span></button>
-  <button class="bar-btn" onclick="doPrint()" title="Print">&#128424;<span class="tip">Print</span></button>
+  <button class="bar-btn primary" id="saveBtn" onclick="doSave()">&#128190; Save Poster</button>
+  <div class="bar-divider"></div>
+  <button class="bar-btn" id="printBtn" onclick="doPrint()" disabled>&#128424; Print</button>
+  <button class="bar-btn" id="emailBtn" onclick="doEmail()" disabled>&#9993; Email</button>
+  <button class="bar-btn" id="shareBtn" onclick="doShare()" disabled>&#128266; Share</button>
+  <div class="bar-divider"></div>
+  <button class="bar-btn" id="publishBtn" onclick="doPublish()" disabled>&#10004; Post to Website</button>
 </div>
 
 <div class="layout">
@@ -162,8 +151,8 @@
       </div>
 
       <div class="sec">Pet Info</div>
-      <div class="f"><label>Pet Name</label><input id="f-name" oninput="up()"></div>
-      <div class="f"><label>Breed Line</label><input id="f-breed" placeholder="e.g. Yellow Lab, Male, 4 yrs" oninput="up()"></div>
+      <div class="f"><label>Pet Name <span class="req">*</span></label><input id="f-name" oninput="up()" placeholder="Required"></div>
+      <div class="f"><label>Breed Line <span class="req">*</span></label><input id="f-breed" placeholder="e.g. Yellow Lab, Male, 4 yrs" oninput="up()"></div>
       <div class="row2">
         <div class="f"><label>Color</label><input id="f-color" oninput="up()"></div>
         <div class="f"><label>Weight</label><input id="f-weight" placeholder="~70 lbs" oninput="up()"></div>
@@ -179,19 +168,17 @@
           </div>
         </div>
       </div>
-      <div class="f"><label>Description</label><textarea id="f-desc" rows="3" oninput="up()"></textarea></div>
+      <div class="f"><label>Description</label><textarea id="f-desc" rows="3" oninput="up()" placeholder="Identifying marks, size, temperament..."></textarea></div>
 
       <div class="sec">Location</div>
-      <div class="f"><label>Location</label><textarea id="f-loc" rows="2" oninput="up()"></textarea></div>
+      <div class="f"><label>Location <span class="req">*</span></label><textarea id="f-loc" rows="2" oninput="up()" placeholder="Required — cross streets, landmarks"></textarea></div>
       <div class="f"><label>Date</label><input id="f-date" type="date" oninput="up()"></div>
 
       <div class="sec">Contact</div>
-      <div class="row3">
+      <div class="row2">
         <div class="f"><label>Name</label><input id="f-cname" oninput="up()"></div>
-        <div class="f"><label>Phone</label><input id="f-phone" type="tel" oninput="up()"></div>
-        <div class="f"><label>Email</label><input id="f-email" type="email" oninput="up()"></div>
+        <div class="f"><label>Phone <span class="req">*</span></label><input id="f-phone" type="tel" oninput="up()"></div>
       </div>
-      <div class="f"><label>Reward (optional)</label><input id="f-reward" placeholder="$500" oninput="up()"></div>
 
       <div class="sec">Photo</div>
       <div id="photo-area"><span style="font-size:11px;color:#999">No photos</span></div>
@@ -211,8 +198,7 @@
 const $ = id => document.getElementById(id);
 
 // State
-let S = { type:'lost', name:'', breed:'', color:'', weight:'', collar:'', mc:'', desc:'', loc:'', date:'', cname:'', phone:'', email:'', reward:'', photos:[], pi:0, rid:'' };
-let mode = 'print';
+let S = { type:'lost', name:'', breed:'', color:'', weight:'', collar:'', mc:'', desc:'', loc:'', date:'', cname:'', phone:'', rid:'', photos:[], pi:0, reporterEmail:'', saved: false, savedImageUrl: '' };
 
 // Load from sessionStorage
 (function load() {
@@ -230,16 +216,12 @@ let mode = 'print';
     S.loc = d.location_details || '';
     S.cname = d.reporter_name || '';
     S.phone = d.reporter_phone || '';
-    S.email = d.reporter_email || '';
-    S.reward = d.reward || '';
+    S.reporterEmail = d.reporter_email || '';
     S.rid = d.id || d.report_id || '';
-    // Build breed line from parts
     const parts = [d.breed, d.gender, d.age].filter(Boolean);
     S.breed = parts.join(', ') || (d.species || '');
     if (!S.breed && d.species) S.breed = d.species;
-    // Date
     if (d.created_at) try { S.date = d.created_at.split('T')[0]; } catch(e){}
-    // Photos
     let photos = [];
     if (d.photo_url) {
       try { photos = JSON.parse(d.photo_url); } catch(e) { photos = [d.photo_url]; }
@@ -262,8 +244,6 @@ function populate() {
   $('f-date').value = S.date;
   $('f-cname').value = S.cname;
   $('f-phone').value = S.phone;
-  $('f-email').value = S.email;
-  $('f-reward').value = S.reward;
   syncType(); syncMC(); renderThumbs();
 }
 
@@ -273,12 +253,12 @@ function syncType() {
     if (b.dataset.t === S.type) b.classList.add(S.type + '-on');
   });
 }
-function setType(t) { S.type = t; syncType(); up(); }
+function setType(t) { S.type = t; S.saved = false; syncType(); up(); updateBarState(); }
 
 function syncMC() {
   document.querySelectorAll('.mc-pill').forEach(b => b.classList.toggle('on', b.dataset.v === S.mc));
 }
-function setMC(v) { S.mc = v; syncMC(); up(); }
+function setMC(v) { S.mc = v; S.saved = false; syncMC(); up(); updateBarState(); }
 
 function renderThumbs() {
   const el = $('photo-area');
@@ -289,7 +269,6 @@ function renderThumbs() {
 }
 function selPhoto(i) { S.pi = i; renderThumbs(); up(); }
 
-// Read fields
 function read() {
   S.name = $('f-name').value;
   S.breed = $('f-breed').value;
@@ -301,18 +280,21 @@ function read() {
   S.date = $('f-date').value;
   S.cname = $('f-cname').value;
   S.phone = $('f-phone').value;
-  S.email = $('f-email').value;
-  S.reward = $('f-reward').value;
+  S.saved = false;
+  updateBarState();
 }
 
 function up() { read(); render(); }
 
-// Mode switching
-document.querySelectorAll('.pill').forEach(b => b.addEventListener('click', () => {
-  mode = b.dataset.mode;
-  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p === b));
-  render();
-}));
+function updateBarState() {
+  const hasRequired = S.name && S.breed && S.loc && S.phone;
+  $('saveBtn').disabled = !hasRequired;
+  $('printBtn').disabled = !S.saved;
+  $('emailBtn').disabled = !S.saved;
+  $('shareBtn').disabled = !S.saved;
+  $('publishBtn').disabled = !S.saved;
+  $('saveBtn').innerHTML = S.saved ? '&#10004; Saved' : '&#128190; Save Poster';
+}
 
 // Mobile editor toggle
 $('ed-toggle').addEventListener('click', () => {
@@ -321,12 +303,8 @@ $('ed-toggle').addEventListener('click', () => {
   $('ed-toggle').innerHTML = collapsed ? 'Edit Fields &#9654;' : 'Edit Fields &#9660;';
 });
 
-// Render
 function render() {
-  const c = $('pc');
-  if (mode === 'text') c.innerHTML = renderText();
-  else if (mode === 'social') c.innerHTML = renderSocial();
-  else c.innerHTML = renderPoster();
+  $('pc').innerHTML = renderPoster();
   scale();
 }
 
@@ -337,75 +315,36 @@ function renderPoster() {
   const photo = S.photos[S.pi] || '';
   const phone = fmtPhone(S.phone) || '(507) 201-7287';
   const who = S.cname || 'WCAHS';
+
+  // Build detail grid — always show all fields, placeholder if empty
   let grid = '';
-  const add = (l,v) => { if(v) grid += '<div><div class="dl">'+l+'</div><div class="dv">'+esc(v)+'</div></div>'; };
-  // Parse breed line for display — show as single "Breed" if it has commas, otherwise split
+  const add = (l,v) => {
+    grid += '<div><div class="dl">'+l+'</div>' + (v ? '<div class="dv">'+esc(v)+'</div>' : '<div class="empty">&mdash;</div>') + '</div>';
+  };
   add('Breed', S.breed);
   add('Color', S.color);
   add('Weight', S.weight);
   add('Collar', S.collar);
   if (S.mc === 'yes') add('Microchip', 'Yes');
-  if (S.mc === 'no') add('Microchip', 'No');
+  else if (S.mc === 'no') add('Microchip', 'No');
+  else add('Microchip', '');
+
   const locLabel = lost ? 'Last Seen Near' : 'Found At';
   const dateStr = S.date ? fmtDate(S.date) : '';
-  const rewardHtml = S.reward ? '<div class="p-reward">REWARD '+esc(S.reward)+'</div>' : '';
 
   return '<div class="poster" id="poster">'+
     '<div class="p-head '+tc+'"><h1>'+headline+'</h1><div class="sub">'+esc(sub)+'</div></div>'+
+    '<div class="p-body">'+
     '<div class="p-photo">'+(photo ? '<img src="'+esc(photo)+'" crossorigin="anonymous" alt="">' : '<div class="none">No Photo Available</div>')+'</div>'+
-    (S.name ? '<div class="p-name">'+esc(S.name)+(lost?'<span class="responds">Responds to "'+esc(S.name)+'"</span>':'')+'</div>' : '')+
-    (grid ? '<div class="p-grid">'+grid+'</div>' : '')+
-    (S.desc ? '<div class="p-desc">'+esc(S.desc)+'</div>' : '')+
-    (S.loc ? '<div class="p-loc '+tc+'"><span class="ll">'+esc(locLabel)+'</span>'+esc(S.loc)+(dateStr?'<div class="ld">'+esc(dateStr)+'</div>':'')+'</div>' : '')+
-    '<div class="p-contact">'+rewardHtml+'<div class="phone">'+esc(phone)+'</div><div class="cname">Contact: '+esc(who)+'</div>'+(S.email?'<div class="cemail">'+esc(S.email)+'</div>':'')+'</div>'+
-    '<div class="p-foot"><div class="org">Waseca County Animal Humane Society &middot; (507) 201-7287 &middot; wcahs.org</div>'+(S.rid?'<div class="ref">Report #'+esc(String(S.rid))+'</div>':'')+'</div>'+
-  '</div>';
-}
-
-function renderSocial() {
-  const lost = S.type === 'lost', tc = lost ? 'lost' : 'found';
-  const headline = lost ? 'MISSING' : 'FOUND';
-  const photo = S.photos[S.pi] || '';
-  const phone = fmtPhone(S.phone) || '(507) 201-7287';
-  let details = '';
-  const line = (l,v) => { if(v) details += '<strong>'+l+':</strong> '+esc(v)+'<br>'; };
-  line('Breed', S.breed); line('Color', S.color); line('Weight', S.weight);
-  const locLabel = lost ? 'Last seen near' : 'Found at';
-
-  return '<div class="social" id="poster">'+
-    '<div style="overflow:hidden">'+(photo ? '<img src="'+esc(photo)+'" class="s-photo" crossorigin="anonymous" alt="">' : '<div class="s-nophoto">No Photo</div>')+'</div>'+
-    '<div class="s-right">'+
-      '<div class="s-badge '+tc+'">'+headline+'</div>'+
-      (S.name ? '<div class="s-name">'+esc(S.name)+'</div>' : '')+
-      (S.breed ? '<div class="s-breed">'+esc(S.breed)+'</div>' : '')+
-      (details ? '<div class="s-details">'+details+'</div>' : '')+
-      (S.loc ? '<div class="s-loc '+tc+'">'+esc(locLabel)+': '+esc(S.loc)+'</div>' : '')+
-      '<div class="s-contact"><div class="s-phone">'+esc(phone)+'</div><div class="s-org">Waseca County Animal Humane Society &middot; wcahs.org</div></div>'+
+    '<div class="p-name">'+(S.name ? esc(S.name) : '<span style="color:#ccc;font-style:italic">Pet Name</span>')+(S.name && lost?'<span class="responds">Responds to "'+esc(S.name)+'"</span>':'')+'</div>'+
+    '<div class="p-grid">'+grid+'</div>'+
+    '<div class="p-details">'+
+      '<div class="p-desc">'+(S.desc ? esc(S.desc) : '<span style="color:#ccc;font-style:italic">Description and identifying details will appear here...</span>')+'</div>'+
+      '<div class="p-loc '+tc+'"><span class="ll">'+esc(locLabel)+'</span>'+(S.loc ? esc(S.loc) : '<span style="color:inherit;opacity:.5;font-style:italic">Location</span>')+(dateStr?'<div class="ld">'+esc(dateStr)+'</div>':'')+'</div>'+
     '</div>'+
-  '</div>';
-}
-
-function renderText() {
-  const lost = S.type === 'lost';
-  const emoji = lost ? '\u{1F6A8}' : '\u{2705}';
-  const tag = lost ? 'LOST' : 'FOUND';
-  const species = S.breed.split(',')[0] || 'PET';
-  const phone = fmtPhone(S.phone) || '(507) 201-7287';
-  const who = S.cname || 'WCAHS';
-  let lines = [];
-  lines.push(emoji + ' ' + tag + ' DOG \u2014 ' + (S.name || 'UNKNOWN').toUpperCase());
-  if (S.breed) lines.push(S.breed);
-  const deets = [];
-  if (S.color) deets.push('Color: ' + S.color);
-  if (S.weight) deets.push('Weight: ' + S.weight);
-  if (S.collar) deets.push('Collar: ' + S.collar);
-  if (deets.length) lines.push(deets.join(' | '));
-  if (S.loc) lines.push((lost ? 'Last seen: ' : 'Found at: ') + S.loc + (S.date ? ', ' + fmtDate(S.date) : ''));
-  if (S.desc) lines.push('Description: ' + S.desc);
-  lines.push('Contact: ' + who + (S.phone ? ' ' + phone : '') + (S.email ? ' | ' + S.email : ''));
-  if (S.reward) lines.push('REWARD: ' + S.reward);
-  lines.push('#' + tag.replace(/\s/g,'') + 'Dog #Waseca #WCAHS');
-  return '<div class="text-box" id="poster">' + esc(lines.join('\n')) + '</div>';
+    '<div class="p-contact"><div class="phone">'+esc(phone)+'</div><div class="cname">Contact: '+esc(who)+'</div></div>'+
+    '<div class="p-foot"><div class="org">Waseca County Animal Humane Society &middot; (507) 201-7287 &middot; wcahs.org</div></div>'+
+    '</div></div>';
 }
 
 // Scale preview to fit
@@ -423,32 +362,106 @@ function scale() {
   });
 }
 
-// Actions
-function doPrint() {
-  if (mode !== 'print') { mode = 'print'; document.querySelectorAll('.pill').forEach(p=>p.classList.toggle('on',p.dataset.mode==='print')); render(); }
-  setTimeout(() => window.print(), 100);
-}
+// ── Actions ──
 
-function doSave() {
+async function doSave() {
   const poster = $('poster');
   if (!poster) return;
   $('saving').classList.add('show');
-  html2canvas(poster, { useCORS:true, allowTaint:true, scale:2, backgroundColor:'#fff' }).then(canvas => {
-    $('saving').classList.remove('show');
+  $('saveBtn').disabled = true;
+  $('saveBtn').innerHTML = 'Saving...';
+  try {
+    const canvas = await html2canvas(poster, { useCORS:true, allowTaint:true, scale:2, backgroundColor:'#fff' });
+    // Convert to blob and download
+    const dataUrl = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     const slug = (S.name||'pet').toLowerCase().replace(/\s+/g,'-');
-    a.download = S.type+'-'+slug+'-'+(mode==='social'?'social':'poster')+'.png';
-    a.href = canvas.toDataURL('image/png');
+    a.download = S.type+'-'+slug+'-poster.png';
+    a.href = dataUrl;
     a.click();
-    toast('Image saved');
-  }).catch(e => { $('saving').classList.remove('show'); toast('Error saving image'); console.error(e); });
+    S.saved = true;
+    S.savedImageUrl = dataUrl;
+    updateBarState();
+    toast('Poster saved!');
+  } catch(e) {
+    toast('Error saving poster');
+    console.error(e);
+  }
+  $('saving').classList.remove('show');
 }
 
-function doCopy() {
-  const text = generatePlainText();
-  navigator.clipboard.writeText(text).then(() => toast('Copied')).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('Copied');
-  });
+function doPrint() {
+  setTimeout(() => window.print(), 100);
+}
+
+function doEmail() {
+  const email = prompt('Send poster to:', S.reporterEmail || '');
+  if (!email) return;
+  // Open mailto with poster details
+  const subject = encodeURIComponent((S.type === 'lost' ? 'LOST' : 'FOUND') + ': ' + (S.name || 'Pet') + ' — WCAHS');
+  const body = encodeURIComponent(generatePlainText());
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
+  toast('Email opened');
+}
+
+function doShare() {
+  if (navigator.share) {
+    navigator.share({
+      title: (S.type === 'lost' ? 'LOST' : 'FOUND') + ': ' + (S.name || 'Pet'),
+      text: generatePlainText(),
+      url: 'https://wcahs.org/lost-found.html',
+    }).catch(() => {});
+  } else {
+    // Fallback: open Facebook share
+    const text = encodeURIComponent(generatePlainText());
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://wcahs.org/lost-found.html') + '&quote=' + text, '_blank', 'width=600,height=400');
+  }
+}
+
+function doPublish() {
+  if (!S.rid) { toast('No report ID — cannot publish'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `<div class="modal">
+    <div class="modal-head"><h3>Post to Lost & Found?</h3></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;line-height:1.5">This will approve the report and post it on the Lost & Found page with the details from this poster.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="modal-btn cancel" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+      <button class="modal-btn confirm" onclick="confirmPublish(this)">Post to Website</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function confirmPublish(btn) {
+  btn.disabled = true;
+  btn.textContent = 'Publishing...';
+  try {
+    // Update the report with edited details and approve
+    await fetch('/api/admin/lost-found/' + S.rid, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'approved',
+        pet_name: S.name,
+        breed: S.breed,
+        color: S.color,
+        description: S.desc,
+        location_details: S.loc,
+      }),
+    });
+    toast('Posted to Lost & Found!');
+    btn.closest('.modal-overlay').remove();
+    $('publishBtn').innerHTML = '&#10004; Published';
+    $('publishBtn').disabled = true;
+  } catch(e) {
+    toast('Error publishing');
+    btn.disabled = false;
+    btn.textContent = 'Post to Website';
+  }
 }
 
 function generatePlainText() {
@@ -457,15 +470,17 @@ function generatePlainText() {
   const phone = fmtPhone(S.phone) || '(507) 201-7287';
   const who = S.cname || 'WCAHS';
   let l = [];
-  l.push('\u{1F6A8} '+tag+' DOG \u2014 '+(S.name||'UNKNOWN').toUpperCase());
-  if(S.breed)l.push(S.breed);
-  const d=[];if(S.color)d.push('Color: '+S.color);if(S.weight)d.push('Weight: '+S.weight);if(S.collar)d.push('Collar: '+S.collar);
-  if(d.length)l.push(d.join(' | '));
-  if(S.loc)l.push((lost?'Last seen: ':'Found at: ')+S.loc+(S.date?', '+fmtDate(S.date):''));
-  if(S.desc)l.push('Description: '+S.desc);
-  l.push('Contact: '+who+(S.phone?' '+phone:'')+(S.email?' | '+S.email:''));
-  if(S.reward)l.push('REWARD: '+S.reward);
-  l.push('#'+tag+'Dog #Waseca #WCAHS');
+  l.push('\u{1F6A8} ' + tag + ' ' + (S.breed.split(',')[0] || 'PET').toUpperCase() + ' \u2014 ' + (S.name || 'UNKNOWN').toUpperCase());
+  if (S.breed) l.push(S.breed);
+  const d = [];
+  if (S.color) d.push('Color: ' + S.color);
+  if (S.weight) d.push('Weight: ' + S.weight);
+  if (S.collar) d.push('Collar: ' + S.collar);
+  if (d.length) l.push(d.join(' | '));
+  if (S.loc) l.push((lost ? 'Last seen: ' : 'Found at: ') + S.loc + (S.date ? ', ' + fmtDate(S.date) : ''));
+  if (S.desc) l.push('Description: ' + S.desc);
+  l.push('Contact: ' + who + (S.phone ? ' ' + phone : ''));
+  l.push('#' + tag + 'Dog #Waseca #WCAHS #LostPet');
   return l.join('\n');
 }
 
@@ -478,6 +493,7 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');set
 // Init
 populate();
 up();
+updateBarState();
 window.addEventListener('resize', scale);
 </script>
 </body>

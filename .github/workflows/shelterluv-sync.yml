@@ -35,7 +35,7 @@ jobs:
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"sql": "SELECT id FROM animals WHERE hidden = 1"}' \
-            | jq -r '.result[0].results[]?.id // empty' | tr '\n' ',' | sed 's/,$//')
+            | jq -r '.result[0].results[]?.id // empty' | sed "s/.*/'&'/" | tr '\n' ',' | sed 's/,$//')
           echo "Hidden IDs to preserve: $HIDDEN_IDS"
 
           # Build SQL statements

@@ -15,6 +15,7 @@
   <meta name="twitter:description" content="Report a lost or found pet in Waseca County. Help reunite pets with their families.">
   <meta name="twitter:image" content="https://wcahs.org/images/logo.png">
   <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon-180.png">
   <title>Lost & Found Pets - WCAHS</title>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -342,6 +343,7 @@
           dz.addEventListener('drop', function(e) { e.preventDefault(); dz.classList.remove('border-sage-500', 'bg-sage-50'); handlePhotoSelect(e.dataTransfer.files); });
         </script>
 
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><input id="lfOptIn" type="checkbox"> Keep me updated on WCAHS news & events</label>
         <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
         <div id="lfStatus" class="hidden"></div>
         <button id="submitBtn" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg">Submit Lost Pet Report</button>
@@ -367,6 +369,7 @@
             gender: e.target.querySelectorAll('select')[1].value,
             location_details: document.getElementById('locationInput').value,
             description: document.getElementById('descInput').value,
+            subscribe: document.getElementById('lfOptIn').checked,
             turnstile_token: turnstile ? turnstile.value : ''
           };
           if (isLost) { body.collar_details = e.target.querySelector('#lostFields input') ? e.target.querySelector('#lostFields input').value : ''; }
@@ -424,6 +427,8 @@
           <li>&bull; Walk your neighborhood calling their name, especially at dawn/dusk when it's quiet</li>
           <li>&bull; Place their bed, a worn shirt, food, and water outside where they were last seen</li>
           <li>&bull; Cats usually hide close to home &mdash; check under porches, bushes, and crawl spaces</li>
+          <li>&bull; Try driving slowly around the neighborhood &mdash; dogs sometimes recognize the sound of your car</li>
+          <li>&bull; Bring another pet with you if you have one &mdash; a familiar friend can draw them out</li>
         </ul>
       </div>
 
@@ -488,6 +493,26 @@
             <li>&bull; Request proof of ownership: vet records, dated photos with the pet, or adoption paperwork</li>
             <li>&bull; Meet in a public place during daylight &mdash; a police station parking lot or vet office is ideal</li>
             <li>&bull; Don't worry if the pet seems hesitant at first &mdash; long-missing animals may need a moment to recognize their owner</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Know What You're Looking At</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; <strong>Ear-tipped cats</strong> (flat-cut tip on one ear) are spayed/neutered community cats &mdash; they are not lost and should be left where they are</li>
+            <li>&bull; <strong>Feral cats</strong> that won't let you approach are likely community cats living outdoors intentionally &mdash; trapping and removing them can disrupt the colony</li>
+            <li>&bull; A friendly outdoor cat near homes is likely someone's indoor/outdoor pet &mdash; watch and ask neighbors before assuming it's lost</li>
+            <li>&bull; <strong>Kittens found alone</strong> are usually not orphaned &mdash; their mom is likely out foraging. Wait at least 8 hours before intervening. Mom is their best chance for survival</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Safety & Special Cases</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; If the animal is <strong>aggressive or behaving erratically</strong>, do not approach &mdash; call your local police department</li>
+            <li>&bull; If the animal is <strong>injured</strong>, call a vet clinic directly. After hours, call an emergency vet. WCAHS is not equipped for emergency medical care</li>
+            <li>&bull; <strong>Wildlife</strong> (raccoons, opossums, deer, birds) &mdash; contact the <a href="https://www.wrcmn.org/" class="text-sage-600 underline" target="_blank">Wildlife Rehabilitation Center of Minnesota</a>. WCAHS handles cats and dogs only</li>
+            <li>&bull; If you find <strong>a mother cat with kittens</strong>, try to keep them together. Their mom is their best chance &mdash; contact us and we'll help coordinate</li>
           </ul>
         </div>
 

@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience } from './_helpers.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -14,9 +14,21 @@ export async function onRequestPost(context) {
   }
 
   const message = body.phone ? `Phone: ${body.phone}\n\n${body.message}` : body.message;
-  await env.DB.prepare(
+  const result = await env.DB.prepare(
     'INSERT INTO form_submissions (type, name, email, subject, message) VALUES (?, ?, ?, ?, ?)'
   ).bind('contact', body.name, body.email, body.subject || 'General Inquiry', message).run();
+
+  const subId = result.meta?.last_row_id || '';
+
+  // Add to newsletter audience if opted in
+  if (body.subscribe) {
+    const nameParts = body.name.split(' ');
+    await addToAudience(env, {
+      email: body.email,
+      firstName: nameParts[0] || '',
+      lastName: nameParts.slice(1).join(' ') || '',
+    });
+  }
 
   await sendNotification(env, {
     subject: `New Contact: ${body.subject || 'General Inquiry'} — ${body.name}`,
@@ -28,7 +40,7 @@ export async function onRequestPost(context) {
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Subject</td><td style="padding:8px 12px">${body.subject || 'General Inquiry'}</td></tr>
         <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Message</td><td style="padding:8px 12px;white-space:pre-wrap">${body.message}</td></tr>
       </table>
-      <p style="margin-top:20px;font-size:12px;color:#999">View all messages at <a href="https://wcahs.org/admin/">wcahs.org/admin</a></p>`,
+      <p style="margin-top:20px;font-size:12px;color:#999"><a href="https://wcahs.org/admin/#inbox-sub-${subId}" style="color:#5c6b4e;font-weight:600">View in Admin &rarr;</a></p>`,
   });
 
   await sendAutoReply(env, {
