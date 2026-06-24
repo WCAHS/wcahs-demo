@@ -1591,7 +1591,7 @@ async function renderPets(el) {
     syncHtml = `<div class="flex items-center gap-2 text-xs text-gray-400">
       <span class="w-2 h-2 rounded-full ${dot}"></span>
       <span>${label}</span>
-      <a href="https://github.com/WCAHS/wcahs-demo/actions" target="_blank" class="text-sage-600 hover:underline ml-1">GitHub</a>
+      <button onclick="manualSync()" id="syncBtn" class="text-sage-600 hover:underline ml-1 font-semibold">Sync Now</button>
     </div>`;
   } catch(e) {}
 
@@ -1748,6 +1748,22 @@ async function renderPetsInactive() {
 window.togglePetVisibility = async function(id, hide) {
   await api('/admin/pets', { method: 'PUT', body: { id, hidden: hide } });
   _petsTab === 'inactive' ? renderPetsInactive() : renderPetsActive();
+};
+
+window.manualSync = async function() {
+  const btn = document.getElementById('syncBtn');
+  if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+  try {
+    const res = await api('/admin/sync-trigger', { method: 'POST' });
+    if (res.error) {
+      if (btn) btn.textContent = 'Failed — try GitHub';
+    } else {
+      if (btn) btn.textContent = 'Done! ' + (res.count || 0) + ' pets';
+      setTimeout(() => renderPets(document.getElementById('content')), 1500);
+    }
+  } catch(e) {
+    if (btn) btn.textContent = 'Error';
+  }
 };
 
 window.dismissInactivePet = async function(id) {
