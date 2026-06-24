@@ -71,7 +71,7 @@ export async function onRequestGet(context) {
       totalVisits += row.sum.visits;
 
       byDate[d.date] = (byDate[d.date] || 0) + row.count;
-      if (d.requestPath) byPath[d.requestPath] = (byPath[d.requestPath] || 0) + row.count;
+      if (d.requestPath && !d.requestPath.startsWith('/admin')) byPath[d.requestPath] = (byPath[d.requestPath] || 0) + row.count;
       if (d.refererHost) byReferer[d.refererHost] = (byReferer[d.refererHost] || 0) + row.count;
       if (d.countryName) byCountry[d.countryName] = (byCountry[d.countryName] || 0) + row.count;
       if (d.userAgentBrowser) byBrowser[d.userAgentBrowser] = (byBrowser[d.userAgentBrowser] || 0) + row.count;
