@@ -29,7 +29,7 @@
       }
     }
   </script>
-  <!-- Turnstile not needed on admin login (password-protected) -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
     .font-display { font-family: 'Playfair Display', serif; }
@@ -119,6 +119,7 @@
           <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
           <input id="loginPass" type="password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-600" required>
         </div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
         <div id="loginError" class="hidden text-red-600 text-sm"></div>
         <button type="submit" class="w-full bg-sage-700 hover:bg-sage-900 text-white font-bold py-3 rounded-2xl transition">Log In</button>
       </form>
@@ -1621,8 +1622,8 @@ function petCard(pet, showActions) {
   const isInactive = !pet.is_manual && INACTIVE_STATUSES.includes(pet.status);
   const photoUrl = pet.cover_photo || '';
   const photoHtml = photoUrl
-    ? `<img src="${h(photoUrl)}" class="w-full h-36 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
-    : `<div class="w-full h-36 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-10 h-10 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
+    ? `<img src="${h(photoUrl)}" class="w-full h-48 sm:h-36 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
+    : `<div class="w-full h-48 sm:h-36 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-10 h-10 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
 
   const statusColor = isHidden ? 'bg-gray-100 text-gray-500'
     : isInactive ? 'bg-amber-50 text-amber-700'
