@@ -139,7 +139,7 @@
           <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
         </a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
-        <a onclick="navigate('email')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="email">Email</a>
+        <!-- Email management handled in Resend dashboard -->
         <!-- FAQ temporarily hidden — editor needs rework -->
         <!-- <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a> -->
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
@@ -1457,7 +1457,7 @@ async function renderAnalytics(el) {
       barsHtml += `<div class="chart-bar flex flex-col items-center gap-1 relative" style="flex:1;min-width:${minBarWidth};max-width:60px">
         <div class="chart-bar-tooltip">${d.count} view${d.count!==1?'s':''}</div>
         <div class="w-full rounded-t-md" style="height:${heightPx}px;background:linear-gradient(to top,#48543e,#93a27e)"></div>
-        ${showLabel ? `<span class="text-[9px] ${isToday ? 'text-sage-700 font-bold' : 'text-gray-400'} truncate w-full text-center leading-tight">${isToday ? 'Today' : label}</span>` : '<span class="text-[9px] invisible">.</span>'}
+        ${showLabel ? `<span class="text-[9px] ${isToday ? 'text-sage-700 font-bold' : 'text-gray-400'} truncate w-full text-center leading-tight">${label}</span>` : '<span class="text-[9px] invisible">.</span>'}
       </div>`;
     });
     barsHtml += '</div>';
