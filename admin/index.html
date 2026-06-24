@@ -1591,7 +1591,7 @@ async function renderPets(el) {
     syncHtml = `<div class="flex items-center gap-2 text-xs text-gray-400">
       <span class="w-2 h-2 rounded-full ${dot}"></span>
       <span>${label}</span>
-      <button onclick="manualSync()" id="syncBtn" class="text-sage-600 hover:underline ml-1 font-semibold">Sync Now</button>
+      <a href="https://github.com/WCAHS/wcahs-demo/actions/workflows/shelterluv-sync.yml" target="_blank" class="text-sage-600 hover:underline ml-1 font-semibold">Sync Now</a>
     </div>`;
   } catch(e) {}
 
