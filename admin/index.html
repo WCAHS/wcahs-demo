@@ -224,7 +224,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   const user = document.getElementById('loginUser').value;
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginError');
-  errEl.classList.add('hidden');
+  errEl.textContent = 'Logging in...';
+  errEl.style.color = '#5c6b4e';
+  errEl.classList.remove('hidden');
 
   const turnstileEl = document.querySelector('[name="cf-turnstile-response"]');
   const turnstileToken = turnstileEl ? turnstileEl.value : '';
@@ -1952,8 +1954,6 @@ window.deleteManualPet = async function(id) {
 };
 
 // Sync status is now shown as a header indicator in renderPets()
-}
-
 
 // ── My Account ──
 async function renderMyAccount(el) {
