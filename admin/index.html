@@ -1585,6 +1585,25 @@ async function renderAnalytics(el) {
   </div>
 
   <p class="text-xs text-gray-400 mt-4 text-center">Powered by Cloudflare Web Analytics &bull; UTC: ${new Date().toLocaleString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</p>`;
+
+  // Load email stats async (don't block analytics render)
+  api('/admin/email-stats').then(es => {
+    if (!es || es.sent === 0) return;
+    const statsEl = document.createElement('div');
+    statsEl.className = 'grid grid-cols-2 md:grid-cols-5 gap-4 mt-5';
+    statsEl.innerHTML = `
+      <div class="card p-4 text-center"><p class="text-lg font-bold text-sage-700">${es.sent}</p><p class="text-gray-400 text-xs">Emails Sent</p></div>
+      <div class="card p-4 text-center"><p class="text-lg font-bold text-sage-700">${es.delivered}</p><p class="text-gray-400 text-xs">Delivered</p></div>
+      <div class="card p-4 text-center"><p class="text-lg font-bold text-sage-700">${es.opened}</p><p class="text-gray-400 text-xs">Opened</p></div>
+      <div class="card p-4 text-center"><p class="text-lg font-bold text-sage-700">${es.clicked}</p><p class="text-gray-400 text-xs">Clicked</p></div>
+      <div class="card p-4 text-center"><p class="text-lg font-bold ${es.bounced > 0 ? 'text-red-500' : 'text-sage-700'}">${es.bounced}</p><p class="text-gray-400 text-xs">Bounced</p></div>
+    `;
+    const heading = document.createElement('h2');
+    heading.className = 'font-bold text-gray-800 text-sm mt-6 mb-3';
+    heading.textContent = 'Email Activity (Resend)';
+    const container = document.getElementById('content');
+    if (container) { container.appendChild(heading); container.appendChild(statsEl); }
+  }).catch(() => {});
 }
 
 // ── Pets ──
@@ -1665,7 +1684,12 @@ function petCard(pet, showActions) {
       actions += `<button onclick="if(confirm('Delete this pet?')) deleteManualPet('${h(pet.id)}')" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>`;
     }
     if (currentRole === 'admin') {
-      actions += `<button onclick="showAssignFoster('${h(pet.id)}','${h(pet.name)}')" class="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition font-semibold ml-auto">Assign Foster</button>`;
+      const fosterNames = pet.foster_names || [];
+      if (fosterNames.length > 0) {
+        actions += `<button onclick="showAssignFoster('${h(pet.id)}','${h(pet.name)}')" class="text-xs bg-sage-100 text-sage-700 px-3 py-1.5 rounded-lg hover:bg-sage-200 transition font-semibold ml-auto">Foster: ${h(fosterNames.join(', '))}</button>`;
+      } else {
+        actions += `<button onclick="showAssignFoster('${h(pet.id)}','${h(pet.name)}')" class="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition font-semibold ml-auto">Assign Foster</button>`;
+      }
     }
     actions += '</div>';
   }

@@ -24,12 +24,29 @@ export async function onRequestGet(context) {
   const { results } = await context.env.DB.prepare(
     'SELECT * FROM animals ORDER BY name'
   ).all();
+
+  // Get foster assignments
+  let assignments = [];
+  try {
+    const res = await context.env.DB.prepare(
+      'SELECT fa.animal_id, u.username FROM foster_assignments fa JOIN users u ON fa.user_id = u.id'
+    ).all();
+    assignments = res.results || [];
+  } catch(e) {}
+
+  const assignmentMap = {};
+  assignments.forEach(a => {
+    if (!assignmentMap[a.animal_id]) assignmentMap[a.animal_id] = [];
+    assignmentMap[a.animal_id].push(a.username);
+  });
+
   const animals = results.map(a => ({
     ...a,
     photos: JSON.parse(a.photos || '[]'),
     attributes: JSON.parse(a.attributes || '[]'),
     hidden: a.hidden || 0,
     is_manual: a.is_manual || 0,
+    foster_names: assignmentMap[a.id] || [],
   }));
   return json({ animals, count: animals.length });
 }
