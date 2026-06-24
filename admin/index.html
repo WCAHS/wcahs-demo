@@ -1694,16 +1694,35 @@ function petCard(pet, showActions) {
     actions += '</div>';
   }
 
-  return `<div class="card overflow-hidden ${isHidden ? 'opacity-40' : ''}">
+  const detailId = 'pet-detail-' + pet.id;
+  const fosterNames = pet.foster_names || [];
+
+  return `<div class="card overflow-hidden ${isHidden ? 'opacity-60' : ''}">
     ${photoHtml}
     <div class="p-3">
       <div class="flex items-center justify-between mb-0.5">
-        <h3 class="font-bold text-gray-900 text-sm">${h(pet.name)}</h3>
-        ${pet.is_manual ? '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">Manual</span>' : ''}
+        <h3 class="font-bold text-gray-900 text-sm cursor-pointer hover:text-sage-700" onclick="togglePetDetail('${pet.id}')">${h(pet.name)}</h3>
+        <div class="flex gap-1">
+          ${fosterNames.length > 0 ? '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-sage-100 text-sage-700 font-semibold">Fostered</span>' : ''}
+          ${pet.is_manual ? '<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">Manual</span>' : ''}
+        </div>
       </div>
       <p class="text-xs text-gray-500">${h(pet.type || '')}${pet.breed ? ' &bull; ' + h(pet.breed) : ''}</p>
       <p class="text-[11px] text-gray-400">${h(pet.age_display || '')}${pet.sex ? ' &bull; ' + h(pet.sex) : ''}</p>
       <p class="text-[11px] mt-1"><span class="inline-block px-2 py-0.5 rounded-full ${statusColor} font-semibold">${isHidden ? 'Hidden' : h(pet.status || 'Available')}</span></p>
+      <div id="${detailId}" class="hidden mt-3 pt-3 border-t border-sage-100 text-xs space-y-1 text-gray-500">
+        ${pet.color ? '<p><span class="text-gray-400">Color:</span> ' + h(pet.color) + '</p>' : ''}
+        ${pet.size ? '<p><span class="text-gray-400">Size:</span> ' + h(pet.size) + '</p>' : ''}
+        ${pet.weight ? '<p><span class="text-gray-400">Weight:</span> ' + h(pet.weight) + ' lbs</p>' : ''}
+        ${pet.altered ? '<p><span class="text-gray-400">Altered:</span> ' + h(pet.altered) + '</p>' : ''}
+        ${pet.microchipped ? '<p><span class="text-gray-400">Microchipped:</span> Yes</p>' : ''}
+        ${pet.adoption_fee != null ? '<p><span class="text-gray-400">Fee:</span> $' + pet.adoption_fee + (pet.adoption_fee_name ? ' (' + h(pet.adoption_fee_name) + ')' : '') + '</p>' : ''}
+        ${pet.in_foster ? '<p><span class="text-gray-400">In Foster:</span> Yes</p>' : ''}
+        ${pet.description ? '<p class="mt-2 text-gray-600">' + h(pet.description) + '</p>' : ''}
+        ${(pet.attributes || []).length > 0 ? '<div class="flex flex-wrap gap-1 mt-2">' + pet.attributes.map(a => '<span class="px-1.5 py-0.5 bg-sage-50 text-sage-600 rounded text-[10px]">' + h(a) + '</span>').join('') + '</div>' : ''}
+        ${fosterNames.length > 0 ? '<p class="mt-2"><span class="text-gray-400">Foster:</span> ' + h(fosterNames.join(', ')) + '</p>' : ''}
+        <div id="pet-foster-updates-${pet.id}"></div>
+      </div>
       ${actions}
     </div>
   </div>`;
@@ -1810,6 +1829,37 @@ window.manualSync = async function() {
     }
   } catch(e) {
     if (btn) { btn.textContent = 'Error'; setTimeout(() => { btn.textContent = 'Sync Now'; btn.disabled = false; }, 3000); }
+  }
+};
+
+window.togglePetDetail = async function(id) {
+  const el = document.getElementById('pet-detail-' + id);
+  if (!el) return;
+  el.classList.toggle('hidden');
+  // Load foster updates if expanding
+  if (!el.classList.contains('hidden')) {
+    const updatesEl = document.getElementById('pet-foster-updates-' + id);
+    if (updatesEl && !updatesEl.dataset.loaded) {
+      try {
+        const data = await api('/admin/pets/assign');
+        const assignments = (data.assignments || []).filter(a => a.animal_id === id);
+        if (assignments.length > 0) {
+          // Fetch foster updates for this animal
+          const fData = await api('/admin/foster-pets');
+          const pets = fData.pets || [];
+          const pet = pets.find(p => p.id === id);
+          const updates = pet?.foster_updates || [];
+          if (updates.length > 0) {
+            updatesEl.innerHTML = '<p class="text-gray-400 text-[10px] uppercase tracking-wider font-bold mt-3 mb-1">Foster Updates</p>' +
+              updates.slice(0, 5).map(u => `<div class="py-1.5 border-b border-gray-50">
+                <div class="flex justify-between"><span class="font-semibold text-gray-600">${u.update_type === 'testimonial' ? '⭐ ' : ''}${h(u.content || '').substring(0, 100)}</span></div>
+                <span class="text-[10px] text-gray-300">${localTime(u.created_at)}</span>
+              </div>`).join('');
+          }
+        }
+      } catch(e) {}
+      updatesEl.dataset.loaded = 'true';
+    }
   }
 };
 
@@ -2112,16 +2162,15 @@ window.showAssignFoster = async function(animalId, petName) {
 window.assignFoster = async function(animalId, userId, petName) {
   const res = await api('/admin/pets/assign', { method: 'POST', body: { animal_id: animalId, user_id: userId } });
   if (res.error) { alert(res.error); return; }
-  // Refresh the modal
   document.getElementById('assignFosterOverlay').remove();
-  showAssignFoster(animalId, petName);
+  renderPets(document.getElementById('content'));
 };
 
 window.unassignFoster = async function(animalId, userId, petName) {
   const res = await api('/admin/pets/assign', { method: 'DELETE', body: { animal_id: animalId, user_id: userId } });
   if (res.error) { alert(res.error); return; }
   document.getElementById('assignFosterOverlay').remove();
-  showAssignFoster(animalId, petName);
+  renderPets(document.getElementById('content'));
 };
 
 // ── Foster Dashboard (My Pets) ──
