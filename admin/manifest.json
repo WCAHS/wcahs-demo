@@ -1,0 +1,22 @@
+{
+  "name": "WCAHS Admin",
+  "short_name": "WCAHS",
+  "description": "Waseca County Animal Humane Society — Admin Panel",
+  "start_url": "/admin/",
+  "display": "standalone",
+  "background_color": "#fdf8f3",
+  "theme_color": "#48543e",
+  "icons": [
+    {
+      "src": "../favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "../images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
