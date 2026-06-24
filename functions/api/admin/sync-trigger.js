@@ -29,8 +29,8 @@ export async function onRequestPost(context) {
     const data = await res.json();
     const animals = data.animals || [];
 
-    // Clear and reinsert
-    await env.DB.prepare('DELETE FROM animals').run();
+    // Clear synced animals only (preserve manual pets and their hidden flags)
+    await env.DB.prepare('DELETE FROM animals WHERE is_manual = 0 OR is_manual IS NULL').run();
 
     if (animals.length > 0) {
       const stmt = env.DB.prepare(

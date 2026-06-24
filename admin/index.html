@@ -79,6 +79,10 @@
     .filter-tab:not(.active) { background: white; color: #6b7280; border-color: #e8ebe3; }
     .filter-tab:not(.active):hover { border-color: #b3bea3; color: #48543e; }
 
+    .filter-tabs-scroll { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none; }
+    .filter-tabs-scroll::-webkit-scrollbar { display: none; }
+    .filter-tabs-scroll .filter-tab { white-space: nowrap; flex-shrink: 0; }
+
     @media (max-width: 767px) {
       #dashboard { flex-direction: column; }
       #sidebar { position: fixed; inset: 0; z-index: 50; transform: translateX(-100%); transition: transform 0.25s ease; width: 100%; max-width: 280px; height: 100vh; }
@@ -144,6 +148,7 @@
           <span>Inbox</span>
           <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
         </a>
+        <a onclick="navigate('pets')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="pets">Pets</a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
         <!-- Email management handled in Resend dashboard -->
         <!-- FAQ temporarily hidden — editor needs rework -->
@@ -151,7 +156,6 @@
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
         <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
-        <a onclick="navigate('api-status')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="api-status">API Status</a>
         <div class="border-t border-sage-800 my-2 admin-only"></div>
         <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mb-1 admin-only">Quick Links</p>
         <a href="https://mail.zoho.com" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white admin-only">
@@ -239,9 +243,11 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 });
 
 let currentRole = 'staff';
+let currentUsername = '';
 
 function showDashboard(user) {
   currentRole = user.role;
+  currentUsername = user.username;
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
   document.getElementById('loggedInAs').textContent = user.username + ' (' + user.role + ')';
@@ -291,6 +297,7 @@ function navigate(page) {
   try { sessionStorage.setItem('wcahs_admin_page', page); } catch(e) {}
   switch(page) {
     case 'submissions': renderSubmissions(content); break;
+    case 'pets': renderPets(content); break;
     case 'events': renderEvents(content); break;
     case 'email': renderEmail(content); break;
     case 'faq': renderFaq(content); break;
@@ -446,7 +453,7 @@ async function renderSubmissions(el) {
   };
 
   let html = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">Inbox</h1>
-    <div class="flex gap-2 mb-5 flex-wrap">
+    <div class="filter-tabs-scroll mb-5">
       ${tabBtn('all', 'All')}
       ${tabBtn('contact', 'Contact')}
       ${tabBtn('foster', 'Foster')}
@@ -1202,15 +1209,23 @@ async function renderSettings(el) {
 
   const partners = Array.isArray(data.partners) ? data.partners.join(', ') : (data.partners || '');
 
-  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Site Settings</h1>
+  const annColor = data.announcement_color || 'sage';
+  const colorOptions = [
+    { value: 'sage', label: 'Sage Green', bg: '#48543e' },
+    { value: 'amber', label: 'Amber', bg: '#d97706' },
+    { value: 'red', label: 'Red', bg: '#dc2626' },
+    { value: 'blue', label: 'Blue', bg: '#2563eb' },
+    { value: 'dark', label: 'Dark', bg: '#1f2937' },
+  ];
+  const annTextLen = (data.announcement_text || '').length;
+
+  let settingsHtml = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Site Settings</h1>
 
   <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Contact Information</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Phone</label><input id="setPhone" value="${h(data.phone||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Email</label><input id="setEmail" value="${h(data.email||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="setAddress" value="${h(data.address||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address Note</label><input id="setAddressNote" value="${h(data.address_note||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
     </div>
   </div>
 
@@ -1238,47 +1253,46 @@ async function renderSettings(el) {
   </div>
 
   <div class="card p-6 mb-5">
-    <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
-    <div class="flex items-center gap-4 mb-3">
-      <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction===true||data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
-    </div>
-    <p class="text-xs text-gray-400">Shows a one-time popup per session with "Pardon Our Muddy Paws!" message. Visitors dismiss it to continue browsing.</p>
-    <div class="mt-3"><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
-      <div class="flex flex-wrap gap-3" id="ucPages">
-        ${['all','home','pets','events','lost-found','about','contact','faq'].map(p => {
-          const pages = data.under_construction_pages || 'all';
-          const checked = pages === 'all' ? p === 'all' : pages.split(',').includes(p);
-          const label = p === 'all' ? 'All Pages' : p.charAt(0).toUpperCase() + p.slice(1).replace('-',' & ');
-          return '<label class="flex items-center gap-1.5 text-xs"><input type="checkbox" value="'+p+'" '+(checked?'checked':'')+' onchange="handleUcPageToggle(this)"> '+label+'</label>';
-        }).join('')}
-      </div>
-    </div>
-  </div>
-
-  <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Site Announcement Banner</h2>
     <div class="flex items-center gap-4 mb-3">
       <label class="flex items-center gap-2 text-sm"><input id="setAnnEnabled" type="checkbox" ${data.announcement_enabled===true||data.announcement_enabled==='true'?'checked':''}> Enable announcement</label>
     </div>
-    <div class="mb-3"><label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label><input id="setAnnText" value="${h(data.announcement_text||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. We're closed Dec 24-26 for the holidays"></div>
-    <div><label class="block text-xs font-semibold text-gray-600 mb-2">Show on pages</label>
-      <div class="flex flex-wrap gap-3" id="annPages">
-        ${['all','home','pets','events','lost-found','about','contact','faq'].map(p => {
-          const pages = data.announcement_pages || 'all';
-          const checked = pages === 'all' ? p === 'all' : pages.split(',').includes(p);
-          const label = p === 'all' ? 'All Pages' : p.charAt(0).toUpperCase() + p.slice(1).replace('-',' & ');
-          return '<label class="flex items-center gap-1.5 text-xs"><input type="checkbox" value="'+p+'" '+(checked?'checked':'')+' onchange="handleAnnPageToggle(this)"> '+label+'</label>';
-        }).join('')}
-      </div>
-      <p class="text-xs text-gray-400 mt-1">Select "All Pages" or pick specific pages</p>
+    <div class="mb-3">
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Announcement Text</label>
+      <input id="setAnnText" value="${h(data.announcement_text||'')}" maxlength="120" oninput="updateAnnCharCount()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. We're closed Dec 24-26 for the holidays">
+      <p class="text-xs text-gray-400 mt-1"><span id="annCharCount">${annTextLen}</span>/120 characters</p>
     </div>
-  </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Banner Color</label>
+      <select id="setAnnColor" class="w-full md:w-auto border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+        ${colorOptions.map(c => '<option value="' + c.value + '"' + (annColor === c.value ? ' selected' : '') + '>' + c.label + '</option>').join('')}
+      </select>
+      <div id="annColorPreview" class="inline-block w-5 h-5 rounded-md ml-2 align-middle" style="background:${(colorOptions.find(c=>c.value===annColor)||colorOptions[0]).bg}"></div>
+    </div>
+  </div>`;
 
-  <button onclick="saveSettings()" class="bg-sage-700 hover:bg-sage-800 text-white font-bold px-6 py-3 rounded-xl transition">Save Settings</button>
+  // Under construction — techadmin only
+  if (currentUsername === 'techadmin') {
+    settingsHtml += `<div class="card p-6 mb-5">
+      <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
+      <div class="flex items-center gap-4 mb-3">
+        <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction===true||data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
+      </div>
+      <p class="text-xs text-gray-400">Shows a one-time popup per session with "Pardon Our Muddy Paws!" message. Visitors dismiss it to continue browsing.</p>
+    </div>`;
+  }
+
+  settingsHtml += `<button onclick="saveSettings()" class="bg-sage-700 hover:bg-sage-800 text-white font-bold px-6 py-3 rounded-xl transition">Save Settings</button>
   <span id="settingsSaved" class="text-sm font-bold ml-3 hidden" style="color:#5c6b4e;">Settings saved!</span>`;
 
+  el.innerHTML = settingsHtml;
+
   const partnerArr = Array.isArray(data.partners) ? data.partners : (data.partners ? data.partners.split(',').map(s=>s.trim()).filter(Boolean) : []);
-  setTimeout(() => renderPartnersList(partnerArr), 0);
+  setTimeout(() => {
+    renderPartnersList(partnerArr);
+    const sel = document.getElementById('setAnnColor');
+    if (sel) sel.addEventListener('change', window.updateAnnColorPreview);
+  }, 0);
 }
 
 // Partners list management
@@ -1307,44 +1321,43 @@ window.removePartner = function(i) {
   renderPartnersList(_partners);
 };
 
-window.handleUcPageToggle = function(el) {
-  const checks = document.querySelectorAll('#ucPages input');
-  if (el.value === 'all' && el.checked) {
-    checks.forEach(c => { if (c.value !== 'all') c.checked = false; });
-  } else if (el.value !== 'all') {
-    checks.forEach(c => { if (c.value === 'all') c.checked = false; });
+window.updateAnnCharCount = function() {
+  const input = document.getElementById('setAnnText');
+  const counter = document.getElementById('annCharCount');
+  if (input && counter) {
+    counter.textContent = input.value.length;
+    counter.style.color = input.value.length > 100 ? '#d97706' : '';
   }
 };
 
-window.handleAnnPageToggle = function(el) {
-  const checks = document.querySelectorAll('#annPages input');
-  if (el.value === 'all' && el.checked) {
-    checks.forEach(c => { if (c.value !== 'all') c.checked = false; });
-  } else if (el.value !== 'all') {
-    checks.forEach(c => { if (c.value === 'all') c.checked = false; });
-  }
+window.updateAnnColorPreview = function() {
+  const select = document.getElementById('setAnnColor');
+  const preview = document.getElementById('annColorPreview');
+  const colors = { sage: '#48543e', amber: '#d97706', red: '#dc2626', blue: '#2563eb', dark: '#1f2937' };
+  if (select && preview) preview.style.background = colors[select.value] || colors.sage;
 };
+
 
 window.saveSettings = async function() {
   try {
-  const annChecks = [...document.querySelectorAll('#annPages input:checked')].map(c => c.value);
-  const annPages = annChecks.length > 0 ? (annChecks.includes('all') ? 'all' : annChecks.join(',')) : 'all';
-  const ucChecks = [...document.querySelectorAll('#ucPages input:checked')].map(c => c.value);
-  const ucPages = ucChecks.length > 0 ? (ucChecks.includes('all') ? 'all' : ucChecks.join(',')) : 'all';
-  const res = await api('/admin/settings', { method: 'PUT', body: {
+  const body = {
     phone: document.getElementById('setPhone').value,
     email: document.getElementById('setEmail').value,
-    address: document.getElementById('setAddress').value,
-    address_note: document.getElementById('setAddressNote').value,
     zeffy_url: document.getElementById('setZeffy').value,
     facebook_url: document.getElementById('setFb').value,
     partners: _partners,
-    under_construction: document.getElementById('setUcEnabled').checked ? 'true' : 'false',
-    under_construction_pages: ucPages,
     announcement_enabled: document.getElementById('setAnnEnabled').checked ? 'true' : 'false',
     announcement_text: document.getElementById('setAnnText').value,
-    announcement_pages: annPages,
-  }});
+    announcement_pages: 'all',
+    announcement_color: document.getElementById('setAnnColor').value,
+  };
+  // Under construction — only save if techadmin
+  const ucEl = document.getElementById('setUcEnabled');
+  if (ucEl) {
+    body.under_construction = ucEl.checked ? 'true' : 'false';
+    body.under_construction_pages = 'all';
+  }
+  const res = await api('/admin/settings', { method: 'PUT', body });
   const saved = document.getElementById('settingsSaved');
   if (res.error) {
     saved.textContent = 'Error: ' + JSON.stringify(res.error);
@@ -1547,7 +1560,372 @@ async function renderAnalytics(el) {
   <p class="text-xs text-gray-400 mt-4 text-center">Powered by Cloudflare Web Analytics &bull; UTC: ${new Date().toLocaleString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</p>`;
 }
 
-// ── API Status ──
+// ── Pets ──
+let _petsTab = 'active';
+
+async function renderPets(el) {
+  const tabBtn = (key, label) => {
+    const isActive = _petsTab === key;
+    return `<button onclick="_petsTab='${key}';renderPets(document.getElementById('content'))" class="filter-tab ${isActive ? 'active' : ''}">${label}</button>`;
+  };
+
+  el.innerHTML = `<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Pets</h1>
+  </div>
+  <div class="filter-tabs-scroll mb-5">
+    ${tabBtn('active', 'Active Pets')}
+    ${tabBtn('happy-tails', 'Happy Tails')}
+    ${tabBtn('manage', 'Manage')}
+    ${tabBtn('sync-status', 'Sync Status')}
+  </div>
+  <div id="petsContent"><p class="text-gray-400">Loading...</p></div>`;
+
+  switch (_petsTab) {
+    case 'active': await renderPetsActive(); break;
+    case 'happy-tails': await renderPetsHappyTails(); break;
+    case 'manage': await renderPetsManage(); break;
+    case 'sync-status': await renderPetsSyncStatus(); break;
+  }
+}
+
+async function renderPetsActive() {
+  const container = document.getElementById('petsContent');
+  try {
+    const data = await api('/admin/pets');
+    const animals = data.animals || [];
+
+    if (animals.length === 0) {
+      container.innerHTML = `<div class="card p-10 text-center">
+        <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19c-4.3 0-7.5-3.2-7.5-7S7.7 5 12 5s7.5 3.2 7.5 7-3.2 7-7.5 7zm-2-9a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2zm-5 3s1.5 2 3 2 3-2 3-2"/></svg>
+        <p class="text-gray-400 font-semibold">No active pets from ShelterLuv</p>
+        <p class="text-gray-300 text-sm mt-1">Pets will appear here after the next sync</p>
+      </div>`;
+      return;
+    }
+
+    let html = `<p class="text-sm text-gray-500 mb-4"><span class="font-bold text-gray-800">${animals.length}</span> pet${animals.length !== 1 ? 's' : ''} &bull; <span class="text-gray-400">${animals.filter(a => a.hidden).length} hidden</span></p>`;
+    html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">';
+    animals.forEach(pet => {
+      const isHidden = pet.hidden === 1;
+      const photoUrl = pet.cover_photo || '';
+      const photoHtml = photoUrl
+        ? `<img src="${h(photoUrl)}" class="w-full h-40 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
+        : `<div class="w-full h-40 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-12 h-12 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
+
+      html += `<div class="card overflow-hidden ${isHidden ? 'opacity-50' : ''}">
+        ${photoHtml}
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold text-gray-900">${h(pet.name)}</h3>
+            ${pet.is_manual ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">Manual</span>' : ''}
+          </div>
+          <p class="text-sm text-gray-500">${h(pet.type || '')}${pet.breed ? ' &bull; ' + h(pet.breed) : ''}</p>
+          <p class="text-xs text-gray-400 mt-0.5">${h(pet.age_display || '')}${pet.sex ? ' &bull; ' + h(pet.sex) : ''}</p>
+          <p class="text-xs mt-1"><span class="inline-block px-2 py-0.5 rounded-full ${isHidden ? 'bg-gray-100 text-gray-500' : 'bg-sage-100 text-sage-700'} font-semibold">${isHidden ? 'Hidden' : pet.status || 'Available'}</span></p>
+          <div class="mt-3 pt-3 border-t border-sage-100">
+            ${isHidden
+              ? `<button onclick="togglePetVisibility('${h(pet.id)}', false)" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold">Show on Website</button>`
+              : `<button onclick="togglePetVisibility('${h(pet.id)}', true)" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition font-semibold">Hide from Website</button>`
+            }
+          </div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error loading pets: ' + h(e.message) + '</p>';
+  }
+}
+
+window.togglePetVisibility = async function(id, hide) {
+  await api('/admin/pets', { method: 'PUT', body: { id, hidden: hide } });
+  renderPetsActive();
+};
+
+async function renderPetsHappyTails() {
+  const container = document.getElementById('petsContent');
+  try {
+    const data = await api('/admin/pets/happy-tails');
+    const entries = Array.isArray(data) ? data : [];
+
+    let html = `<div class="flex items-center justify-between mb-4">
+      <p class="text-sm text-gray-500"><span class="font-bold text-gray-800">${entries.length}</span> happy tail${entries.length !== 1 ? 's' : ''}</p>
+      <button onclick="showHappyTailForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ Add Happy Tail</button>
+    </div>`;
+    html += '<div id="happyTailFormArea"></div>';
+
+    if (entries.length === 0) {
+      html += `<div class="card p-10 text-center">
+        <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        <p class="text-gray-400 font-semibold">No happy tails yet</p>
+        <p class="text-gray-300 text-sm mt-1">Add adopted pets to celebrate their forever homes</p>
+      </div>`;
+    } else {
+      html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">';
+      entries.forEach(ht => {
+        const photoHtml = ht.photo_url
+          ? `<img src="${h(ht.photo_url)}" class="w-20 h-20 rounded-xl object-cover shrink-0" onerror="this.style.display='none'">`
+          : '';
+        const familyPhotoHtml = ht.family_photo_url
+          ? `<img src="${h(ht.family_photo_url)}" class="w-full h-40 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
+          : `<div class="w-full h-32 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-10 h-10 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>`;
+
+        html += `<div class="card overflow-hidden">
+          ${familyPhotoHtml}
+          <div class="p-4">
+            <div class="flex items-start gap-3">
+              ${photoHtml}
+              <div class="min-w-0">
+                <h3 class="font-bold text-gray-900">${h(ht.pet_name)}</h3>
+                <p class="text-sm text-gray-500">${h(ht.pet_type || '')}${ht.breed ? ' &bull; ' + h(ht.breed) : ''}</p>
+                ${ht.adoption_date ? '<p class="text-xs text-gray-400 mt-0.5">Adopted ' + formatDate(ht.adoption_date) + '</p>' : ''}
+              </div>
+            </div>
+            ${ht.description ? '<p class="text-sm text-gray-600 mt-2">' + h(ht.description) + '</p>' : ''}
+            <div class="mt-3 pt-3 border-t border-sage-100 flex gap-3">
+              <button onclick="uploadHappyTailPhoto(${ht.id})" class="text-xs text-sage-700 hover:underline font-semibold">Upload Family Photo</button>
+              <button onclick="if(confirm('Remove this happy tail?')) removeHappyTail(${ht.id})" class="text-xs text-red-400 hover:underline">Remove</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error loading happy tails: ' + h(e.message) + '</p>';
+  }
+}
+
+window.showHappyTailForm = function() {
+  document.getElementById('happyTailFormArea').innerHTML = `<div class="card-warm p-6 mb-5 border border-sage-200" style="background:#f6f7f4;">
+    <h3 class="font-bold text-gray-900 mb-4">Add Happy Tail</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Pet Name *</label><input id="htName" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
+        <select id="htType" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+          <option value="">--</option><option value="Dog">Dog</option><option value="Cat">Cat</option><option value="Other">Other</option>
+        </select></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Breed</label><input id="htBreed" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Adoption Date</label><input id="htDate" type="date" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+    </div>
+    <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="htDesc" rows="2" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="Their story..."></textarea></div>
+    <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Pet Photo</label><input id="htPhoto" type="file" accept="image/*" class="text-sm"></div>
+    <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Family Photo</label><input id="htFamilyPhoto" type="file" accept="image/*" class="text-sm"></div>
+    <div class="flex gap-2">
+      <button onclick="saveHappyTail()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Save</button>
+      <button onclick="document.getElementById('happyTailFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
+    </div>
+  </div>`;
+};
+
+async function uploadPhotoFile(fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return '';
+  const formData = new FormData();
+  formData.append('photo', file);
+  const res = await fetch('/api/admin/pets/photo', {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  return data.url || '';
+}
+
+window.saveHappyTail = async function() {
+  const name = document.getElementById('htName').value.trim();
+  if (!name) { alert('Pet name is required'); return; }
+
+  let photoUrl = '';
+  let familyPhotoUrl = '';
+  const photoInput = document.getElementById('htPhoto');
+  const familyInput = document.getElementById('htFamilyPhoto');
+  if (photoInput.files[0]) photoUrl = await uploadPhotoFile(photoInput);
+  if (familyInput.files[0]) familyPhotoUrl = await uploadPhotoFile(familyInput);
+
+  const res = await api('/admin/pets/happy-tails', { method: 'POST', body: {
+    pet_name: name,
+    pet_type: document.getElementById('htType').value,
+    breed: document.getElementById('htBreed').value,
+    adoption_date: document.getElementById('htDate').value,
+    description: document.getElementById('htDesc').value,
+    photo_url: photoUrl,
+    family_photo_url: familyPhotoUrl,
+  }});
+  if (res.error) { alert(res.error); return; }
+  _petsTab = 'happy-tails';
+  renderPets(document.getElementById('content'));
+};
+
+window.removeHappyTail = async function(id) {
+  await api('/admin/pets/happy-tails?id=' + id, { method: 'DELETE' });
+  _petsTab = 'happy-tails';
+  renderPets(document.getElementById('content'));
+};
+
+window.uploadHappyTailPhoto = async function(id) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async function() {
+    if (!input.files[0]) return;
+    const url = await uploadPhotoFile(input);
+    if (!url) { alert('Upload failed'); return; }
+    // Fetch current entry, update family_photo_url via raw SQL through happy-tails endpoint
+    // We need a PUT-like operation. For simplicity, delete and re-add is bad. Let's use a separate approach.
+    // Actually, we can just update via a POST with special flag or use the existing endpoints.
+    // The happy-tails endpoint only has GET/POST/DELETE. Let's do a direct fetch to update.
+    const res = await fetch('/api/admin/pets/happy-tails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _update_photo: true, id, family_photo_url: url }),
+    });
+    _petsTab = 'happy-tails';
+    renderPets(document.getElementById('content'));
+  };
+  input.click();
+};
+
+async function renderPetsManage() {
+  const container = document.getElementById('petsContent');
+  try {
+    const data = await api('/admin/pets');
+    const manualPets = (data.animals || []).filter(a => a.is_manual === 1);
+
+    let html = `<div class="card-warm p-6 mb-5 border border-sage-200" style="background:#f6f7f4;">
+      <h3 class="font-bold text-gray-900 mb-4">Add Pet Manually</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Name *</label><input id="mpName" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
+          <select id="mpType" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+            <option value="Dog">Dog</option><option value="Cat">Cat</option><option value="Other">Other</option>
+          </select></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Breed</label><input id="mpBreed" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Age (months)</label><input id="mpAge" type="number" min="0" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. 24"></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Sex</label>
+          <select id="mpSex" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+            <option value="">--</option><option value="Male">Male</option><option value="Female">Female</option>
+          </select></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Photo</label><input id="mpPhoto" type="file" accept="image/*" class="text-sm"></div>
+      </div>
+      <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="mpDesc" rows="3" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></textarea></div>
+      <button onclick="saveManualPet()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Add Pet</button>
+    </div>`;
+
+    if (manualPets.length > 0) {
+      html += `<h3 class="font-bold text-gray-900 mb-3">Manually Added Pets</h3>`;
+      html += '<div class="space-y-2">';
+      manualPets.forEach(pet => {
+        html += `<div class="card p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            ${pet.cover_photo ? '<img src="' + h(pet.cover_photo) + '" class="w-10 h-10 rounded-xl object-cover shrink-0">' : '<div class="w-10 h-10 rounded-xl bg-sage-100 flex items-center justify-center"><span class="text-sm font-bold text-sage-600">' + h(pet.name.charAt(0)) + '</span></div>'}
+            <div>
+              <span class="font-bold text-gray-900 text-sm">${h(pet.name)}</span>
+              <p class="text-xs text-gray-400">${h(pet.type || '')}${pet.breed ? ' &bull; ' + h(pet.breed) : ''} &bull; ${h(pet.age_display || '')}</p>
+            </div>
+          </div>
+          <button onclick="if(confirm('Delete ${h(pet.name)}?')) deleteManualPet('${h(pet.id)}')" class="text-xs text-red-400 hover:underline">Delete</button>
+        </div>`;
+      });
+      html += '</div>';
+    } else {
+      html += `<div class="card p-6 text-center text-gray-400 text-sm">No manually added pets. Synced pets from ShelterLuv can be hidden but not deleted.</div>`;
+    }
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error: ' + h(e.message) + '</p>';
+  }
+}
+
+window.saveManualPet = async function() {
+  const name = document.getElementById('mpName').value.trim();
+  if (!name) { alert('Pet name is required'); return; }
+
+  let coverPhoto = '';
+  const photoInput = document.getElementById('mpPhoto');
+  if (photoInput.files[0]) coverPhoto = await uploadPhotoFile(photoInput);
+
+  const res = await api('/admin/pets', { method: 'POST', body: {
+    name,
+    type: document.getElementById('mpType').value,
+    breed: document.getElementById('mpBreed').value,
+    age: document.getElementById('mpAge').value,
+    sex: document.getElementById('mpSex').value,
+    description: document.getElementById('mpDesc').value,
+    cover_photo: coverPhoto,
+  }});
+  if (res.error) { alert(res.error); return; }
+  _petsTab = 'manage';
+  renderPets(document.getElementById('content'));
+};
+
+window.deleteManualPet = async function(id) {
+  const res = await api('/admin/pets?id=' + encodeURIComponent(id), { method: 'DELETE' });
+  if (res.error) { alert(res.error); return; }
+  _petsTab = 'manage';
+  renderPets(document.getElementById('content'));
+};
+
+async function renderPetsSyncStatus() {
+  const container = document.getElementById('petsContent');
+  container.innerHTML = '<p class="text-gray-400">Loading...</p>';
+  let data;
+  try { data = await api('/admin/sync-status'); } catch(e) { data = { error: e.message }; }
+  if (data.error) { container.innerHTML = '<p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">Could not load: ' + h(data.error) + '</p>'; return; }
+
+  const lastSync = data.recent_syncs[0];
+  const lastSuccessMin = data.last_success ? minutesAgo(data.last_success) : null;
+  const isHealthy = lastSync?.status === 'success' && lastSuccessMin !== null && lastSuccessMin < 30;
+  const nextSyncMin = lastSuccessMin !== null ? Math.max(15 - lastSuccessMin, 0) : null;
+
+  const lastSyncLabel = lastSuccessMin !== null
+    ? (lastSuccessMin < 1 ? 'just now' : lastSuccessMin + ' min ago')
+    : 'never';
+  const nextSyncLabel = lastSuccessMin !== null
+    ? (lastSuccessMin >= 30 ? 'overdue' : nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
+    : 'unknown';
+
+  const statusColor = isHealthy ? 'green' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'red' : 'amber');
+  const statusLabel = isHealthy ? 'Healthy' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'Overdue' : 'Issue');
+  const dotStyle = {green:'bg-green-500;box-shadow:0 0 0 4px rgba(34,197,94,0.2)',red:'bg-red-500;box-shadow:0 0 0 4px rgba(239,68,68,0.2)',amber:'bg-amber-500;box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}[statusColor];
+  const badgeStyle = {green:'bg-sage-100 text-sage-700',red:'bg-red-100 text-red-700',amber:'bg-amber-100 text-amber-700'}[statusColor];
+
+  container.innerHTML = `<div class="grid md:grid-cols-2 gap-5">
+    <div class="card p-5">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="w-3 h-3 rounded-full ${dotStyle.split(';')[0]}" style="${dotStyle.split(';')[1] || ''}"></span>
+        <h2 class="font-bold text-gray-900 text-sm">ShelterLuv Sync</h2>
+        <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold ${badgeStyle}">${statusLabel}</span>
+      </div>
+      <div class="space-y-1.5 text-sm text-gray-600">
+        <div class="flex justify-between"><span class="text-gray-400">Animals</span><span class="font-semibold text-gray-800">${data.current_animals}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Last sync</span><span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Next sync</span><span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
+      </div>
+      <p class="text-[11px] text-gray-400 mt-3">Every 15 min via GitHub Actions &bull; <a href="https://github.com/WCAHS/wcahs-demo/actions" target="_blank" class="text-sage-600 hover:underline">Manage on GitHub</a></p>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-900 text-sm mb-2">Recent Syncs</h3>
+      ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
+      '<div class="space-y-0.5">' + data.recent_syncs.slice(0, 5).map(s => `
+        <div class="flex items-center justify-between py-1 text-xs">
+          <div class="flex items-center gap-2">
+            ${s.status === 'success'
+              ? '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
+              : '<svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+            }
+            <span class="text-gray-400">${localTime(s.synced_at)}</span>
+          </div>
+        </div>
+      `).join('') + '</div>'}
+    </div>
+  </div>`;
+}
+
+// ── API Status (kept for backward compat, redirects to pets sync tab) ──
 async function renderApiStatus(el) {
   el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-gray-400">Loading...</p>';
   let data;
