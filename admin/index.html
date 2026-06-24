@@ -254,8 +254,9 @@ function showDashboard(user) {
   if (user.role !== 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
   }
+  const validPages = ['submissions','pets','events','email','faq','settings','about','users','my-account','analytics'];
   const savedPage = sessionStorage.getItem('wcahs_admin_page');
-  navigate(savedPage || 'submissions');
+  navigate(validPages.includes(savedPage) ? savedPage : 'submissions');
   loadBadgeCounts();
 }
 
@@ -306,7 +307,7 @@ function navigate(page) {
     case 'users': renderUsers(content); break;
     case 'my-account': renderMyAccount(content); break;
     case 'analytics': renderAnalytics(content); break;
-    default: content.innerHTML = '<p class="text-gray-400">Select a section</p>';
+    default: sessionStorage.removeItem('wcahs_admin_page'); renderSubmissions(content); break;
   }
 }
 
