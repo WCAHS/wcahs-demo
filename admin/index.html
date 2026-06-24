@@ -309,12 +309,17 @@ function timeAgo(dt) {
 }
 function localTime(dt) {
   if (!dt) return '';
-  const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+  const fixed = dt.replace(' ', 'T').replace(/([^Z])$/, '$1Z');
+  const d = new Date(fixed);
+  if (isNaN(d)) return '';
   return d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
 }
 function minutesAgo(dt) {
   if (!dt) return null;
-  const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+  // D1 timestamps are UTC but formatted as "2026-06-23 23:21:08" — need T separator and Z suffix
+  const fixed = dt.replace(' ', 'T').replace(/([^Z])$/, '$1Z');
+  const d = new Date(fixed);
+  if (isNaN(d)) return null;
   return Math.floor((new Date() - d) / 60000);
 }
 
@@ -1543,18 +1548,18 @@ async function renderApiStatus(el) {
 
   const lastSync = data.recent_syncs[0];
   const lastSuccessMin = data.last_success ? minutesAgo(data.last_success) : null;
-  const isHealthy = lastSync?.status === 'success' && lastSuccessMin !== null && lastSuccessMin < 20;
+  const isHealthy = lastSync?.status === 'success' && lastSuccessMin !== null && lastSuccessMin < 30;
   const nextSyncMin = lastSuccessMin !== null ? Math.max(15 - lastSuccessMin, 0) : null;
 
   const lastSyncLabel = lastSuccessMin !== null
     ? (lastSuccessMin < 1 ? 'just now' : lastSuccessMin + ' min ago')
     : 'never';
   const nextSyncLabel = lastSuccessMin !== null
-    ? (lastSuccessMin >= 20 ? 'overdue' : nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
+    ? (lastSuccessMin >= 30 ? 'overdue' : nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
     : 'unknown';
 
-  const statusColor = isHealthy ? 'green' : (lastSuccessMin !== null && lastSuccessMin >= 20 ? 'red' : 'amber');
-  const statusLabel = isHealthy ? 'Healthy' : (lastSuccessMin !== null && lastSuccessMin >= 20 ? 'Overdue' : 'Issue');
+  const statusColor = isHealthy ? 'green' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'red' : 'amber');
+  const statusLabel = isHealthy ? 'Healthy' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'Overdue' : 'Issue');
   const dotStyle = {green:'bg-green-500;box-shadow:0 0 0 4px rgba(34,197,94,0.2)',red:'bg-red-500;box-shadow:0 0 0 4px rgba(239,68,68,0.2)',amber:'bg-amber-500;box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}[statusColor];
   const badgeStyle = {green:'bg-sage-100 text-sage-700',red:'bg-red-100 text-red-700',amber:'bg-amber-100 text-amber-700'}[statusColor];
 
