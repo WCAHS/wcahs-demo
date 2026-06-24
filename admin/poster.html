@@ -3,313 +3,994 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pet Poster - WCAHS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Pet Poster Generator - WCAHS</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#48543e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WCAHS Admin">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Nunito', sans-serif; background: #f0f0f0; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Nunito', Arial, sans-serif; background: #f0f0f0; color: #333; }
 
+    /* ── Actions Bar ── */
+    .actions {
+      position: sticky; top: 0; z-index: 100;
+      background: #2c2c2c; padding: 10px 16px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      border-bottom: 3px solid #48543e;
+    }
+    .actions .sep {
+      width: 1px; height: 28px; background: #555; margin: 0 6px;
+    }
+    .actions .label {
+      font-size: 11px; color: #999; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-right: 4px;
+    }
+    .act-btn {
+      background: #444; color: #ddd; border: 1.5px solid #555; padding: 6px 14px;
+      border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .act-btn:hover { background: #555; color: #fff; }
+    .act-btn.active { background: #48543e; color: #fff; border-color: #6b7f5e; }
+    .act-btn.primary { background: #1a56a0; color: #fff; border-color: #2468bf; }
+    .act-btn.primary:hover { background: #1d61b5; }
+    .back-link {
+      color: #999; text-decoration: none; font-size: 13px; font-weight: 700; margin-right: 8px;
+    }
+    .back-link:hover { color: #fff; }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid; grid-template-columns: 380px 1fr;
+      min-height: calc(100vh - 52px);
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Editor Panel ── */
+    .editor {
+      background: #fff; border-right: 1px solid #ddd;
+      overflow-y: auto; max-height: calc(100vh - 52px);
+      padding: 16px;
+    }
+    .editor h2 {
+      font-size: 15px; font-weight: 800; color: #48543e; text-transform: uppercase;
+      letter-spacing: 1px; margin: 16px 0 8px; padding-bottom: 4px;
+      border-bottom: 2px solid #e8ece4;
+    }
+    .editor h2:first-child { margin-top: 0; }
+    .field { margin-bottom: 8px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 700; color: #666;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 6px 10px; border: 1.5px solid #ddd; border-radius: 6px;
+      font-family: inherit; font-size: 14px; font-weight: 600; color: #333;
+      transition: border-color .15s; background: #fafafa;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      outline: none; border-color: #48543e; background: #fff;
+    }
+    .field textarea { resize: vertical; min-height: 60px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    /* Type toggle */
+    .type-toggle {
+      display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 2px solid #ddd;
+      margin-bottom: 12px;
+    }
+    .type-toggle button {
+      flex: 1; padding: 10px; border: none; font-family: inherit;
+      font-size: 15px; font-weight: 800; cursor: pointer; transition: all .15s;
+      text-transform: uppercase; letter-spacing: 2px;
+    }
+    .type-toggle .lost-btn { background: #f5f5f5; color: #999; }
+    .type-toggle .lost-btn.active { background: #cc1f1f; color: #fff; }
+    .type-toggle .found-btn { background: #f5f5f5; color: #999; }
+    .type-toggle .found-btn.active { background: #2d7a3a; color: #fff; }
+
+    /* Photo selector */
+    .photo-thumbs {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+    }
+    .photo-thumb {
+      width: 64px; height: 64px; border-radius: 8px; object-fit: cover;
+      border: 3px solid #ddd; cursor: pointer; transition: all .15s;
+    }
+    .photo-thumb:hover { border-color: #999; }
+    .photo-thumb.selected { border-color: #48543e; box-shadow: 0 0 0 2px #48543e; }
+
+    /* Microchip toggle */
+    .toggle-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toggle-row label { margin-bottom: 0; }
+    .mini-toggle {
+      display: flex; gap: 0; border-radius: 6px; overflow: hidden; border: 1.5px solid #ddd;
+    }
+    .mini-toggle button {
+      padding: 4px 12px; border: none; font-family: inherit; font-size: 12px;
+      font-weight: 700; cursor: pointer; background: #f5f5f5; color: #999; transition: all .15s;
+    }
+    .mini-toggle button.active { background: #48543e; color: #fff; }
+
+    /* ── Preview Wrap ── */
+    .preview-wrap {
+      background: #e8e8e8; overflow-y: auto; max-height: calc(100vh - 52px);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 24px;
+    }
+    .preview-scaler {
+      transform-origin: top center;
+      transition: transform .2s;
+    }
+
+    /* ── POSTER STYLES ── */
     .poster {
-      width: 8.5in;
-      min-height: 11in;
-      margin: 20px auto;
-      background: #fff;
-      padding: 0;
-      overflow: hidden;
+      width: 8.5in; min-height: 11in;
+      background: #fff; overflow: hidden;
       box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      font-family: 'Nunito', Arial, sans-serif;
+    }
+    .poster * { box-sizing: border-box; }
+
+    .poster-header {
+      padding: 28px 40px 24px; text-align: center;
+    }
+    .poster-header.lost { background: #cc1f1f; color: #fff; }
+    .poster-header.found { background: #2d7a3a; color: #fff; }
+    .poster-header h1 {
+      font-size: 52px; font-weight: 900; letter-spacing: 6px;
+      text-transform: uppercase; line-height: 1; margin-bottom: 4px;
+    }
+    .poster-header .subtitle {
+      font-size: 17px; font-weight: 700; opacity: 0.92; letter-spacing: 1px;
     }
 
-    /* Header banner */
-    .header {
-      padding: 28px 40px 24px;
-      text-align: center;
+    .poster-photo {
+      padding: 20px 40px 12px; text-align: center;
     }
-    .header.lost { background: #dc2626; color: #fff; }
-    .header.found { background: #16a34a; color: #fff; }
-    .header h1 {
-      font-size: 52px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      line-height: 1;
-      margin-bottom: 4px;
+    .poster-photo img {
+      max-width: 100%; max-height: 4.2in; border-radius: 12px;
+      border: 4px solid #333; object-fit: cover;
     }
-    .header .subtitle {
-      font-size: 18px;
-      font-weight: 700;
-      opacity: 0.9;
-      letter-spacing: 1px;
+    .poster-no-photo {
+      width: 100%; height: 3in; background: #f3f3f3; border: 3px dashed #ccc;
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      color: #999; font-size: 18px; font-weight: 600;
     }
 
-    /* Photo area */
-    .photo-area {
-      padding: 24px 40px 16px;
-      text-align: center;
+    .poster-pet-name {
+      text-align: center; padding: 10px 40px 4px;
+      font-size: 40px; font-weight: 900; color: #111; line-height: 1.1;
     }
-    .photo-area img {
-      max-width: 100%;
-      max-height: 4.5in;
-      border-radius: 12px;
-      border: 4px solid #333;
-      object-fit: cover;
-    }
-    .no-photo {
-      width: 100%;
-      height: 3in;
-      background: #f3f3f3;
-      border: 3px dashed #ccc;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #999;
-      font-size: 18px;
-      font-weight: 600;
+    .poster-pet-name .responds {
+      font-size: 15px; font-weight: 600; color: #666; display: block; margin-top: 2px;
     }
 
-    /* Pet name */
-    .pet-name {
-      text-align: center;
-      padding: 12px 40px 8px;
-      font-size: 42px;
-      font-weight: 900;
-      color: #111;
-      line-height: 1.1;
+    .poster-details {
+      padding: 10px 40px 14px;
     }
-    .pet-name .responds-to {
-      font-size: 16px;
-      font-weight: 600;
-      color: #666;
-      display: block;
-      margin-top: 2px;
+    .poster-details-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px;
+    }
+    .poster-detail .d-label {
+      font-weight: 800; color: #555; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;
+    }
+    .poster-detail .d-value {
+      color: #111; font-weight: 700; font-size: 16px;
     }
 
-    /* Details grid */
-    .details {
-      padding: 12px 40px 16px;
+    .poster-description {
+      padding: 6px 40px 14px;
     }
-    .details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 24px;
+    .poster-description .desc-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: #888; font-weight: 800; margin-bottom: 3px;
     }
-    .detail-item {
-      font-size: 15px;
-      line-height: 1.4;
-    }
-    .detail-item .label {
-      font-weight: 800;
-      color: #333;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 1px;
-    }
-    .detail-item .value {
-      color: #111;
-      font-weight: 600;
-      font-size: 17px;
+    .poster-description .desc-text {
+      font-size: 14px; color: #333; line-height: 1.5;
+      border-left: 4px solid #ddd; padding-left: 14px;
     }
 
-    /* Description */
-    .description {
-      padding: 8px 40px 16px;
-      font-size: 15px;
-      color: #333;
-      line-height: 1.5;
+    .poster-location {
+      margin: 6px 40px; padding: 14px 18px; border-radius: 10px;
+      text-align: center; font-weight: 700; font-size: 16px;
     }
-    .description strong {
-      display: block;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #666;
-      margin-bottom: 4px;
+    .poster-location.lost {
+      background: #fef9e7; color: #92660e; border: 2px solid #f5d67a;
     }
-
-    /* Location banner */
-    .location-banner {
-      margin: 8px 40px;
-      padding: 14px 20px;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 17px;
+    .poster-location.found {
+      background: #eef8f0; color: #1e6a31; border: 2px solid #8cd4a0;
     }
-    .location-banner.lost { background: #fef2f2; color: #dc2626; border: 2px solid #fca5a5; }
-    .location-banner.found { background: #f0fdf4; color: #16a34a; border: 2px solid #86efac; }
-
-    /* Contact */
-    .contact {
-      padding: 16px 40px;
-      text-align: center;
+    .poster-location .loc-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      display: block; margin-bottom: 2px; opacity: 0.7;
     }
-    .contact .phone {
-      font-size: 36px;
-      font-weight: 900;
-      color: #111;
-      letter-spacing: 2px;
-    }
-    .contact .org {
-      font-size: 14px;
-      color: #666;
-      font-weight: 600;
-      margin-top: 4px;
+    .poster-location .loc-date {
+      font-size: 12px; font-weight: 600; opacity: 0.7; margin-top: 2px;
     }
 
-    /* Tear strips */
-    .tear-strips {
-      padding: 16px 40px 24px;
-      display: flex;
-      gap: 0;
+    .poster-contact {
+      margin: 14px 40px; padding: 18px 24px; border-radius: 12px;
+      background: #1a56a0; color: #fff; text-align: center; position: relative;
     }
-    .tear-strip {
-      flex: 1;
-      border: 1px dashed #ccc;
-      padding: 8px 4px;
-      text-align: center;
-      font-size: 10px;
-      color: #666;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      min-height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .poster-contact .ct-phone {
+      font-size: 34px; font-weight: 900; letter-spacing: 2px;
+    }
+    .poster-contact .ct-name {
+      font-size: 15px; font-weight: 600; opacity: 0.9; margin-top: 2px;
+    }
+    .poster-contact .ct-email {
+      font-size: 13px; font-weight: 600; opacity: 0.75; margin-top: 1px;
+    }
+    .poster-reward {
+      position: absolute; top: -14px; right: 16px;
+      background: #f59e0b; color: #fff; font-weight: 900; font-size: 14px;
+      padding: 6px 16px; border-radius: 20px; letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .poster-tear-strips {
+      padding: 12px 40px 16px; display: flex; gap: 0;
+    }
+    .poster-tear-strip {
+      flex: 1; border: 1px dashed #ccc; padding: 8px 4px; text-align: center;
+      font-size: 10px; color: #666; writing-mode: vertical-rl; text-orientation: mixed;
+      min-height: 76px; display: flex; align-items: center; justify-content: center;
       line-height: 1.2;
     }
-    .tear-strip strong {
-      font-size: 11px;
-      color: #333;
-    }
+    .poster-tear-strip strong { font-size: 11px; color: #333; }
 
-    /* Footer */
     .poster-footer {
-      padding: 12px 40px 20px;
-      text-align: center;
-      font-size: 11px;
-      color: #999;
-      border-top: 1px solid #eee;
+      padding: 10px 40px 16px; text-align: center; font-size: 11px;
+      color: #888; border-top: 2px solid #e8ece4; background: #f5f7f3;
+    }
+    .poster-footer .org-line {
+      font-weight: 800; color: #48543e; font-size: 12px; letter-spacing: 0.5px;
+    }
+    .poster-footer .ref { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+    /* ── Facebook Preview ── */
+    .poster.facebook {
+      width: 1200px; min-height: auto; height: 630px;
+      display: grid; grid-template-columns: 1fr 1fr; overflow: hidden;
+    }
+    .fb-photo {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .fb-no-photo {
+      width: 100%; height: 100%; background: #f0f0f0;
+      display: flex; align-items: center; justify-content: center;
+      color: #999; font-size: 24px; font-weight: 700;
+    }
+    .fb-right {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 40px;
+    }
+    .fb-right .fb-badge {
+      display: inline-block; padding: 8px 20px; border-radius: 8px;
+      font-size: 28px; font-weight: 900; letter-spacing: 4px;
+      text-transform: uppercase; color: #fff; margin-bottom: 16px; align-self: flex-start;
+    }
+    .fb-right .fb-badge.lost { background: #cc1f1f; }
+    .fb-right .fb-badge.found { background: #2d7a3a; }
+    .fb-right .fb-name {
+      font-size: 44px; font-weight: 900; color: #111; line-height: 1.1; margin-bottom: 12px;
+    }
+    .fb-right .fb-desc {
+      font-size: 18px; color: #555; line-height: 1.4; margin-bottom: 16px;
+    }
+    .fb-right .fb-details {
+      font-size: 16px; color: #666; line-height: 1.6; margin-bottom: 20px;
+    }
+    .fb-right .fb-details strong { color: #333; }
+    .fb-right .fb-location {
+      font-size: 18px; font-weight: 700; margin-bottom: 20px; padding: 12px 16px;
+      border-radius: 8px;
+    }
+    .fb-right .fb-location.lost { background: #fef9e7; color: #92660e; }
+    .fb-right .fb-location.found { background: #eef8f0; color: #1e6a31; }
+    .fb-right .fb-contact {
+      background: #1a56a0; color: #fff; padding: 16px 20px; border-radius: 10px;
+    }
+    .fb-right .fb-contact .fb-phone {
+      font-size: 28px; font-weight: 900; letter-spacing: 1px;
+    }
+    .fb-right .fb-contact .fb-org {
+      font-size: 13px; opacity: 0.8; margin-top: 4px;
     }
 
-    /* Print styles */
+    /* ── Mobile Preview ── */
+    .poster.mobile-preview {
+      width: 375px; min-height: auto;
+    }
+    .poster.mobile-preview .poster-header h1 { font-size: 32px; letter-spacing: 3px; }
+    .poster.mobile-preview .poster-header .subtitle { font-size: 13px; }
+    .poster.mobile-preview .poster-header { padding: 18px 20px 16px; }
+    .poster.mobile-preview .poster-photo { padding: 14px 20px 8px; }
+    .poster.mobile-preview .poster-photo img { max-height: 250px; }
+    .poster.mobile-preview .poster-pet-name { font-size: 28px; padding: 8px 20px 4px; }
+    .poster.mobile-preview .poster-details { padding: 8px 20px 10px; }
+    .poster.mobile-preview .poster-details-grid { gap: 4px 16px; }
+    .poster.mobile-preview .poster-detail .d-value { font-size: 14px; }
+    .poster.mobile-preview .poster-description { padding: 4px 20px 10px; }
+    .poster.mobile-preview .poster-location { margin: 6px 20px; padding: 10px 14px; font-size: 14px; }
+    .poster.mobile-preview .poster-contact { margin: 10px 20px; padding: 14px 18px; }
+    .poster.mobile-preview .poster-contact .ct-phone { font-size: 26px; }
+    .poster.mobile-preview .poster-tear-strips { display: none; }
+    .poster.mobile-preview .poster-footer { padding: 8px 20px 12px; }
+
+    /* ── Text Preview ── */
+    .text-preview {
+      width: 600px; background: #fff; padding: 32px; font-family: 'Courier New', monospace;
+      font-size: 14px; line-height: 1.6; color: #333; white-space: pre-wrap;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1); border-radius: 8px;
+      min-height: 400px;
+    }
+
+    /* ── Print Styles ── */
     @media print {
-      body { background: #fff; }
-      .poster { box-shadow: none; margin: 0; width: 100%; }
-      .no-print { display: none !important; }
+      body { background: #fff !important; }
+      .actions, .editor, .no-print { display: none !important; }
+      .layout { display: block !important; }
+      .preview-wrap {
+        background: #fff !important; padding: 0 !important;
+        max-height: none !important; overflow: visible !important;
+      }
+      .preview-scaler { transform: none !important; }
+      .poster {
+        box-shadow: none !important; margin: 0 !important;
+        width: 100% !important; min-height: auto !important;
+      }
+      .poster.facebook, .poster.mobile-preview { display: none !important; }
+      .text-preview { display: none !important; }
       @page { margin: 0; size: letter; }
     }
 
-    /* Controls bar */
-    .controls {
-      text-align: center;
-      padding: 20px;
-      background: #333;
-      position: sticky;
-      top: 0;
-      z-index: 10;
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #333; color: #fff; padding: 10px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 700; z-index: 9999;
+      opacity: 0; transition: opacity .3s; pointer-events: none;
     }
-    .controls button {
-      background: #fff;
-      color: #333;
-      border: none;
-      padding: 10px 28px;
-      border-radius: 8px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      margin: 0 6px;
+    .toast.show { opacity: 1; }
+
+    /* ── Saving overlay ── */
+    .saving-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; display: none;
     }
-    .controls button:hover { background: #eee; }
+    .saving-overlay.show { display: flex; }
+    .saving-overlay .msg {
+      background: #fff; padding: 24px 40px; border-radius: 12px;
+      font-size: 16px; font-weight: 700; color: #333;
+    }
   </style>
 </head>
 <body>
-  <div class="controls no-print">
-    <button onclick="window.print()">Print Poster</button>
-    <button onclick="window.close()">Close</button>
+
+  <!-- Actions Bar -->
+  <div class="actions no-print">
+    <a href="/admin/" class="back-link">&larr; Admin</a>
+    <div class="sep"></div>
+    <span class="label">Preview:</span>
+    <button class="act-btn active" onclick="setMode('print')" id="mode-print">Print</button>
+    <button class="act-btn" onclick="setMode('mobile')" id="mode-mobile">Mobile</button>
+    <button class="act-btn" onclick="setMode('facebook')" id="mode-facebook">Facebook</button>
+    <button class="act-btn" onclick="setMode('text')" id="mode-text">Text</button>
+    <div class="sep"></div>
+    <button class="act-btn primary" onclick="doPrint()">&#128424; Print</button>
+    <button class="act-btn primary" onclick="doSaveImage()">&#128247; Save Image</button>
+    <button class="act-btn primary" onclick="doCopyText()">&#128203; Copy Text</button>
+    <button class="act-btn primary" onclick="doShare()">&#128228; Share</button>
   </div>
 
-  <div class="poster" id="poster"></div>
+  <!-- Layout -->
+  <div class="layout">
+    <!-- Editor -->
+    <div class="editor no-print" id="editor">
+      <div class="type-toggle">
+        <button class="lost-btn" onclick="setType('lost')" id="toggle-lost">LOST</button>
+        <button class="found-btn" onclick="setType('found')" id="toggle-found">FOUND</button>
+      </div>
+
+      <h2>Pet Info</h2>
+      <div class="field">
+        <label>Pet Name</label>
+        <input type="text" id="f-pet_name" oninput="update()">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Species</label>
+          <input type="text" id="f-species" oninput="update()">
+        </div>
+        <div class="field">
+          <label>Breed</label>
+          <input type="text" id="f-breed" oninput="update()">
+        </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field">
+          <label>Sex</label>
+          <select id="f-gender" onchange="update()">
+            <option value="">Unknown</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Age</label>
+          <input type="text" id="f-age" placeholder="e.g. 3 years" oninput="update()">
+        </div>
+        <div class="field">
+          <label>Weight</label>
+          <input type="text" id="f-weight" placeholder="e.g. 25 lbs" oninput="update()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Color / Markings</label>
+        <input type="text" id="f-color" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Collar Details</label>
+        <input type="text" id="f-collar_details" placeholder="Color, type, tags..." oninput="update()">
+      </div>
+      <div class="field">
+        <div class="toggle-row">
+          <label>Microchipped</label>
+          <div class="mini-toggle">
+            <button onclick="setMicrochip('yes')" id="mc-yes">Yes</button>
+            <button onclick="setMicrochip('no')" id="mc-no">No</button>
+            <button onclick="setMicrochip('')" id="mc-unk" class="active">Unknown</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="f-description" rows="3" oninput="update()"></textarea>
+      </div>
+
+      <h2>Location</h2>
+      <div class="field">
+        <label id="loc-label">Last Seen / Found At</label>
+        <input type="text" id="f-location_details" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date" oninput="update()">
+      </div>
+
+      <h2>Contact</h2>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="f-reporter_name" oninput="update()">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" id="f-reporter_phone" oninput="update()">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="f-reporter_email" oninput="update()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Reward (optional)</label>
+        <input type="text" id="f-reward" placeholder="e.g. $100" oninput="update()">
+      </div>
+
+      <h2>Photo</h2>
+      <div id="photo-selector">
+        <p style="font-size:12px;color:#999;">No photos available</p>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap" id="preview-wrap">
+      <div class="preview-scaler" id="preview-scaler">
+        <div id="preview-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Saving overlay -->
+  <div class="saving-overlay" id="saving-overlay">
+    <div class="msg">Generating image...</div>
+  </div>
 
 <script>
-  // Read report data from sessionStorage (set by admin panel)
-  const data = JSON.parse(sessionStorage.getItem('wcahs_poster_data') || '{}');
-  if (!data.type) { document.getElementById('poster').innerHTML = '<p style="padding:40px;text-align:center;color:#999;">No report data found. Generate a poster from the admin panel.</p>'; }
-  else { renderPoster(data); }
+// ── State ──
+let state = {
+  type: 'lost',
+  pet_name: '',
+  species: '',
+  breed: '',
+  gender: '',
+  age: '',
+  weight: '',
+  color: '',
+  collar_details: '',
+  microchipped: '',
+  description: '',
+  location_details: '',
+  date: '',
+  reporter_name: '',
+  reporter_phone: '',
+  reporter_email: '',
+  reward: '',
+  photos: [],
+  selectedPhoto: 0,
+  reportId: ''
+};
 
-  function renderPoster(r) {
-    const isLost = r.type === 'lost';
-    const typeClass = isLost ? 'lost' : 'found';
-    const headline = isLost ? 'MISSING' : 'FOUND';
-    const subtitle = isLost
-      ? (r.species || 'Pet') + ' needs your help getting home'
-      : (r.species || 'Pet') + ' found — is this yours?';
+let currentMode = 'print';
 
-    // Parse photo URL (may be JSON array or single string)
-    let photoUrl = '';
-    if (r.photo_url) {
-      try { const arr = JSON.parse(r.photo_url); photoUrl = arr[0] || ''; } catch(e) { photoUrl = r.photo_url; }
+// ── Load data from sessionStorage ──
+function loadData() {
+  const raw = sessionStorage.getItem('wcahs_poster_data');
+  if (!raw) return false;
+  try {
+    const d = JSON.parse(raw);
+    state.type = d.type || 'lost';
+    state.pet_name = d.pet_name || '';
+    state.species = d.species || '';
+    state.breed = d.breed || '';
+    state.gender = d.gender || '';
+    state.age = d.age || '';
+    state.weight = d.weight || '';
+    state.color = d.color || '';
+    state.collar_details = d.collar_details || '';
+    state.microchipped = d.microchipped || '';
+    state.description = d.description || '';
+    state.location_details = d.location_details || '';
+    state.reporter_name = d.reporter_name || '';
+    state.reporter_phone = d.reporter_phone || '';
+    state.reporter_email = d.reporter_email || '';
+    state.reward = d.reward || '';
+    state.reportId = d.id || d.report_id || '';
+    state.collar_details = d.collar_details || d.collar_status || '';
+    state.temperament = d.temperament || '';
+
+    // Parse date
+    if (d.created_at) {
+      try { state.date = d.created_at.split('T')[0]; } catch(e) {}
     }
 
-    const phone = fmtPhone(r.reporter_phone) || r.org_phone || '(507) 201-7287';
-    const contactName = r.reporter_name || 'WCAHS';
+    // Parse photos
+    let photos = [];
+    if (d.photo_url) {
+      try { photos = JSON.parse(d.photo_url); } catch(e) { photos = [d.photo_url]; }
+      if (!Array.isArray(photos)) photos = [photos];
+      photos = photos.filter(p => p && typeof p === 'string');
+    }
+    state.photos = photos;
+    state.selectedPhoto = 0;
 
-    let detailsHtml = '';
-    if (r.species) detailsHtml += detail('Species', r.species);
-    if (r.breed) detailsHtml += detail('Breed', r.breed);
-    if (r.color) detailsHtml += detail('Color', r.color);
-    if (r.gender) detailsHtml += detail('Gender', r.gender);
-    if (r.collar_details) detailsHtml += detail('Collar', r.collar_details);
-    if (r.temperament) detailsHtml += detail('Temperament', r.temperament);
+    return true;
+  } catch(e) { return false; }
+}
 
-    const locationText = r.location_details
-      ? (isLost ? 'Last seen: ' : 'Found at: ') + r.location_details
-      : '';
+// ── Populate editor fields ──
+function populateEditor() {
+  el('f-pet_name').value = state.pet_name;
+  el('f-species').value = state.species;
+  el('f-breed').value = state.breed;
+  el('f-gender').value = state.gender;
+  el('f-age').value = state.age;
+  el('f-weight').value = state.weight;
+  el('f-color').value = state.color;
+  el('f-collar_details').value = state.collar_details;
+  el('f-description').value = state.description;
+  el('f-location_details').value = state.location_details;
+  el('f-date').value = state.date;
+  el('f-reporter_name').value = state.reporter_name;
+  el('f-reporter_phone').value = state.reporter_phone;
+  el('f-reporter_email').value = state.reporter_email;
+  el('f-reward').value = state.reward;
 
-    const tearText = (r.pet_name || r.species || 'Pet') + ' — ' + phone;
+  // Type toggle
+  updateTypeToggle();
 
-    document.getElementById('poster').innerHTML = `
-      <div class="header ${typeClass}">
-        <h1>${headline}</h1>
-        <div class="subtitle">${subtitle}</div>
-      </div>
+  // Microchip toggle
+  setMicrochip(state.microchipped, true);
 
-      <div class="photo-area">
-        ${photoUrl
-          ? `<img src="${photoUrl}" alt="${r.pet_name || 'Pet'}">`
-          : '<div class="no-photo">No Photo Available</div>'}
-      </div>
+  // Photos
+  renderPhotoSelector();
+}
 
-      ${r.pet_name ? `<div class="pet-name">${esc(r.pet_name)}${isLost ? '<span class="responds-to">Responds to "' + esc(r.pet_name) + '"</span>' : ''}</div>` : ''}
+function updateTypeToggle() {
+  el('toggle-lost').classList.toggle('active', state.type === 'lost');
+  el('toggle-found').classList.toggle('active', state.type === 'found');
+  el('loc-label').textContent = state.type === 'lost' ? 'Last Seen Location' : 'Found At Location';
+}
 
-      ${detailsHtml ? `<div class="details"><div class="details-grid">${detailsHtml}</div></div>` : ''}
+function setType(t) {
+  state.type = t;
+  updateTypeToggle();
+  update();
+}
 
-      ${r.description ? `<div class="description"><strong>Description</strong>${esc(r.description)}</div>` : ''}
+function setMicrochip(v, silent) {
+  state.microchipped = v;
+  el('mc-yes').classList.toggle('active', v === 'yes');
+  el('mc-no').classList.toggle('active', v === 'no');
+  el('mc-unk').classList.toggle('active', v === '');
+  if (!silent) update();
+}
 
-      ${locationText ? `<div class="location-banner ${typeClass}">${esc(locationText)}</div>` : ''}
-
-      <div class="contact">
-        <div class="phone">${esc(phone)}</div>
-        <div class="org">Contact: ${esc(contactName)} &bull; Waseca County Animal Humane Society</div>
-        <div class="org">facebook.com/WasecaCAHS</div>
-      </div>
-
-      <div class="tear-strips">
-        ${Array(7).fill(`<div class="tear-strip"><strong>${esc(tearText)}</strong></div>`).join('')}
-      </div>
-
-      <div class="poster-footer">
-        Generated by Waseca County Animal Humane Society &bull; wcahs.org
-      </div>
-    `;
+function renderPhotoSelector() {
+  const wrap = el('photo-selector');
+  if (state.photos.length === 0) {
+    wrap.innerHTML = '<p style="font-size:12px;color:#999;">No photos available</p>';
+    return;
   }
+  let html = '<div class="photo-thumbs">';
+  state.photos.forEach((url, i) => {
+    html += '<img src="' + esc(url) + '" class="photo-thumb' + (i === state.selectedPhoto ? ' selected' : '') +
+            '" onclick="selectPhoto(' + i + ')" onerror="this.style.display=\'none\'">';
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
 
-  function detail(label, value) {
-    return `<div class="detail-item"><div class="label">${label}</div><div class="value">${esc(value)}</div></div>`;
+function selectPhoto(i) {
+  state.selectedPhoto = i;
+  renderPhotoSelector();
+  update();
+}
+
+// ── Read fields from editor ──
+function readFields() {
+  state.pet_name = el('f-pet_name').value;
+  state.species = el('f-species').value;
+  state.breed = el('f-breed').value;
+  state.gender = el('f-gender').value;
+  state.age = el('f-age').value;
+  state.weight = el('f-weight').value;
+  state.color = el('f-color').value;
+  state.collar_details = el('f-collar_details').value;
+  state.description = el('f-description').value;
+  state.location_details = el('f-location_details').value;
+  state.date = el('f-date').value;
+  state.reporter_name = el('f-reporter_name').value;
+  state.reporter_phone = el('f-reporter_phone').value;
+  state.reporter_email = el('f-reporter_email').value;
+  state.reward = el('f-reward').value;
+}
+
+// ── Update preview ──
+function update() {
+  readFields();
+  renderPreview();
+}
+
+function renderPreview() {
+  const container = el('preview-container');
+  if (currentMode === 'text') {
+    container.innerHTML = '<div class="text-preview" id="poster">' + esc(generateText()) + '</div>';
+  } else if (currentMode === 'facebook') {
+    container.innerHTML = renderFacebook();
+  } else if (currentMode === 'mobile') {
+    container.innerHTML = renderPrintPoster('mobile-preview');
+  } else {
+    container.innerHTML = renderPrintPoster('');
   }
+  scalePoster();
+}
 
-  function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-  function fmtPhone(p) { if(!p)return''; const d=p.replace(/\D/g,''); if(d.length===10)return'('+d.substring(0,3)+') '+d.substring(3,6)+'-'+d.substring(6); if(d.length===11&&d[0]==='1')return'('+d.substring(1,4)+') '+d.substring(4,7)+'-'+d.substring(7); return p; }
+function renderPrintPoster(extraClass) {
+  const s = state;
+  const isLost = s.type === 'lost';
+  const typeClass = isLost ? 'lost' : 'found';
+  const headline = isLost ? 'MISSING' : 'FOUND';
+  const subtitle = isLost
+    ? (s.species || 'Pet') + ' needs your help getting home'
+    : (s.species || 'Pet') + ' found — is this yours?';
+  const photoUrl = s.photos[s.selectedPhoto] || '';
+  const phone = fmtPhone(s.reporter_phone) || '(507) 201-7287';
+  const contactName = s.reporter_name || 'WCAHS';
+
+  // Build details
+  let details = '';
+  if (s.species) details += posterDetail('Species', s.species);
+  if (s.breed) details += posterDetail('Breed', s.breed);
+  if (s.color) details += posterDetail('Color', s.color);
+  if (s.gender) details += posterDetail('Sex', s.gender);
+  if (s.age) details += posterDetail('Age', s.age);
+  if (s.weight) details += posterDetail('Weight', s.weight);
+  if (s.collar_details) details += posterDetail('Collar', s.collar_details);
+  if (s.microchipped === 'yes') details += posterDetail('Microchip', 'Yes');
+  if (s.microchipped === 'no') details += posterDetail('Microchip', 'No');
+
+  const locLabel = isLost ? 'Last Seen Near' : 'Found At';
+  const dateStr = s.date ? formatDate(s.date) : '';
+
+  const tearText = (s.pet_name || s.species || 'Pet') + ' ' + phone;
+
+  const rewardHtml = s.reward
+    ? '<div class="poster-reward">REWARD ' + esc(s.reward) + '</div>'
+    : '';
+
+  return '<div class="poster ' + esc(extraClass) + '" id="poster">' +
+    '<div class="poster-header ' + typeClass + '">' +
+      '<h1>' + headline + '</h1>' +
+      '<div class="subtitle">' + esc(subtitle) + '</div>' +
+    '</div>' +
+    '<div class="poster-photo">' +
+      (photoUrl
+        ? '<img src="' + esc(photoUrl) + '" alt="' + esc(s.pet_name || 'Pet') + '" crossorigin="anonymous">'
+        : '<div class="poster-no-photo">No Photo Available</div>') +
+    '</div>' +
+    (s.pet_name
+      ? '<div class="poster-pet-name">' + esc(s.pet_name) +
+        (isLost ? '<span class="responds">Responds to "' + esc(s.pet_name) + '"</span>' : '') +
+        '</div>'
+      : '') +
+    (details
+      ? '<div class="poster-details"><div class="poster-details-grid">' + details + '</div></div>'
+      : '') +
+    (s.description
+      ? '<div class="poster-description"><div class="desc-label">Description</div><div class="desc-text">' + esc(s.description) + '</div></div>'
+      : '') +
+    (s.location_details
+      ? '<div class="poster-location ' + typeClass + '">' +
+        '<span class="loc-label">' + esc(locLabel) + '</span>' +
+        esc(s.location_details) +
+        (dateStr ? '<div class="loc-date">' + esc(dateStr) + '</div>' : '') +
+        '</div>'
+      : '') +
+    '<div class="poster-contact">' +
+      rewardHtml +
+      '<div class="ct-phone">' + esc(phone) + '</div>' +
+      '<div class="ct-name">Contact: ' + esc(contactName) + '</div>' +
+      (s.reporter_email ? '<div class="ct-email">' + esc(s.reporter_email) + '</div>' : '') +
+    '</div>' +
+    '<div class="poster-tear-strips">' +
+      Array(7).fill('<div class="poster-tear-strip"><strong>' + esc(tearText) + '</strong></div>').join('') +
+    '</div>' +
+    '<div class="poster-footer">' +
+      '<div class="org-line">Waseca County Animal Humane Society &middot; (507) 201-7287 &middot; wcahs.org</div>' +
+      (s.reportId ? '<div class="ref">Report #' + esc(String(s.reportId)) + '</div>' : '') +
+    '</div>' +
+  '</div>';
+}
+
+function renderFacebook() {
+  const s = state;
+  const isLost = s.type === 'lost';
+  const typeClass = isLost ? 'lost' : 'found';
+  const headline = isLost ? 'MISSING' : 'FOUND';
+  const photoUrl = s.photos[s.selectedPhoto] || '';
+  const phone = fmtPhone(s.reporter_phone) || '(507) 201-7287';
+
+  let detailLines = '';
+  if (s.species) detailLines += '<strong>Species:</strong> ' + esc(s.species) + '<br>';
+  if (s.breed) detailLines += '<strong>Breed:</strong> ' + esc(s.breed) + '<br>';
+  if (s.color) detailLines += '<strong>Color:</strong> ' + esc(s.color) + '<br>';
+  if (s.gender) detailLines += '<strong>Sex:</strong> ' + esc(s.gender) + '<br>';
+  if (s.age) detailLines += '<strong>Age:</strong> ' + esc(s.age) + '<br>';
+
+  const locLabel = isLost ? 'Last seen near' : 'Found at';
+
+  return '<div class="poster facebook" id="poster">' +
+    '<div style="overflow:hidden;">' +
+      (photoUrl
+        ? '<img src="' + esc(photoUrl) + '" class="fb-photo" alt="" crossorigin="anonymous">'
+        : '<div class="fb-no-photo">No Photo</div>') +
+    '</div>' +
+    '<div class="fb-right">' +
+      '<div class="fb-badge ' + typeClass + '">' + headline + '</div>' +
+      (s.pet_name ? '<div class="fb-name">' + esc(s.pet_name) + '</div>' : '') +
+      (detailLines ? '<div class="fb-details">' + detailLines + '</div>' : '') +
+      (s.location_details
+        ? '<div class="fb-location ' + typeClass + '">' + esc(locLabel) + ': ' + esc(s.location_details) + '</div>'
+        : '') +
+      '<div class="fb-contact">' +
+        '<div class="fb-phone">' + esc(phone) + '</div>' +
+        '<div class="fb-org">Waseca County Animal Humane Society &middot; wcahs.org</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function generateText() {
+  const s = state;
+  const isLost = s.type === 'lost';
+  const headline = isLost ? 'MISSING PET' : 'FOUND PET';
+  const phone = fmtPhone(s.reporter_phone) || '(507) 201-7287';
+  const contactName = s.reporter_name || 'WCAHS';
+
+  let lines = [];
+  lines.push('** ' + headline + ' **');
+  lines.push('');
+  if (s.pet_name) lines.push('Name: ' + s.pet_name);
+  if (s.species) lines.push('Species: ' + s.species);
+  if (s.breed) lines.push('Breed: ' + s.breed);
+  if (s.color) lines.push('Color: ' + s.color);
+  if (s.gender) lines.push('Sex: ' + s.gender);
+  if (s.age) lines.push('Age: ' + s.age);
+  if (s.weight) lines.push('Weight: ' + s.weight);
+  if (s.collar_details) lines.push('Collar: ' + s.collar_details);
+  if (s.microchipped === 'yes') lines.push('Microchipped: Yes');
+  lines.push('');
+  if (s.description) { lines.push('Description: ' + s.description); lines.push(''); }
+  if (s.location_details) {
+    lines.push((isLost ? 'Last seen: ' : 'Found at: ') + s.location_details);
+    if (s.date) lines.push('Date: ' + formatDate(s.date));
+    lines.push('');
+  }
+  if (s.reward) { lines.push('REWARD: ' + s.reward); lines.push(''); }
+  lines.push('Contact: ' + contactName);
+  lines.push('Phone: ' + phone);
+  if (s.reporter_email) lines.push('Email: ' + s.reporter_email);
+  lines.push('');
+  lines.push('Waseca County Animal Humane Society');
+  lines.push('(507) 201-7287 | wcahs.org');
+
+  return lines.join('\n');
+}
+
+// ── Poster detail helper ──
+function posterDetail(label, value) {
+  return '<div class="poster-detail"><div class="d-label">' + esc(label) + '</div><div class="d-value">' + esc(value) + '</div></div>';
+}
+
+// ── Mode switching ──
+function setMode(m) {
+  currentMode = m;
+  ['print','mobile','facebook','text'].forEach(k => {
+    el('mode-' + k).classList.toggle('active', k === m);
+  });
+  renderPreview();
+}
+
+// ── Scale poster to fit ──
+function scalePoster() {
+  const wrap = el('preview-wrap');
+  const scaler = el('preview-scaler');
+  if (!wrap || !scaler) return;
+
+  // Reset transform to measure natural size
+  scaler.style.transform = 'none';
+
+  requestAnimationFrame(() => {
+    const poster = el('poster');
+    if (!poster) return;
+
+    const wrapW = wrap.clientWidth - 48;
+    const wrapH = wrap.clientHeight - 48;
+    const posterW = poster.offsetWidth;
+    const posterH = poster.offsetHeight;
+
+    if (posterW === 0 || posterH === 0) return;
+
+    const scaleX = wrapW / posterW;
+    const scaleY = wrapH / posterH;
+    const scale = Math.min(scaleX, scaleY, 1);
+
+    scaler.style.transform = 'scale(' + scale + ')';
+  });
+}
+
+// ── Actions ──
+function doPrint() {
+  // Switch to print mode first
+  if (currentMode !== 'print') setMode('print');
+  setTimeout(() => window.print(), 100);
+}
+
+function doSaveImage() {
+  const poster = el('poster');
+  if (!poster) return;
+
+  el('saving-overlay').classList.add('show');
+
+  // For facebook mode, use specific dimensions
+  const opts = { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff' };
+
+  html2canvas(poster, opts).then(canvas => {
+    el('saving-overlay').classList.remove('show');
+    const link = document.createElement('a');
+    const name = (state.pet_name || 'pet').toLowerCase().replace(/\s+/g, '-');
+    const mode = currentMode === 'facebook' ? 'facebook' : currentMode === 'mobile' ? 'mobile' : 'poster';
+    link.download = state.type + '-' + name + '-' + mode + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast('Image saved');
+  }).catch(err => {
+    el('saving-overlay').classList.remove('show');
+    toast('Error generating image');
+    console.error(err);
+  });
+}
+
+function doCopyText() {
+  const text = generateText();
+  navigator.clipboard.writeText(text).then(() => {
+    toast('Text copied to clipboard');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Text copied to clipboard');
+  });
+}
+
+function doShare() {
+  const text = generateText();
+  const title = (state.type === 'lost' ? 'MISSING: ' : 'FOUND: ') + (state.pet_name || state.species || 'Pet');
+
+  if (navigator.share) {
+    navigator.share({ title: title, text: text }).catch(() => {});
+  } else {
+    doCopyText();
+  }
+}
+
+// ── Utilities ──
+function el(id) { return document.getElementById(id); }
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function fmtPhone(p) {
+  if (!p) return '';
+  const d = p.replace(/\D/g, '');
+  if (d.length === 10) return '(' + d.substring(0,3) + ') ' + d.substring(3,6) + '-' + d.substring(6);
+  if (d.length === 11 && d[0] === '1') return '(' + d.substring(1,4) + ') ' + d.substring(4,7) + '-' + d.substring(7);
+  return p;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  try {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  } catch(e) { return d; }
+}
+
+function toast(msg) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Init ──
+const hasData = loadData();
+if (hasData) {
+  populateEditor();
+} else {
+  // Show empty state but still functional
+  state.type = 'lost';
+  updateTypeToggle();
+  setMicrochip('', true);
+}
+update();
+
+// Resize handler
+window.addEventListener('resize', scalePoster);
 </script>
 </body>
 </html>
