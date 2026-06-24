@@ -155,13 +155,24 @@
         if (!items.length) return;
         document.getElementById(emptyId).classList.add('hidden');
         document.getElementById(containerId).innerHTML = items.map(function(r) {
-          return '<div class="bg-white rounded-2xl overflow-hidden shadow-md">' +
-            (function(){ var u=r.photo_url; if(!u)return''; try{var arr=JSON.parse(u);u=arr[0];}catch(e){} return '<div class="h-48 overflow-hidden"><img src="'+u+'" alt="" class="w-full h-full object-cover"></div>'; })() +
+          var photos = [];
+          if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+          var photoHtml = photos[0] ? '<div class="h-56 overflow-hidden"><img src="'+photos[0]+'" alt="" class="w-full h-full object-cover"></div>' : '';
+          var allPhotosHtml = photos.length > 1 ? '<div class="flex gap-2 mt-3 flex-wrap lf-detail hidden">' + photos.map(function(p) { return '<img src="'+p+'" class="w-20 h-20 rounded-lg object-cover border border-gray-100 cursor-pointer" onclick="window.open(this.src)">'; }).join('') + '</div>' : '';
+          var detailHtml = '<div class="lf-detail hidden mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600 space-y-1">' +
+            (r.breed ? '<p><span class="text-gray-400">Breed:</span> '+r.breed+'</p>' : '') +
+            (r.color ? '<p><span class="text-gray-400">Color:</span> '+r.color+'</p>' : '') +
+            (r.gender ? '<p><span class="text-gray-400">Gender:</span> '+r.gender+'</p>' : '') +
+            (r.description ? '<p class="mt-2">'+r.description+'</p>' : '') +
+            allPhotosHtml +
+            '</div>';
+          return '<div class="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer card-hover" onclick="this.querySelectorAll(\'.lf-detail\').forEach(function(d){d.classList.toggle(\'hidden\')})">' +
+            photoHtml +
             '<div class="p-6"><h3 class="font-bold text-lg text-gray-900">'+(r.pet_name||'Unknown Pet')+'</h3>' +
             '<p class="text-gray-500 text-sm mt-1">'+r.species+(r.breed?' &bull; '+r.breed:'')+(r.color?' &bull; '+r.color:'')+'</p>' +
             (r.location_details?'<p class="text-gray-600 text-sm mt-2">'+r.location_details+'</p>':'') +
-            (r.description?'<p class="text-gray-600 text-sm mt-2">'+r.description+'</p>':'') +
-            '<p class="text-gray-400 text-xs mt-3">Reported '+new Date(r.created_at).toLocaleDateString()+'</p>' +
+            '<p class="text-gray-400 text-xs mt-3">Reported '+new Date(r.created_at).toLocaleDateString()+' <span class="text-sage-500 font-semibold ml-1">View details &darr;</span></p>' +
+            detailHtml +
             '</div></div>';
         }).join('');
       }

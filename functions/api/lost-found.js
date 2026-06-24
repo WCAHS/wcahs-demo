@@ -5,6 +5,7 @@ export async function onRequestGet(context) {
     `SELECT id, type, pet_name, species, breed, color, gender, location_details,
             description, photo_url, created_at
      FROM lost_found_reports WHERE status = 'approved'
+     AND created_at > datetime('now', '-30 days')
      ORDER BY created_at DESC`
   ).all();
   return json(results);
@@ -62,7 +63,7 @@ export async function onRequestPost(context) {
         ${body.location_details ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Location</td><td style="padding:8px 12px">${body.location_details}</td></tr>` : ''}
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Reporter</td><td style="padding:8px 12px">${body.reporter_name}${body.reporter_email ? ' &lt;' + body.reporter_email + '&gt;' : ''}</td></tr>
       </table>
-      <p style="margin-top:20px;font-size:12px;color:#999"><a href="https://wcahs.org/admin/#inbox-lf" style="color:#5c6b4e;font-weight:600">Review in Admin &rarr;</a></p>`,
+      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-lf" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">Review in Admin &rarr;</a></div>`,
   });
 
   if (body.reporter_email) {

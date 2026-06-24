@@ -40,7 +40,7 @@ export async function onRequestPost(context) {
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Subject</td><td style="padding:8px 12px">${body.subject || 'General Inquiry'}</td></tr>
         <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Message</td><td style="padding:8px 12px;white-space:pre-wrap">${body.message}</td></tr>
       </table>
-      <p style="margin-top:20px;font-size:12px;color:#999"><a href="https://wcahs.org/admin/#inbox-sub-${subId}" style="color:#5c6b4e;font-weight:600">View in Admin &rarr;</a></p>`,
+      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-sub-${subId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">View in Admin &rarr;</a></div>`,
   });
 
   await sendAutoReply(env, {

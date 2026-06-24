@@ -66,7 +66,7 @@ export async function sendNotification(env, { subject, html }) {
       },
       body: JSON.stringify({
         from: 'WCAHS Notifications <noreply@wcahs.org>',
-        to: ['info@wcahs.org'],
+        to: ['info@wcahs.org', 'admin@wcahs.org'],
         subject,
         html,
       }),

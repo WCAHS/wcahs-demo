@@ -14,6 +14,7 @@ export async function onRequestPut(context) {
   if (body.color !== undefined) { sets.push('color=?'); vals.push(body.color); }
   if (body.description !== undefined) { sets.push('description=?'); vals.push(body.description); }
   if (body.location_details !== undefined) { sets.push('location_details=?'); vals.push(body.location_details); }
+  if (body.renew) { sets.push("created_at=datetime('now')"); }
   if (sets.length === 0) return error('Nothing to update');
 
   sets.push("updated_at=datetime('now')");

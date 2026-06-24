@@ -51,13 +51,13 @@
     .chart-bar-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #3b4434; color: white; font-size: 11px; padding: 2px 8px; border-radius: 6px; white-space: nowrap; margin-bottom: 4px; }
     .chart-bar:hover .chart-bar-tooltip { display: block; }
 
-    /* Inbox item accents */
-    .inbox-item { border-left: 4px solid transparent; transition: all 0.15s ease; }
-    .inbox-item.type-contact { border-left-color: #3b82f6; }
-    .inbox-item.type-foster { border-left-color: #5c6b4e; }
-    .inbox-item.type-lost { border-left-color: #ef4444; }
-    .inbox-item.type-found { border-left-color: #22c55e; }
-    .inbox-item.unread { background: #fffcf8; border-left-width: 4px; }
+    /* Inbox item accents — all within sage/amber/warm palette */
+    .inbox-item { border-left: 3px solid transparent; transition: all 0.15s ease; }
+    .inbox-item.type-contact { border-left-color: #93a27e; }
+    .inbox-item.type-foster { border-left-color: #d97706; }
+    .inbox-item.type-lost { border-left-color: #b45309; }
+    .inbox-item.type-found { border-left-color: #48543e; }
+    .inbox-item.unread { background: #fffcf8; }
     .inbox-item.unread .inbox-name { font-weight: 800; color: #1f2937; }
     .inbox-item.read { background: #fff; }
     .inbox-item.read .inbox-name { font-weight: 600; color: #6b7280; }
@@ -154,13 +154,14 @@
           <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
         </a>
         <a onclick="navigate('pets')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="pets">Pets</a>
+        <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="lost-found">Lost & Found</a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
         <!-- Email management handled in Resend dashboard -->
         <!-- FAQ temporarily hidden — editor needs rework -->
         <!-- <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a> -->
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
-        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer staff-visible" data-nav="analytics">Analytics</a>
+        <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
         <div class="border-t border-sage-800 my-2 staff-visible"></div>
         <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mb-1 staff-visible">Quick Links</p>
         <a href="https://mail.zoho.com/signin" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white staff-visible">
@@ -283,7 +284,7 @@ function showDashboard(user) {
       `;
       nav.prepend(fosterNav);
     }
-    const validPages = ['submissions','pets','events','faq','settings','about','users','my-account','analytics','foster-pets'];
+    const validPages = ['submissions','pets','lost-found','events','faq','settings','about','users','my-account','analytics','foster-pets'];
     const savedPage = sessionStorage.getItem('wcahs_admin_page');
     const defaultPage = user.role === 'foster' ? 'foster-pets' : 'submissions';
     navigate(validPages.includes(savedPage) ? savedPage : defaultPage);
@@ -334,6 +335,7 @@ function navigate(page) {
   switch(page) {
     case 'submissions': renderSubmissions(content); break;
     case 'pets': renderPets(content); break;
+    case 'lost-found': renderLostFoundManage(content); break;
     case 'events': renderEvents(content); break;
     case 'email': renderEmail(content); break;
     case 'faq': renderFaq(content); break;
@@ -444,7 +446,8 @@ async function renderSubmissions(el) {
     });
   });
 
-  _lfData.forEach(r => {
+  // Only show pending L&F in inbox — approved/resolved go to Lost & Found management
+  _lfData.filter(r => r.status === 'pending' || r.status === 'rejected').forEach(r => {
     allItems.push({
       kind: 'lf',
       itemType: r.type, // lost or found
@@ -509,11 +512,11 @@ async function renderSubmissions(el) {
       const unread = !item.is_read;
       const readClass = unread ? 'unread' : 'read';
 
-      // Type labels and colors
+      // Type labels — subtle inline text, on-palette colors
       const typeLabels = { contact: 'Contact', foster: 'Foster App', lost: 'Lost Pet', found: 'Found Pet' };
-      const typePillColors = { contact: 'bg-blue-100 text-blue-700', foster: 'bg-sage-100 text-sage-700', lost: 'bg-red-100 text-red-700', found: 'bg-green-100 text-green-700' };
+      const typeLabelColors = { contact: '#93a27e', foster: '#d97706', lost: '#b45309', found: '#48543e' };
       const typeLabel = typeLabels[item.itemType] || item.itemType;
-      const typePillClass = typePillColors[item.itemType] || 'bg-gray-100 text-gray-600';
+      const typeLabelColor = typeLabelColors[item.itemType] || '#6b7280';
 
       // Thumbnail for L&F with photos
       let thumbHtml = '';
@@ -521,15 +524,14 @@ async function renderSubmissions(el) {
         let photos = [];
         try { photos = JSON.parse(item.photo_url); } catch(e) { photos = [item.photo_url]; }
         if (photos[0]) {
-          thumbHtml = `<img src="${photos[0]}" class="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100">`;
+          thumbHtml = `<img src="${photos[0]}" class="w-10 h-10 rounded-lg object-cover shrink-0 border border-sage-100">`;
         }
       }
       if (!thumbHtml) {
-        // Two-letter initials with type-colored border
-        const borderColors = { contact: 'border-blue-200', foster: 'border-sage-200', lost: 'border-red-200', found: 'border-green-200' };
+        // Two-letter initials with warm neutral background
         const nameParts = (item.name || '?').split(' ');
         const initials = nameParts.length > 1 ? nameParts[0].charAt(0) + nameParts[nameParts.length-1].charAt(0) : nameParts[0].charAt(0);
-        thumbHtml = `<div class="w-10 h-10 rounded-lg bg-gray-50 border-2 ${borderColors[item.itemType] || 'border-gray-200'} flex items-center justify-center shrink-0"><span class="text-xs font-bold text-gray-500">${h(initials.toUpperCase())}</span></div>`;
+        thumbHtml = `<div class="w-10 h-10 rounded-lg bg-sage-50 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-sage-400">${h(initials.toUpperCase())}</span></div>`;
       }
 
       // Preview snippet
@@ -550,15 +552,15 @@ async function renderSubmissions(el) {
       // Auto-mark read on click for both submissions and L&F
       let markReadCall = '';
       if (item.kind === 'submission' && unread) markReadCall = `markRead(${item.id}, true);`;
-      else if (item.kind === 'lf' && item.status === 'pending') markReadCall = `updateReport(${item.id},'pending');`;
 
       html += `<div class="inbox-item card type-${item.itemType} ${readClass} overflow-hidden" data-type="${item.itemType}">
         <div class="flex items-center gap-3 p-3.5 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('${clickId}', '${arrowId}'); ${markReadCall}">
           ${thumbHtml}
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5">
+            <div class="flex items-center gap-1.5 mb-0.5">
               <span class="inbox-name text-gray-900 text-sm ${unread ? '' : 'font-normal'}">${h(item.name)}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-full ${typePillClass} font-bold shrink-0">${typeLabel}</span>
+              <span class="text-[10px] text-gray-300">&middot;</span>
+              <span class="text-[10px] font-bold shrink-0" style="color:${typeLabelColor}">${typeLabel}</span>
               <span class="text-[11px] text-gray-300 ml-auto shrink-0">${timeAgo(item.created_at)}</span>
             </div>
             <p class="text-xs text-gray-400 truncate">${h(snippet)}</p>
@@ -695,7 +697,11 @@ window.toggleSub = function(id) {
 
 window.markRead = async function(id, read) {
   await api('/admin/submissions/' + id, { method: 'PUT', body: { is_read: read } });
-  navigate('submissions'); loadBadgeCounts();
+  // Update visual state without re-rendering (which would collapse open items)
+  const item = document.querySelector('.inbox-item:has(#sub-' + id + ')');
+  if (item && read) { item.classList.remove('unread'); item.classList.add('read'); }
+  else if (item && !read) { item.classList.remove('read'); item.classList.add('unread'); }
+  loadBadgeCounts();
 };
 
 window.updateSubStatus = async function(id, status) {
@@ -729,9 +735,124 @@ window.generatePoster = function(report) {
   window.open('/admin/poster.html', '_blank');
 };
 
-window.deleteReport = async function(id) {
+window.deleteReport = async function(id, returnTo) {
   await api('/admin/lost-found/' + id, { method: 'DELETE' });
-  navigate('submissions'); loadBadgeCounts();
+  if (returnTo === 'lost-found') { navigate('lost-found'); }
+  else { navigate('submissions'); }
+  loadBadgeCounts();
+};
+
+// ── Lost & Found Management ──
+let _lfManageFilter = 'active';
+
+async function renderLostFoundManage(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Lost & Found</h1><p class="text-gray-400">Loading...</p>';
+  const reports = await api('/admin/lost-found');
+  if (reports.error) { el.innerHTML += '<p class="text-red-500">' + reports.error + '</p>'; return; }
+
+  const all = Array.isArray(reports) ? reports : [];
+  const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+  const active = all.filter(r => r.status === 'approved' && r.created_at >= thirtyDaysAgo);
+  const expired = all.filter(r => r.status === 'approved' && r.created_at < thirtyDaysAgo);
+  const resolved = all.filter(r => r.status === 'resolved');
+
+  const tabBtn = (key, label, count) => {
+    const isActive = _lfManageFilter === key;
+    return `<button onclick="_lfManageFilter='${key}';renderLostFoundManage(document.getElementById('content'))" class="filter-tab ${isActive ? 'active' : ''}">${label} (${count})</button>`;
+  };
+
+  let html = `<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Lost & Found</h1>
+    <a href="https://wcahs.org/lost-found.html" target="_blank" class="text-xs text-sage-600 hover:underline font-semibold">View Public Page &rarr;</a>
+  </div>
+  <div class="filter-tabs-scroll mb-5">
+    ${tabBtn('active', 'Active', active.length)}
+    ${expired.length > 0 ? tabBtn('expired', 'Expired', expired.length) : ''}
+    ${tabBtn('resolved', 'Resolved', resolved.length)}
+  </div>`;
+
+  const items = _lfManageFilter === 'active' ? active : _lfManageFilter === 'expired' ? expired : resolved;
+
+  if (items.length === 0) {
+    html += `<div class="card p-10 text-center">
+      <svg class="w-14 h-14 mx-auto text-sage-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <p class="text-gray-400 font-semibold">${_lfManageFilter === 'active' ? 'No active reports on the website' : 'No resolved reports'}</p>
+    </div>`;
+  } else {
+    html += '<div class="space-y-3">';
+    items.forEach(r => {
+      let photos = [];
+      if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+      const thumbHtml = photos[0]
+        ? `<img src="${photos[0]}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-sage-100">`
+        : `<div class="w-14 h-14 rounded-xl bg-sage-50 flex items-center justify-center shrink-0"><svg class="w-6 h-6 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>`;
+
+      const typeColor = r.type === 'lost' ? 'text-amber-700' : 'text-sage-700';
+      const typeLabel = r.type === 'lost' ? 'LOST' : 'FOUND';
+      const petLabel = r.pet_name || ('Unknown ' + (r.species || 'Pet'));
+      const date = r.created_at ? new Date(r.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      // Calculate days until expiry (30 days from created_at)
+      let expiryHtml = '';
+      if (r.status === 'approved') {
+        const created = new Date(r.created_at.replace(' ', 'T') + 'Z');
+        const expiresAt = new Date(created.getTime() + 30*24*60*60*1000);
+        const daysLeft = Math.ceil((expiresAt - Date.now()) / (24*60*60*1000));
+        if (daysLeft > 0) {
+          const urgency = daysLeft <= 5 ? 'text-amber-600' : 'text-gray-400';
+          expiryHtml = `<span class="text-[10px] ${urgency} ml-2">Expires in ${daysLeft}d</span>`;
+        } else {
+          expiryHtml = '<span class="text-[10px] text-red-500 ml-2">Expired</span>';
+        }
+      }
+
+      html += `<div class="card p-4 flex items-center gap-4">
+        ${thumbHtml}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-0.5">
+            <span class="text-[10px] font-bold ${typeColor}">${typeLabel}</span>
+            <span class="font-bold text-gray-900 text-sm">${h(petLabel)}</span>
+            ${expiryHtml}
+          </div>
+          <p class="text-xs text-gray-400 truncate">${h(r.species || '')}${r.breed ? ' &bull; ' + h(r.breed) : ''}${r.location_details ? ' &bull; ' + h(r.location_details) : ''}</p>
+          <p class="text-[11px] text-gray-300 mt-0.5">Reported ${date} by ${h(r.reporter_name || 'Unknown')}</p>
+          ${r.resolved_note ? '<p class="text-xs text-sage-600 mt-1"><strong>Resolution:</strong> ' + h(r.resolved_note) + '</p>' : ''}
+        </div>
+        <div class="flex gap-2 shrink-0">
+          ${r.status === 'approved' ? `
+            <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-xs bg-sage-100 text-sage-700 px-3 py-1.5 rounded-lg hover:bg-sage-200 transition font-semibold">Poster</button>
+            <button onclick="resolveLFReport(${r.id})" class="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition font-semibold">Resolve</button>
+          ` : ''}
+          ${r.status === 'resolved' ? `
+            <button onclick="reactivateLFReport(${r.id})" class="text-xs bg-sage-100 text-sage-700 px-3 py-1.5 rounded-lg hover:bg-sage-200 transition font-semibold">Reactivate</button>
+          ` : ''}
+          ${_lfManageFilter === 'expired' ? `
+            <button onclick="renewLFReport(${r.id})" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold">Renew 30 Days</button>
+          ` : ''}
+          <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id}, 'lost-found')" class="text-xs text-red-400 hover:underline">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+window.resolveLFReport = async function(id) {
+  const note = prompt('Resolution note (e.g., "Reunited with owner"):');
+  if (note === null) return;
+  await api('/admin/lost-found/' + id, { method: 'PUT', body: { status: 'resolved', resolved_note: note || '' } });
+  navigate('lost-found');
+};
+
+window.reactivateLFReport = async function(id) {
+  await api('/admin/lost-found/' + id, { method: 'PUT', body: { status: 'approved', resolved_note: '' } });
+  navigate('lost-found');
+};
+
+window.renewLFReport = async function(id) {
+  await api('/admin/lost-found/' + id, { method: 'PUT', body: { renew: true } });
+  navigate('lost-found');
 };
 
 // ── Email ──
@@ -2480,7 +2601,7 @@ async function renderUsers(el) {
   html += `<div class="mt-6 card p-5 text-sm text-gray-500">
     <strong class="text-gray-700">Roles</strong><br>
     <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-sage-500"></span> <strong>Admin</strong></span> &mdash; full access to everything<br>
-    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox, Pets, Events, and Analytics<br>
+    <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <strong>Staff</strong></span> &mdash; Inbox, Pets, Events + Zoho/Resend links<br>
     <span class="inline-flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> <strong>Foster</strong></span> &mdash; My Pets only (assigned animals + updates)
   </div>`;
   el.innerHTML = html;
