@@ -9,6 +9,8 @@ export async function onRequestGet(context) {
   const range = url.searchParams.get('range') || '7d';
 
   const now = new Date();
+  // Add 1 day buffer to endDate to ensure we capture today's data across all timezones
+  const end = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   let start;
   switch (range) {
     case '24h': start = new Date(now - 24 * 60 * 60 * 1000); break;
@@ -17,7 +19,7 @@ export async function onRequestGet(context) {
   }
 
   const startDate = start.toISOString().split('T')[0];
-  const endDate = now.toISOString().split('T')[0];
+  const endDate = end.toISOString().split('T')[0];
 
   const query = `{
     viewer {

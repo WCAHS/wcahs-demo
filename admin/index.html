@@ -1450,12 +1450,14 @@ async function renderAnalytics(el) {
     dates.forEach((d, i) => {
       const heightPct = Math.max((d.count / maxCount) * 100, 4); // min 4% so 0-count bars visible
       const heightPx = Math.max(Math.round(heightPct * 1.2), 4);
+      // d.date is UTC date like "2026-06-23" — parse at noon local to avoid day shift
       const label = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const isToday = d.date === new Date().toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD
       const showLabel = (i % labelSkip === 0) || i === numBars - 1;
       barsHtml += `<div class="chart-bar flex flex-col items-center gap-1 relative" style="flex:1;min-width:${minBarWidth};max-width:60px">
         <div class="chart-bar-tooltip">${d.count} view${d.count!==1?'s':''}</div>
         <div class="w-full rounded-t-md" style="height:${heightPx}px;background:linear-gradient(to top,#48543e,#93a27e)"></div>
-        ${showLabel ? `<span class="text-[9px] text-gray-400 truncate w-full text-center leading-tight">${label}</span>` : '<span class="text-[9px] invisible">.</span>'}
+        ${showLabel ? `<span class="text-[9px] ${isToday ? 'text-sage-700 font-bold' : 'text-gray-400'} truncate w-full text-center leading-tight">${isToday ? 'Today' : label}</span>` : '<span class="text-[9px] invisible">.</span>'}
       </div>`;
     });
     barsHtml += '</div>';
