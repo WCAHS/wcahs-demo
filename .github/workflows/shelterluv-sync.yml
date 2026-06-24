@@ -5,6 +5,8 @@ on:
   schedule:
     - cron: '2,17,32,47 * * * *'  # Every 15 minutes (offset to avoid GitHub's :00 congestion)
   workflow_dispatch: {}      # Manual trigger from GitHub UI
+  repository_dispatch:       # Triggered by CF Worker cron backup
+    types: [sync]
 
 jobs:
   sync:
