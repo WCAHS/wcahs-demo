@@ -139,9 +139,14 @@
     <!-- Sidebar -->
     <div id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.remove('open')"></div>
     <aside id="sidebar" class="w-56 bg-sage-900 text-white flex flex-col shrink-0 md:sticky top-0 h-screen">
-      <div class="p-5 border-b border-sage-800">
-        <img src="../images/logo.png" alt="WCAHS" class="h-8" style="filter: invert(1) brightness(2);">
-        <p class="text-sage-400 text-xs mt-1.5 tracking-wide uppercase font-semibold">Admin Panel</p>
+      <div class="p-5 border-b border-sage-800 flex items-center justify-between">
+        <div>
+          <img src="../images/logo.png" alt="WCAHS" class="h-8" style="filter: invert(1) brightness(2);">
+          <p class="text-sage-400 text-xs mt-1.5 tracking-wide uppercase font-semibold">Admin Panel</p>
+        </div>
+        <button onclick="document.getElementById('sidebar').classList.remove('open')" class="md:hidden p-1 text-sage-400 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
       <nav class="flex-1 py-4 space-y-1 px-3 overflow-y-auto">
         <a onclick="navigate('submissions')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer flex items-center justify-between" data-nav="submissions">
