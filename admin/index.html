@@ -306,7 +306,6 @@ function navigate(page) {
     case 'users': renderUsers(content); break;
     case 'my-account': renderMyAccount(content); break;
     case 'analytics': renderAnalytics(content); break;
-    case 'api-status': renderApiStatus(content); break;
     default: content.innerHTML = '<p class="text-gray-400">Select a section</p>';
   }
 }
@@ -1569,22 +1568,38 @@ async function renderPets(el) {
     return `<button onclick="_petsTab='${key}';renderPets(document.getElementById('content'))" class="filter-tab ${isActive ? 'active' : ''}">${label}</button>`;
   };
 
+  // Fetch sync status for the header indicator
+  let syncHtml = '';
+  try {
+    const syncData = await api('/admin/sync-status');
+    const lastMin = syncData.last_success ? minutesAgo(syncData.last_success) : null;
+    const isOk = lastMin !== null && lastMin < 30;
+    const dot = isOk ? 'bg-green-500' : 'bg-amber-500';
+    const label = lastMin !== null ? (lastMin < 1 ? 'synced just now' : 'synced ' + lastMin + 'm ago') : 'no sync data';
+    syncHtml = `<div class="flex items-center gap-2 text-xs text-gray-400">
+      <span class="w-2 h-2 rounded-full ${dot}"></span>
+      <span>${label}</span>
+      <a href="https://github.com/WCAHS/wcahs-demo/actions" target="_blank" class="text-sage-600 hover:underline ml-1">GitHub</a>
+    </div>`;
+  } catch(e) {}
+
   el.innerHTML = `<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
     <h1 class="text-2xl font-display font-bold text-sage-800">Pets</h1>
+    ${syncHtml}
   </div>
   <div class="filter-tabs-scroll mb-5">
-    ${tabBtn('active', 'Active Pets')}
+    ${tabBtn('active', 'Active')}
+    ${tabBtn('inactive', 'Inactive')}
     ${tabBtn('happy-tails', 'Happy Tails')}
-    ${tabBtn('manage', 'Manage')}
-    ${tabBtn('sync-status', 'Sync Status')}
+    ${tabBtn('manage', 'Add Pet')}
   </div>
   <div id="petsContent"><p class="text-gray-400">Loading...</p></div>`;
 
   switch (_petsTab) {
     case 'active': await renderPetsActive(); break;
+    case 'inactive': await renderPetsInactive(); break;
     case 'happy-tails': await renderPetsHappyTails(); break;
     case 'manage': await renderPetsManage(); break;
-    case 'sync-status': await renderPetsSyncStatus(); break;
   }
 }
 
@@ -1639,41 +1654,46 @@ async function renderPetsActive() {
   try {
     const data = await api('/admin/pets');
     const animals = data.animals || [];
-
     const active = animals.filter(a => !INACTIVE_STATUSES.includes(a.status) || a.is_manual);
-    const inactive = animals.filter(a => INACTIVE_STATUSES.includes(a.status) && !a.is_manual);
 
-    if (animals.length === 0) {
+    if (active.length === 0) {
       container.innerHTML = `<div class="card p-10 text-center">
         <svg class="w-14 h-14 mx-auto text-sage-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19c-4.3 0-7.5-3.2-7.5-7S7.7 5 12 5s7.5 3.2 7.5 7-3.2 7-7.5 7zm-2-9a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2zm-5 3s1.5 2 3 2 3-2 3-2"/></svg>
-        <p class="text-gray-400 font-semibold">No pets in the system</p>
-        <p class="text-gray-300 text-sm mt-1">Pets will appear after the next ShelterLuv sync</p>
+        <p class="text-gray-400 font-semibold">No active pets right now</p>
+        <p class="text-gray-300 text-sm mt-1">Active pets from ShelterLuv or manually added will appear here</p>
       </div>`;
       return;
     }
 
-    let html = '';
+    let html = `<p class="text-sm text-gray-500 mb-3"><span class="font-bold text-gray-800">${active.length}</span> active pet${active.length !== 1 ? 's' : ''} on the website</p>`;
+    html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
+    active.forEach(pet => { html += petCard(pet, true); });
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p class="text-red-500 text-sm">Error loading pets: ' + h(e.message) + '</p>';
+  }
+}
 
-    // Active / Publishable
-    html += `<h2 class="font-bold text-gray-800 text-sm mb-3">Active <span class="text-gray-400 font-normal">(${active.length})</span></h2>`;
-    if (active.length === 0) {
-      html += '<p class="text-gray-400 text-sm mb-6">No publishable pets right now</p>';
-    } else {
-      html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">';
-      active.forEach(pet => { html += petCard(pet, true); });
-      html += '</div>';
-    }
+async function renderPetsInactive() {
+  const container = document.getElementById('petsContent');
+  try {
+    const data = await api('/admin/pets');
+    const animals = data.animals || [];
+    const inactive = animals.filter(a => INACTIVE_STATUSES.includes(a.status) && !a.is_manual);
 
-    // Inactive
-    html += `<h2 class="font-bold text-gray-800 text-sm mb-3">Inactive <span class="text-gray-400 font-normal">(${inactive.length})</span></h2>`;
     if (inactive.length === 0) {
-      html += '<p class="text-gray-400 text-sm">No inactive pets</p>';
-    } else {
-      html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
-      inactive.forEach(pet => { html += petCard(pet, true); });
-      html += '</div>';
+      container.innerHTML = `<div class="card p-10 text-center">
+        <p class="text-gray-400 font-semibold">No inactive pets</p>
+        <p class="text-gray-300 text-sm mt-1">Pets that are on hold, adopted, or transferred will appear here</p>
+      </div>`;
+      return;
     }
 
+    let html = `<p class="text-sm text-gray-500 mb-3"><span class="font-bold text-gray-800">${inactive.length}</span> inactive pet${inactive.length !== 1 ? 's' : ''} — move to Happy Tails or wait for status change in ShelterLuv</p>`;
+    html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
+    inactive.forEach(pet => { html += petCard(pet, true); });
+    html += '</div>';
     container.innerHTML = html;
   } catch(e) {
     container.innerHTML = '<p class="text-red-500 text-sm">Error loading pets: ' + h(e.message) + '</p>';
@@ -1922,120 +1942,7 @@ window.deleteManualPet = async function(id) {
   renderPets(document.getElementById('content'));
 };
 
-async function renderPetsSyncStatus() {
-  const container = document.getElementById('petsContent');
-  container.innerHTML = '<p class="text-gray-400">Loading...</p>';
-  let data;
-  try { data = await api('/admin/sync-status'); } catch(e) { data = { error: e.message }; }
-  if (data.error) { container.innerHTML = '<p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">Could not load: ' + h(data.error) + '</p>'; return; }
-
-  const lastSync = data.recent_syncs[0];
-  const lastSuccessMin = data.last_success ? minutesAgo(data.last_success) : null;
-  const isHealthy = lastSync?.status === 'success' && lastSuccessMin !== null && lastSuccessMin < 30;
-  const nextSyncMin = lastSuccessMin !== null ? Math.max(15 - lastSuccessMin, 0) : null;
-
-  const lastSyncLabel = lastSuccessMin !== null
-    ? (lastSuccessMin < 1 ? 'just now' : lastSuccessMin + ' min ago')
-    : 'never';
-  const nextSyncLabel = lastSuccessMin !== null
-    ? (lastSuccessMin >= 30 ? 'overdue' : nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
-    : 'unknown';
-
-  const statusColor = isHealthy ? 'green' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'red' : 'amber');
-  const statusLabel = isHealthy ? 'Healthy' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'Overdue' : 'Issue');
-  const dotStyle = {green:'bg-green-500;box-shadow:0 0 0 4px rgba(34,197,94,0.2)',red:'bg-red-500;box-shadow:0 0 0 4px rgba(239,68,68,0.2)',amber:'bg-amber-500;box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}[statusColor];
-  const badgeStyle = {green:'bg-sage-100 text-sage-700',red:'bg-red-100 text-red-700',amber:'bg-amber-100 text-amber-700'}[statusColor];
-
-  container.innerHTML = `<div class="grid md:grid-cols-2 gap-5">
-    <div class="card p-5">
-      <div class="flex items-center gap-3 mb-3">
-        <span class="w-3 h-3 rounded-full ${dotStyle.split(';')[0]}" style="${dotStyle.split(';')[1] || ''}"></span>
-        <h2 class="font-bold text-gray-900 text-sm">ShelterLuv Sync</h2>
-        <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold ${badgeStyle}">${statusLabel}</span>
-      </div>
-      <div class="space-y-1.5 text-sm text-gray-600">
-        <div class="flex justify-between"><span class="text-gray-400">Animals</span><span class="font-semibold text-gray-800">${data.current_animals}</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">Last sync</span><span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">Next sync</span><span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
-      </div>
-      <p class="text-[11px] text-gray-400 mt-3">Every 15 min via GitHub Actions &bull; <a href="https://github.com/WCAHS/wcahs-demo/actions" target="_blank" class="text-sage-600 hover:underline">Manage on GitHub</a></p>
-    </div>
-
-    <div class="card p-5">
-      <h3 class="font-bold text-gray-900 text-sm mb-2">Recent Syncs</h3>
-      ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
-      '<div class="space-y-0.5">' + data.recent_syncs.slice(0, 5).map(s => `
-        <div class="flex items-center justify-between py-1 text-xs">
-          <div class="flex items-center gap-2">
-            ${s.status === 'success'
-              ? '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
-              : '<svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
-            }
-            <span class="text-gray-400">${localTime(s.synced_at)}</span>
-          </div>
-        </div>
-      `).join('') + '</div>'}
-    </div>
-  </div>`;
-}
-
-// ── API Status (kept for backward compat, redirects to pets sync tab) ──
-async function renderApiStatus(el) {
-  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-gray-400">Loading...</p>';
-  let data;
-  try { data = await api('/admin/sync-status'); } catch(e) { data = { error: e.message }; }
-  if (data.error) { el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">API Status</h1><p class="text-amber-700 bg-amber-50 p-4 rounded-2xl">Could not load: ' + h(data.error) + '</p>'; return; }
-
-  const lastSync = data.recent_syncs[0];
-  const lastSuccessMin = data.last_success ? minutesAgo(data.last_success) : null;
-  const isHealthy = lastSync?.status === 'success' && lastSuccessMin !== null && lastSuccessMin < 30;
-  const nextSyncMin = lastSuccessMin !== null ? Math.max(15 - lastSuccessMin, 0) : null;
-
-  const lastSyncLabel = lastSuccessMin !== null
-    ? (lastSuccessMin < 1 ? 'just now' : lastSuccessMin + ' min ago')
-    : 'never';
-  const nextSyncLabel = lastSuccessMin !== null
-    ? (lastSuccessMin >= 30 ? 'overdue' : nextSyncMin <= 0 ? 'any moment' : '~' + nextSyncMin + ' min')
-    : 'unknown';
-
-  const statusColor = isHealthy ? 'green' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'red' : 'amber');
-  const statusLabel = isHealthy ? 'Healthy' : (lastSuccessMin !== null && lastSuccessMin >= 30 ? 'Overdue' : 'Issue');
-  const dotStyle = {green:'bg-green-500;box-shadow:0 0 0 4px rgba(34,197,94,0.2)',red:'bg-red-500;box-shadow:0 0 0 4px rgba(239,68,68,0.2)',amber:'bg-amber-500;box-shadow:0 0 0 4px rgba(245,158,11,0.2)'}[statusColor];
-  const badgeStyle = {green:'bg-sage-100 text-sage-700',red:'bg-red-100 text-red-700',amber:'bg-amber-100 text-amber-700'}[statusColor];
-
-  el.innerHTML = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">API Status</h1>
-
-  <div class="grid md:grid-cols-2 gap-5">
-    <div class="card p-5">
-      <div class="flex items-center gap-3 mb-3">
-        <span class="w-3 h-3 rounded-full ${dotStyle.split(';')[0]}" style="${dotStyle.split(';')[1] || ''}"></span>
-        <h2 class="font-bold text-gray-900 text-sm">ShelterLuv Sync</h2>
-        <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold ${badgeStyle}">${statusLabel}</span>
-      </div>
-      <div class="space-y-1.5 text-sm text-gray-600">
-        <div class="flex justify-between"><span class="text-gray-400">Animals</span><span class="font-semibold text-gray-800">${data.current_animals}</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">Last sync</span><span class="font-semibold ${lastSuccessMin >= 20 ? 'text-red-600' : 'text-gray-800'}">${lastSyncLabel}</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">Next sync</span><span class="font-semibold ${nextSyncLabel === 'overdue' ? 'text-red-600' : 'text-gray-800'}">${nextSyncLabel}</span></div>
-      </div>
-      <p class="text-[11px] text-gray-400 mt-3">Every 15 min via GitHub Actions &bull; <a href="https://github.com/WCAHS/wcahs-demo/actions" target="_blank" class="text-sage-600 hover:underline">Manage on GitHub</a></p>
-    </div>
-
-    <div class="card p-5">
-      <h3 class="font-bold text-gray-900 text-sm mb-2">Recent Syncs</h3>
-      ${data.recent_syncs.length === 0 ? '<p class="text-gray-400 text-sm">No syncs yet</p>' :
-      '<div class="space-y-0.5">' + data.recent_syncs.slice(0, 5).map(s => `
-        <div class="flex items-center justify-between py-1 text-xs">
-          <div class="flex items-center gap-2">
-            ${s.status === 'success'
-              ? '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
-              : '<svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
-            }
-            <span class="text-gray-400">${localTime(s.synced_at)}</span>
-          </div>
-        </div>
-      `).join('') + '</div>'}
-    </div>
-  </div>`;
+// Sync status is now shown as a header indicator in renderPets()
 }
 
 
