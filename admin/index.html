@@ -515,7 +515,9 @@ async function renderSubmissions(el) {
       // Type labels — subtle inline text, on-palette colors
       const typeLabels = { contact: 'Contact', foster: 'Foster App', lost: 'Lost Pet', found: 'Found Pet' };
       const typeLabelColors = { contact: '#93a27e', foster: '#d97706', lost: '#b45309', found: '#48543e' };
-      const typeLabel = typeLabels[item.itemType] || item.itemType;
+      // Contact form: use subject line as label instead of generic "Contact"
+      let typeLabel = typeLabels[item.itemType] || item.itemType;
+      if (item.itemType === 'contact' && item.subject) typeLabel = item.subject;
       const typeLabelColor = typeLabelColors[item.itemType] || '#6b7280';
 
       // Thumbnail for L&F with photos

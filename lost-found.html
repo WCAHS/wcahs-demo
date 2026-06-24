@@ -151,31 +151,76 @@
     fetch('/api/lost-found').then(r=>r.json()).then(function(reports) {
       var lost = reports.filter(r=>r.type==='lost');
       var found = reports.filter(r=>r.type==='found');
+      // Store reports globally for modal access
+      window._lfReports = [];
       function renderCards(items, containerId, emptyId) {
         if (!items.length) return;
+        window._lfReports = window._lfReports.concat(items);
         document.getElementById(emptyId).classList.add('hidden');
         document.getElementById(containerId).innerHTML = items.map(function(r) {
           var photos = [];
           if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
-          var photoHtml = photos[0] ? '<div class="h-56 overflow-hidden"><img src="'+photos[0]+'" alt="" class="w-full h-full object-cover"></div>' : '';
-          var allPhotosHtml = photos.length > 1 ? '<div class="flex gap-2 mt-3 flex-wrap lf-detail hidden">' + photos.map(function(p) { return '<img src="'+p+'" class="w-20 h-20 rounded-lg object-cover border border-gray-100 cursor-pointer" onclick="window.open(this.src)">'; }).join('') + '</div>' : '';
-          var detailHtml = '<div class="lf-detail hidden mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600 space-y-1">' +
-            (r.breed ? '<p><span class="text-gray-400">Breed:</span> '+r.breed+'</p>' : '') +
-            (r.color ? '<p><span class="text-gray-400">Color:</span> '+r.color+'</p>' : '') +
-            (r.gender ? '<p><span class="text-gray-400">Gender:</span> '+r.gender+'</p>' : '') +
-            (r.description ? '<p class="mt-2">'+r.description+'</p>' : '') +
-            allPhotosHtml +
-            '</div>';
-          return '<div class="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer card-hover" onclick="this.querySelectorAll(\'.lf-detail\').forEach(function(d){d.classList.toggle(\'hidden\')})">' +
-            photoHtml +
-            '<div class="p-6"><h3 class="font-bold text-lg text-gray-900">'+(r.pet_name||'Unknown Pet')+'</h3>' +
-            '<p class="text-gray-500 text-sm mt-1">'+r.species+(r.breed?' &bull; '+r.breed:'')+(r.color?' &bull; '+r.color:'')+'</p>' +
-            (r.location_details?'<p class="text-gray-600 text-sm mt-2">'+r.location_details+'</p>':'') +
-            '<p class="text-gray-400 text-xs mt-3">Reported '+new Date(r.created_at).toLocaleDateString()+' <span class="text-sage-500 font-semibold ml-1">View details &darr;</span></p>' +
-            detailHtml +
+          var photoHtml = photos[0] ? '<div class="h-56 overflow-hidden"><img src="'+photos[0]+'" alt="" class="w-full h-full object-cover"></div>' : '<div class="h-40 bg-sage-50 flex items-center justify-center"><svg class="w-12 h-12 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>';
+          var typeColor = r.type === 'lost' ? 'bg-red-500' : 'bg-green-600';
+          var typeLabel = r.type === 'lost' ? 'LOST' : 'FOUND';
+          return '<div class="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer card-hover" onclick="openLFModal('+r.id+')">' +
+            '<div class="relative">' + photoHtml +
+            '<span class="absolute top-3 left-3 '+typeColor+' text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">'+typeLabel+'</span>' +
+            '</div>' +
+            '<div class="p-5"><h3 class="font-bold text-lg text-gray-900">'+(r.pet_name||'Unknown Pet')+'</h3>' +
+            '<p class="text-gray-500 text-sm mt-1">'+r.species+(r.breed?' &bull; '+r.breed:'')+'</p>' +
+            (r.location_details?'<p class="text-gray-500 text-sm mt-1.5"><svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>'+r.location_details+'</p>':'') +
+            '<p class="text-gray-400 text-xs mt-3">Reported '+new Date(r.created_at).toLocaleDateString()+'</p>' +
             '</div></div>';
         }).join('');
       }
+
+      window.openLFModal = function(id) {
+        var r = window._lfReports.find(function(x) { return x.id === id; });
+        if (!r) return;
+        var photos = [];
+        if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+        var isLost = r.type === 'lost';
+        var typeColor = isLost ? '#cc1f1f' : '#2d7a3a';
+        var typeLabel = isLost ? 'LOST' : 'FOUND';
+        var locLabel = isLost ? 'Last Seen' : 'Found At';
+
+        var mainPhoto = photos[0] ? '<img src="'+photos[0]+'" class="w-full max-h-80 object-cover rounded-xl" alt="">' : '';
+        var thumbsHtml = photos.length > 1 ? '<div class="flex gap-2 mt-3 overflow-x-auto pb-1">' + photos.map(function(p,i) {
+          return '<img src="'+p+'" class="w-20 h-20 rounded-lg object-cover border-2 '+(i===0?'border-sage-500':'border-gray-200')+' cursor-pointer shrink-0" onclick="document.getElementById(\'lfModalMainPhoto\').src=this.src">';
+        }).join('') + '</div>' : '';
+
+        var overlay = document.createElement('div');
+        overlay.id = 'lfModal';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        overlay.innerHTML = '<div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" style="font-family:Nunito,sans-serif">' +
+          '<div class="p-6">' +
+            '<div class="flex items-center justify-between mb-4">' +
+              '<div class="flex items-center gap-2">' +
+                '<span style="background:'+typeColor+'" class="text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">'+typeLabel+'</span>' +
+                '<h2 class="font-bold text-xl text-gray-900">'+(r.pet_name||'Unknown Pet')+'</h2>' +
+              '</div>' +
+              '<button onclick="document.getElementById(\'lfModal\').remove()" class="text-gray-400 hover:text-gray-600 p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>' +
+            '</div>' +
+            (mainPhoto ? '<div class="mb-4"><img id="lfModalMainPhoto" src="'+photos[0]+'" class="w-full max-h-80 object-cover rounded-xl" alt=""></div>' : '') +
+            thumbsHtml +
+            '<div class="grid grid-cols-2 gap-3 mt-4">' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Species</p><p class="text-sm font-semibold text-gray-900">'+(r.species||'—')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Breed</p><p class="text-sm font-semibold text-gray-900">'+(r.breed||'—')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Color</p><p class="text-sm font-semibold text-gray-900">'+(r.color||'—')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Gender</p><p class="text-sm font-semibold text-gray-900">'+(r.gender||'—')+'</p></div>' +
+            '</div>' +
+            (r.location_details ? '<div class="mt-4 rounded-xl p-4 text-center" style="background:'+(isLost?'#fef9e7':'#eef8f0')+';border:1.5px solid '+(isLost?'#f5d67a':'#8cd4a0')+'"><p class="text-[10px] uppercase font-bold opacity-60" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+locLabel+'</p><p class="font-bold" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+r.location_details+'</p></div>' : '') +
+            (r.description ? '<div class="mt-4"><p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Description</p><p class="text-sm text-gray-600 leading-relaxed">'+r.description+'</p></div>' : '') +
+            '<p class="text-gray-400 text-xs mt-4">Reported '+new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</p>' +
+            '<div class="mt-4 pt-4 border-t border-gray-100 text-center">' +
+              '<p class="text-gray-500 text-sm">Recognize this pet? <a href="tel:5072017287" class="text-sage-600 font-bold hover:underline">(507) 201-7287</a></p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+        document.body.appendChild(overlay);
+      };
       renderCards(lost, 'lostCards', 'lostEmpty');
       renderCards(found, 'foundCards', 'foundEmpty');
     }).catch(function(){});
