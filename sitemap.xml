@@ -32,4 +32,8 @@
     <loc>https://wcahs.org/lost-found.html</loc>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://wcahs.org/happy-tails.html</loc>
+    <priority>0.7</priority>
+  </url>
 </urlset>

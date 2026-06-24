@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Frequently asked questions about adopting, fostering, and volunteering at Waseca County Animal Humane Society. Learn about our rescue process in Waseca, MN.">
-  <link rel="canonical" href="https://wcahs.org/faq.html">
-  <meta property="og:title" content="FAQ - WCAHS">
-  <meta property="og:description" content="Frequently asked questions about adopting, fostering, and volunteering at Waseca County Animal Humane Society.">
+  <meta name="description" content="Happy Tails — celebrating successful adoptions from Waseca County Animal Humane Society. See the pets who found their forever homes in southern Minnesota.">
+  <link rel="canonical" href="https://wcahs.org/happy-tails.html">
+  <meta property="og:title" content="Happy Tails - WCAHS">
+  <meta property="og:description" content="Celebrating successful adoptions — see the pets who found their forever homes through WCAHS.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://wcahs.org/faq.html">
+  <meta property="og:url" content="https://wcahs.org/happy-tails.html">
   <meta property="og:image" content="https://wcahs.org/images/logo.png">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="FAQ - WCAHS">
-  <meta name="twitter:description" content="Frequently asked questions about adopting, fostering, and volunteering at Waseca County Animal Humane Society.">
+  <meta name="twitter:title" content="Happy Tails - WCAHS">
+  <meta name="twitter:description" content="Celebrating successful adoptions — see the pets who found their forever homes through WCAHS.">
   <meta name="twitter:image" content="https://wcahs.org/images/logo.png">
   <link rel="icon" type="image/png" href="favicon.png">
-  <title>FAQ - WCAHS</title>
+  <title>Happy Tails - WCAHS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -57,9 +57,8 @@
     .hover\:text-sage-700:hover { color: #48543e !important; }
     .hover\:text-sage-800:hover { color: #3b4434 !important; }
     .hover\:bg-sage-100:hover { background-color: #e8ebe3 !important; }
-    details summary { cursor: pointer; }
-    details summary::-webkit-details-marker { display: none; }
-    details[open] summary .faq-arrow { transform: rotate(180deg); }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
@@ -75,7 +74,7 @@
         <a href="pets.html" class="text-gray-600 hover:text-sage-700 transition">Adopt</a>
         <a href="events.html" class="text-gray-600 hover:text-sage-700 transition">Events</a>
         <a href="lost-found.html" class="text-gray-600 hover:text-sage-700 transition">Lost & Found</a>
-        <a href="happy-tails.html" class="text-gray-600 hover:text-sage-700 transition">Happy Tails</a>
+        <a href="happy-tails.html" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">Happy Tails</a>
         <a href="about.html" class="text-gray-600 hover:text-sage-700 transition">About</a>
         <a href="contact.html" class="text-gray-600 hover:text-sage-700 transition">Contact</a>
         <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donate</a>
@@ -89,7 +88,7 @@
       <a href="pets.html" class="block py-2 text-gray-600">Adopt</a>
       <a href="events.html" class="block py-2 text-gray-600">Events</a>
       <a href="lost-found.html" class="block py-2 text-gray-600">Lost & Found</a>
-      <a href="happy-tails.html" class="block py-2 text-gray-600">Happy Tails</a>
+      <a href="happy-tails.html" class="block py-2 text-sage-700 font-semibold">Happy Tails</a>
       <a href="about.html" class="block py-2 text-gray-600">About</a>
       <a href="contact.html" class="block py-2 text-gray-600">Contact</a>
       <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donate</a>
@@ -101,86 +100,44 @@
     <span class="announcement-text"></span>
   </div>
 
-  <!-- Header -->
+  <!-- Hero -->
   <section class="bg-sage-700 py-16 relative overflow-hidden">
-    <img src="images/cats/cat_02.png" alt="" style="position:absolute; bottom:-5px; right:50px; height:115px; opacity:0.08; filter:invert(1);">
-    <img src="images/dogs/dog_07.png" alt="" style="position:absolute; bottom:-5px; left:50px; height:105px; opacity:0.07; filter:invert(1);">
-    <img src="images/paws/paw_01.png" alt="" style="position:absolute; top:12px; left:30%; height:30px; opacity:0.05; filter:invert(1); transform:rotate(10deg);">
+    <img src="images/paws/paw_01.png" alt="" style="position:absolute; top:15px; left:20%; height:35px; opacity:0.05; filter:invert(1); transform:rotate(15deg);">
+    <img src="images/paws/paw_02.png" alt="" style="position:absolute; bottom:20px; right:15%; height:30px; opacity:0.05; filter:invert(1); transform:rotate(-10deg);">
+    <img src="images/paws/paw_03.png" alt="" style="position:absolute; top:40px; right:8%; height:25px; opacity:0.04; filter:invert(1); transform:rotate(25deg);">
     <div class="max-w-6xl mx-auto px-4 text-center relative z-10">
-      <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-3">Frequently Asked Questions</h1>
-      <p class="text-sage-200 text-lg">Everything you need to know about adopting, fostering, and supporting WCAHS</p>
+      <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-3">Happy Tails</h1>
+      <p class="text-sage-200 text-lg max-w-2xl mx-auto">Every adoption is a story of love, hope, and a second chance. These are the pets who found their forever homes through WCAHS.</p>
     </div>
   </section>
 
-  <!-- FAQ Content -->
-  <section class="max-w-3xl mx-auto px-4 py-20">
+  <!-- Happy Tails Grid -->
+  <section class="max-w-6xl mx-auto px-4 py-16">
+    <!-- Loading state -->
+    <div id="loading" class="text-center py-16">
+      <div class="inline-block w-8 h-8 border-4 border-sage-200 border-t-sage-600 rounded-full animate-spin"></div>
+      <p class="text-gray-500 mt-4">Loading happy tails...</p>
+    </div>
 
-    <!-- Adoption Banner -->
-    <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
-      <div class="relative aspect-[4/3] md:aspect-auto md:h-72">
-        <img src="images/photos/IMG_1591.JPEG" alt="WCAHS tabby cat" class="w-full h-full object-cover" style="object-position: center 25%;">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <h2 class="absolute bottom-4 left-6 font-display text-2xl md:text-3xl font-bold text-white">Adoption</h2>
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden text-center py-20">
+      <div class="w-24 h-24 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg class="w-12 h-12 text-sage-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
       </div>
-    </div>
-    <div id="faq-adoption" class="space-y-3 mb-16"></div>
-
-    <!-- Fostering Banner -->
-    <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
-      <div class="relative aspect-[4/3] md:aspect-auto md:h-72">
-        <img src="images/photos/IMG_1596.JPEG" alt="WCAHS Siamese cat" class="w-full h-full object-cover" style="object-position: center 30%;">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <h2 class="absolute bottom-4 left-6 font-display text-2xl md:text-3xl font-bold text-white">Fostering</h2>
-      </div>
-    </div>
-    <div id="faq-fostering" class="space-y-3 mb-16"></div>
-
-    <!-- General Banner -->
-    <div class="rounded-2xl overflow-hidden shadow-lg mb-6">
-      <div class="relative aspect-[4/3] md:aspect-auto md:h-72">
-        <img src="images/photos/IMG_1598.JPEG" alt="WCAHS beagle at sunset" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <h2 class="absolute bottom-4 left-6 font-display text-2xl md:text-3xl font-bold text-white">General</h2>
-      </div>
-    </div>
-    <div id="faq-general" class="space-y-3 mb-16"></div>
-
-    <script>
-      fetch('/api/faq').then(r=>r.json()).then(function(data) {
-        var arrow = '<svg class="faq-arrow w-5 h-5 text-sage-600 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
-        ['adoption','fostering','general'].forEach(function(section) {
-          var items = data[section] || [];
-          var container = document.getElementById('faq-' + section);
-          if (!items.length) { container.innerHTML = '<p class="text-gray-400 text-sm">No questions in this section yet.</p>'; return; }
-          container.innerHTML = items.map(function(f) {
-            return '<details class="bg-white rounded-2xl shadow-sm overflow-hidden">' +
-              '<summary class="flex items-center justify-between p-6 font-semibold text-gray-900">' + f.question + arrow + '</summary>' +
-              '<div class="px-6 pb-6 text-gray-600 text-sm leading-relaxed">' + f.answer + '</div></details>';
-          }).join('');
-        });
-      }).catch(function(){});
-    </script>
-
-    <!-- Still have questions -->
-    <div class="bg-sage-50 rounded-2xl p-10 text-center">
-      <h3 class="font-bold text-lg text-sage-800 mb-2">Still have questions?</h3>
-      <p class="text-gray-500 text-sm mb-4">We're happy to help!</p>
-      <a href="contact.html" class="inline-block bg-sage-600 hover:bg-sage-700 text-white font-semibold px-6 py-3 rounded-full transition text-sm">Contact Us</a>
+      <h2 class="font-display text-2xl font-bold text-gray-900 mb-3">Our first happy tail is coming soon!</h2>
+      <p class="text-gray-500 max-w-md mx-auto">We're working on sharing the wonderful stories of pets who've found their forever homes. Check back soon!</p>
     </div>
 
+    <!-- Grid -->
+    <div id="tails-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
   </section>
 
   <!-- CTA -->
-  <section class="bg-sage-800 py-16 relative overflow-hidden">
-    <img src="images/dogs/dog_08.png" alt="" style="position:absolute; bottom:0; left:30px; height:100px; opacity:0.07; filter:invert(1);">
-    <img src="images/paws/paw_04.png" alt="" style="position:absolute; top:15px; right:80px; height:35px; opacity:0.05; filter:invert(1); transform:rotate(15deg);">
-    <div class="max-w-3xl mx-auto px-4 text-center relative z-10">
-      <h2 class="font-display text-3xl font-bold text-white mb-4">Ready to Make a Difference?</h2>
-      <p class="text-sage-200 text-lg mb-8">Whether you adopt, foster, or donate &mdash; you're saving a life.</p>
-      <div class="flex flex-wrap justify-center gap-4">
-        <a href="pets.html" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-4 rounded-full transition shadow-lg">Meet Our Pets</a>
-        <a href="contact.html#foster" class="border-2 border-white/40 hover:border-white/70 text-white font-semibold px-8 py-4 rounded-full transition">Become a Foster</a>
-      </div>
+  <section class="bg-white py-16">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      <h2 class="font-display text-3xl font-bold text-gray-900 mb-4">Want to write the next happy tail?</h2>
+      <p class="text-gray-600 mb-8 text-lg">Browse our adoptable pets and find your new best friend. Every adoption makes room for us to save another life.</p>
+      <a href="pets.html" class="inline-block bg-sage-700 hover:bg-sage-800 text-white font-semibold px-8 py-3 rounded-full transition shadow-md" style="background-color:#48543e;">View Adoptable Pets</a>
     </div>
   </section>
 
@@ -195,6 +152,7 @@
         <h4 class="font-bold text-white mb-4">Quick Links</h4>
         <ul class="space-y-2 text-sm">
           <li><a href="pets.html" class="hover:text-white transition">Adoptable Pets</a></li>
+          <li><a href="happy-tails.html" class="hover:text-white transition">Happy Tails</a></li>
           <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
           <li><a href="faq.html" class="hover:text-white transition">FAQ</a></li>
           <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
@@ -216,6 +174,74 @@
     </div>
   </footer>
 
+<script>
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  fetch('/api/happy-tails')
+    .then(r => r.json())
+    .then(function(tails) {
+      document.getElementById('loading').classList.add('hidden');
+
+      if (!tails || tails.length === 0) {
+        document.getElementById('empty-state').classList.remove('hidden');
+        return;
+      }
+
+      var grid = document.getElementById('tails-grid');
+      grid.classList.remove('hidden');
+
+      tails.forEach(function(t) {
+        var photoSrc = t.family_photo_url || t.photo_url || '';
+        var hasPhoto = !!photoSrc;
+
+        var card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl overflow-hidden shadow-sm card-hover';
+
+        var photoHtml;
+        if (hasPhoto) {
+          photoHtml = '<img src="' + escapeHtml(photoSrc) + '" alt="' + escapeHtml(t.pet_name) + '" class="w-full h-64 object-cover">';
+        } else {
+          photoHtml = '<div class="w-full h-64 bg-sage-100 flex items-center justify-center">' +
+            '<svg class="w-16 h-16 text-sage-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>' +
+            '</div>';
+        }
+
+        var detailParts = [];
+        if (t.breed) detailParts.push(escapeHtml(t.breed));
+        if (t.pet_type) detailParts.push(escapeHtml(t.pet_type));
+        var detailStr = detailParts.join(' &middot; ');
+
+        var dateHtml = t.adoption_date ? '<p class="text-amber-600 text-sm font-semibold">Adopted ' + formatDate(t.adoption_date) + '</p>' : '';
+
+        var descHtml = t.description ? '<p class="text-gray-500 text-sm mt-2 leading-relaxed">' + escapeHtml(t.description) + '</p>' : '';
+
+        card.innerHTML = photoHtml +
+          '<div class="p-5">' +
+            '<h3 class="font-bold text-lg text-gray-900 mb-1">' + escapeHtml(t.pet_name) + '</h3>' +
+            (detailStr ? '<p class="text-gray-400 text-sm mb-2">' + detailStr + '</p>' : '') +
+            dateHtml +
+            descHtml +
+          '</div>';
+
+        grid.appendChild(card);
+      });
+    })
+    .catch(function() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('empty-state').classList.remove('hidden');
+    });
+</script>
 <script src="site-data.js"></script>
 <script src="loader.js"></script>
 </div></body>

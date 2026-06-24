@@ -1634,10 +1634,15 @@ function petCard(pet, showActions) {
     actions = '<div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-sage-100">';
     if (isInactive && !pet.is_manual) {
       actions += `<button onclick="moveToHappyTails('${h(pet.id)}','${h(pet.name)}','${h(pet.type||'')}','${h(pet.breed||'')}','${h(pet.cover_photo||'')}')" class="text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition font-semibold">Happy Tails</button>`;
+      if (!isHidden) {
+        actions += `<button onclick="dismissInactivePet('${h(pet.id)}')" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition font-semibold">Dismiss</button>`;
+      } else {
+        actions += `<button onclick="togglePetVisibility('${h(pet.id)}', false)" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold">Restore</button>`;
+      }
     }
-    if (isHidden) {
+    if (!isInactive && isHidden) {
       actions += `<button onclick="togglePetVisibility('${h(pet.id)}', false)" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold">Show</button>`;
-    } else if (!isInactive) {
+    } else if (!isInactive && !isHidden) {
       actions += `<button onclick="togglePetVisibility('${h(pet.id)}', true)" class="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition font-semibold">Hide</button>`;
     }
     if (pet.is_manual) {
@@ -1692,9 +1697,25 @@ async function renderPetsInactive() {
   try {
     const data = await api('/admin/pets');
     const animals = data.animals || [];
-    const inactive = animals.filter(a => INACTIVE_STATUSES.includes(a.status) && !a.is_manual);
+    // Filter inactive: not manual, inactive status, not hidden
+    const allInactive = animals.filter(a => INACTIVE_STATUSES.includes(a.status) && !a.is_manual);
+    const inactive = allInactive.filter(a => !a.hidden);
+    const dismissed = allInactive.filter(a => a.hidden);
 
-    if (inactive.length === 0) {
+    // Auto-hide inactive pets older than 30 days (based on last_updated)
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const autoHide = inactive.filter(a => {
+      if (!a.last_updated) return false;
+      const updated = new Date(a.last_updated.replace(' ', 'T') + 'Z');
+      return updated.getTime() < thirtyDaysAgo;
+    });
+    // Auto-dismiss old ones silently
+    autoHide.forEach(a => {
+      api('/admin/pets', { method: 'PUT', body: { id: a.id, hidden: true } });
+    });
+    const visible = inactive.filter(a => !autoHide.includes(a));
+
+    if (visible.length === 0 && dismissed.length === 0) {
       container.innerHTML = `<div class="card p-10 text-center">
         <p class="text-gray-400 font-semibold">No inactive pets</p>
         <p class="text-gray-300 text-sm mt-1">Pets that are on hold, adopted, or transferred will appear here</p>
@@ -1702,10 +1723,22 @@ async function renderPetsInactive() {
       return;
     }
 
-    let html = `<p class="text-sm text-gray-500 mb-3"><span class="font-bold text-gray-800">${inactive.length}</span> inactive pet${inactive.length !== 1 ? 's' : ''} — move to Happy Tails or wait for status change in ShelterLuv</p>`;
-    html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
-    inactive.forEach(pet => { html += petCard(pet, true); });
-    html += '</div>';
+    let html = '';
+    if (visible.length > 0) {
+      html += `<p class="text-sm text-gray-500 mb-3"><span class="font-bold text-gray-800">${visible.length}</span> inactive pet${visible.length !== 1 ? 's' : ''} — move to Happy Tails or dismiss</p>`;
+      html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
+      visible.forEach(pet => { html += petCard(pet, true); });
+      html += '</div>';
+    } else {
+      html += '<p class="text-gray-400 text-sm mb-4">No new inactive pets</p>';
+    }
+
+    if (dismissed.length > 0) {
+      html += `<details class="mt-6"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-600">Dismissed (${dismissed.length})</summary>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 opacity-50">`;
+      dismissed.forEach(pet => { html += petCard(pet, true); });
+      html += '</div></details>';
+    }
     container.innerHTML = html;
   } catch(e) {
     container.innerHTML = '<p class="text-red-500 text-sm">Error loading pets: ' + h(e.message) + '</p>';
@@ -1714,7 +1747,12 @@ async function renderPetsInactive() {
 
 window.togglePetVisibility = async function(id, hide) {
   await api('/admin/pets', { method: 'PUT', body: { id, hidden: hide } });
-  renderPetsActive();
+  _petsTab === 'inactive' ? renderPetsInactive() : renderPetsActive();
+};
+
+window.dismissInactivePet = async function(id) {
+  await api('/admin/pets', { method: 'PUT', body: { id, hidden: true } });
+  renderPetsInactive();
 };
 
 window.moveToHappyTails = async function(id, name, type, breed, photoUrl) {
