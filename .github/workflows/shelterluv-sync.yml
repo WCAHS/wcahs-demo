@@ -82,20 +82,32 @@ jobs:
             done)
           fi
 
-          # Restore hidden flags
-          if [ -n "$HIDDEN_IDS" ]; then
-            SQL+="UPDATE animals SET hidden = 1 WHERE id IN ($HIDDEN_IDS);"
-          fi
-
-          # Log the sync
-          SQL+="INSERT INTO sync_log (animal_count, status) VALUES ($ANIMAL_COUNT, 'success');"
-
-          echo "Executing SQL against D1..."
+          # Execute main sync (delete + inserts)
+          echo "Executing sync SQL against D1..."
           curl -sf -X POST \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"sql\": $(echo "$SQL" | jq -Rs .)}" \
+            | jq '.success'
+
+          # Restore hidden flags (separate call so it actually runs)
+          if [ -n "$HIDDEN_IDS" ]; then
+            echo "Restoring hidden flags for: $HIDDEN_IDS"
+            curl -sf -X POST \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"sql\": \"UPDATE animals SET hidden = 1 WHERE id IN ($HIDDEN_IDS)\"}" \
+              | jq '.success'
+          fi
+
+          # Log the sync (separate call)
+          curl -sf -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"sql\": \"INSERT INTO sync_log (animal_count, status) VALUES ($ANIMAL_COUNT, 'success')\"}" \
             | jq '.success'
 
           echo "Sync complete: $ANIMAL_COUNT animals"

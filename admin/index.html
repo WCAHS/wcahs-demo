@@ -594,7 +594,7 @@ function renderSubExpanded(item) {
     return `<div class="p-5">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-4">
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Name</p><p class="text-sm text-gray-800 font-semibold">${h(item.name)}</p></div>
-        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="mailto:${h(item.email)}" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="https://mail.zoho.com/zm/#/compose?to=${encodeURIComponent(item.email)}" target="_blank" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Phone</p><p class="text-sm text-gray-800">${item.phone ? '<a href="tel:' + item.phone.replace(/\\D/g,'') + '" class="text-sage-700 hover:underline">' + h(fmtPhone(item.phone)) + '</a>' : '<span class="text-gray-300">&mdash;</span>'}</p></div>
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Subject</p><p class="text-sm text-gray-800">${item.subject ? h(item.subject) : '<span class="text-gray-300">&mdash;</span>'}</p></div>
       </div>
@@ -609,7 +609,7 @@ function renderSubExpanded(item) {
     return `<div class="p-5">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-4">
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Name</p><p class="text-sm text-gray-800 font-semibold">${h(item.name)}</p></div>
-        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="mailto:${h(item.email)}" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="https://mail.zoho.com/zm/#/compose?to=${encodeURIComponent(item.email)}" target="_blank" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
       </div>
       <div class="mb-4">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">About Yourself</p>
@@ -623,7 +623,7 @@ function renderSubExpanded(item) {
 function subActionBar(item, statusLabels, st) {
   const unread = !item.is_read;
   return `<div class="flex items-center gap-3 flex-wrap pt-3 border-t border-sage-100">
-    ${item.email ? `<a href="mailto:${h(item.email)}?subject=Re: ${encodeURIComponent(item.subject || 'Your inquiry')}" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-7 9 7v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"/></svg>Reply</a>` : ''}
+    ${item.email ? `<a href="https://mail.zoho.com/zm/#/compose?to=${encodeURIComponent(item.email)}&subject=${encodeURIComponent('Re: ' + (item.subject || 'Your inquiry'))}" target="_blank" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-7 9 7v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"/></svg>Reply</a>` : ''}
     <select onchange="updateSubStatus(${item.id}, this.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-sage-400">
       ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
     </select>
@@ -657,7 +657,7 @@ function renderLFExpanded(item) {
         <div class="space-y-1.5 text-sm">
           <p class="font-semibold">${h(r.reporter_name)}</p>
           ${r.reporter_phone ? '<p><a href="tel:'+r.reporter_phone.replace(/\\D/g,'')+'" class="text-sage-700 hover:underline">'+h(fmtPhone(r.reporter_phone))+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
-          ${r.reporter_email ? '<p><a href="mailto:'+h(r.reporter_email)+'" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
+          ${r.reporter_email ? '<p><a href="https://mail.zoho.com/zm/#/compose?to='+encodeURIComponent(r.reporter_email)+'" target="_blank" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
         </div>
         ${r.location_details ? '<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">Location</h4><p class="text-sm font-semibold">'+h(r.location_details)+'</p>' : ''}
       </div>
@@ -1434,14 +1434,93 @@ async function renderSettings(el) {
     </div>
   </div>`;
 
-  // Under construction — techadmin only
+  // Custom popup editor
+  const popupIcons = [
+    { value: '', label: 'No Icon' },
+    { value: '🐾', label: '🐾 Paw Prints' },
+    { value: '🐶', label: '🐶 Dog' },
+    { value: '🐱', label: '🐱 Cat' },
+    { value: '❤️', label: '❤️ Heart' },
+    { value: '⭐', label: '⭐ Star' },
+    { value: '📢', label: '📢 Megaphone' },
+    { value: '🎉', label: '🎉 Party' },
+    { value: '🏠', label: '🏠 House' },
+    { value: '⚠️', label: '⚠️ Warning' },
+    { value: '🎄', label: '🎄 Holiday' },
+    { value: '🌟', label: '🌟 Sparkle' },
+  ];
+  const popupStyles = [
+    { value: 'sage', label: 'Sage', btn: '#5c6b4e', bg: '#fff', text: '#3b4434', border: '' },
+    { value: 'amber', label: 'Warm Amber', btn: '#d97706', bg: '#fffbeb', text: '#78350f', border: '' },
+    { value: 'sky', label: 'Sky Blue', btn: '#0284c7', bg: '#f0f9ff', text: '#0c4a6e', border: '' },
+    { value: 'rose', label: 'Rose', btn: '#e11d48', bg: '#fff1f2', text: '#881337', border: '' },
+    { value: 'dark', label: 'Dark', btn: '#f5f5f4', bg: '#1c1917', text: '#fafaf9', border: '' },
+  ];
+  const popupIcon = data.popup_icon || '';
+  const popupStyle = data.popup_style || 'sage';
+  const popupMsg = data.popup_message || '';
+  const popupBtnText = data.popup_button_text || '';
+  const popupBtnLink = data.popup_button_link || '';
+  const popupEnabled = data.popup_enabled === true || data.popup_enabled === 'true';
+  const popupMsgLen = popupMsg.length;
+
+  settingsHtml += `<div class="card p-6 mb-5">
+    <h2 class="font-bold text-gray-900 mb-4">Site Popup</h2>
+    <p class="text-xs text-gray-400 mb-4">A one-time popup shown to visitors. Dismissed per session.</p>
+    <div class="flex items-center gap-4 mb-4">
+      <label class="flex items-center gap-2 text-sm"><input id="setPopupEnabled" type="checkbox" ${popupEnabled?'checked':''} onchange="updatePopupPreview()"> Enable popup</label>
+    </div>
+    <div id="popupFields">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Icon</label>
+          <select id="setPopupIcon" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" onchange="updatePopupPreview()">
+            ${popupIcons.map(ic => '<option value="'+ic.value+'"'+(popupIcon===ic.value?' selected':'')+'>'+ic.label+'</option>').join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Style</label>
+          <select id="setPopupStyle" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" onchange="updatePopupPreview()">
+            ${popupStyles.map(s => '<option value="'+s.value+'"'+(popupStyle===s.value?' selected':'')+'>'+s.label+'</option>').join('')}
+          </select>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Message</label>
+        <textarea id="setPopupMsg" maxlength="200" rows="3" oninput="updatePopupCharCount();updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" placeholder="e.g. We're hosting an adoption event this Saturday!">${h(popupMsg)}</textarea>
+        <p class="text-xs text-gray-400 mt-1"><span id="popupCharCount">${popupMsgLen}</span>/200 characters</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Button Text <span class="font-normal text-gray-400">(optional)</span></label>
+          <input id="setPopupBtnText" value="${h(popupBtnText)}" maxlength="40" oninput="updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Learn More">
+          <p class="text-xs text-gray-400 mt-1">Leave blank for just a dismiss X button</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Button Link <span class="font-normal text-gray-400">(optional)</span></label>
+          <input id="setPopupBtnLink" value="${h(popupBtnLink)}" oninput="updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. /events.html or https://...">
+          <p class="text-xs text-gray-400 mt-1">Where the button goes when clicked</p>
+        </div>
+      </div>
+    </div>
+    <div id="popupPreviewWrap" class="rounded-xl overflow-hidden mt-2 ${popupEnabled?'':'hidden'}">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">Preview</p>
+      <div id="popupPreviewBox" class="rounded-2xl p-8 text-center relative max-w-sm mx-auto shadow-lg" style="background:#fff;">
+        <div id="popupPreviewIcon" class="text-4xl mb-3">${popupIcon||''}</div>
+        <p id="popupPreviewMsg" class="text-sm leading-relaxed mb-5" style="color:#3b4434;">${h(popupMsg)||'Your popup message here...'}</p>
+        <div id="popupPreviewBtn"></div>
+      </div>
+    </div>
+  </div>`;
+
+  // Under construction — techadmin only (overrides custom popup)
   if (currentUsername === 'techadmin') {
     settingsHtml += `<div class="card p-6 mb-5">
       <h2 class="font-bold text-gray-900 mb-4">Under Construction Mode</h2>
       <div class="flex items-center gap-4 mb-3">
         <label class="flex items-center gap-2 text-sm"><input id="setUcEnabled" type="checkbox" ${data.under_construction===true||data.under_construction==='true'?'checked':''}> Show "Under Construction" popup</label>
       </div>
-      <p class="text-xs text-gray-400">Shows a one-time popup per session with "Pardon Our Muddy Paws!" message. Visitors dismiss it to continue browsing.</p>
+      <p class="text-xs text-gray-400">Shows a one-time popup per session with "Pardon Our Muddy Paws!" message. <strong>Overrides the custom popup above when enabled.</strong></p>
     </div>`;
   }
 
@@ -1516,6 +1595,56 @@ window.updateAnnPreview = function() {
 };
 
 
+window.updatePopupCharCount = function() {
+  const input = document.getElementById('setPopupMsg');
+  const counter = document.getElementById('popupCharCount');
+  if (input && counter) {
+    counter.textContent = input.value.length;
+    counter.style.color = input.value.length > 180 ? '#d97706' : '';
+  }
+};
+
+window.updatePopupPreview = function() {
+  const enabled = document.getElementById('setPopupEnabled');
+  const wrap = document.getElementById('popupPreviewWrap');
+  const box = document.getElementById('popupPreviewBox');
+  const iconEl = document.getElementById('popupPreviewIcon');
+  const msgEl = document.getElementById('popupPreviewMsg');
+  const btnEl = document.getElementById('popupPreviewBtn');
+  if (!wrap || !box) return;
+
+  if (enabled && !enabled.checked) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+
+  const styles = {
+    sage:  { btn: '#5c6b4e', bg: '#fff', text: '#3b4434', btnText: '#fff' },
+    amber: { btn: '#d97706', bg: '#fffbeb', text: '#78350f', btnText: '#fff' },
+    sky:   { btn: '#0284c7', bg: '#f0f9ff', text: '#0c4a6e', btnText: '#fff' },
+    rose:  { btn: '#e11d48', bg: '#fff1f2', text: '#881337', btnText: '#fff' },
+    dark:  { btn: '#a8a29e', bg: '#1c1917', text: '#fafaf9', btnText: '#1c1917' },
+  };
+  const style = styles[document.getElementById('setPopupStyle').value] || styles.sage;
+  box.style.background = style.bg;
+  msgEl.style.color = style.text;
+
+  const icon = document.getElementById('setPopupIcon').value;
+  iconEl.textContent = icon;
+  iconEl.style.display = icon ? '' : 'none';
+
+  const msg = document.getElementById('setPopupMsg').value;
+  msgEl.textContent = msg || 'Your popup message here...';
+
+  const btnText = document.getElementById('setPopupBtnText').value;
+  if (btnText) {
+    btnEl.innerHTML = '<span style="display:inline-block;background:'+style.btn+';color:'+style.btnText+';border:none;padding:10px 28px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.9rem;font-weight:700;">'+btnText.replace(/</g,'&lt;')+'</span>';
+  } else {
+    btnEl.innerHTML = '<span style="color:'+style.text+';opacity:0.5;font-size:12px;">(dismiss X only)</span>';
+  }
+};
+
+// Run preview on load after DOM renders
+setTimeout(function(){ if(document.getElementById('popupPreviewBox')) updatePopupPreview(); }, 0);
+
 window.saveSettings = async function() {
   try {
   const body = {
@@ -1527,6 +1656,16 @@ window.saveSettings = async function() {
     announcement_pages: 'all',
     announcement_color: document.getElementById('setAnnColor').value,
   };
+  // Popup settings
+  const popupEl = document.getElementById('setPopupEnabled');
+  if (popupEl) {
+    body.popup_enabled = popupEl.checked ? 'true' : 'false';
+    body.popup_icon = document.getElementById('setPopupIcon').value;
+    body.popup_style = document.getElementById('setPopupStyle').value;
+    body.popup_message = document.getElementById('setPopupMsg').value;
+    body.popup_button_text = document.getElementById('setPopupBtnText').value;
+    body.popup_button_link = document.getElementById('setPopupBtnLink').value;
+  }
   // Under construction — only save if techadmin
   const ucEl = document.getElementById('setUcEnabled');
   if (ucEl) {

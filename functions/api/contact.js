@@ -43,18 +43,8 @@ export async function onRequestPost(context) {
       <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-sub-${subId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">View in Admin &rarr;</a></div>`,
   });
 
-  await sendAutoReply(env, {
-    to: body.email,
-    subject: 'We received your message!',
-    bodyHtml: `<h2 style="color:#48543e;margin:0 0 16px;font-family:Georgia,serif">Thanks for reaching out, ${body.name}!</h2>
-      <p style="color:#666;font-size:15px;line-height:1.6">We received your message and a member of our team will get back to you as soon as possible.</p>
-      <div style="background:#f6f7f4;border-radius:12px;padding:16px 20px;margin:20px 0">
-        <p style="margin:0;font-size:13px;color:#666"><strong>Subject:</strong> ${body.subject || 'General Inquiry'}</p>
-        <p style="margin:8px 0 0;font-size:13px;color:#666"><strong>Your message:</strong> ${body.message.substring(0, 200)}${body.message.length > 200 ? '...' : ''}</p>
-      </div>
-      <p style="color:#666;font-size:15px;line-height:1.6">In the meantime, feel free to browse our <a href="https://wcahs.org/pets.html" style="color:#5c6b4e;font-weight:700">available pets</a> or check out our <a href="https://wcahs.org/events.html" style="color:#5c6b4e;font-weight:700">upcoming events</a>.</p>
-      <p style="color:#999;font-size:13px;margin-top:24px">— The WCAHS Team</p>`,
-  });
+  // Auto-reply to submitter disabled for now
+  // await sendAutoReply(env, { ... });
 
   return json({ ok: true, message: 'Message sent! We\'ll get back to you soon.' });
 }

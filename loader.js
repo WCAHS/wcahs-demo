@@ -97,20 +97,58 @@
       setTimeout(function() { loader.remove(); }, 500);
     }, 800);
 
-    // Under construction popup — controlled via admin settings
-    if (!sessionStorage.getItem('wcahs_banner_dismissed')) {
-      fetch('/api/settings').then(function(r){return r.json();}).then(function(s) {
-        if (s.under_construction !== true && s.under_construction !== 'true') return;
-        var pages = s.under_construction_pages || 'all';
-        var currentPage = location.pathname.replace(/.*\//, '').replace('.html', '') || 'home';
-        if (currentPage === 'index') currentPage = 'home';
-        if (pages !== 'all' && pages.split(',').indexOf(currentPage) === -1) return;
-        var banner = document.createElement('div');
-        banner.id = 'constructionBanner';
-        banner.innerHTML = '<div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;"><div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:440px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative;"><div style="font-size:40px; margin-bottom:12px;">\uD83D\uDC3E</div><h2 style="font-family:Playfair Display,serif; font-size:1.5rem; font-weight:700; color:#3b4434; margin-bottom:8px;">Pardon Our Muddy Paws!</h2><p style="color:#666; font-size:0.95rem; line-height:1.6; margin-bottom:24px;">We\'re still housebreaking this new website. You might spot a few accidents here and there \u2014 bear with us while we get everything cleaned up!</p><button onclick="document.getElementById(\'constructionBanner\').remove(); sessionStorage.setItem(\'wcahs_banner_dismissed\',\'1\');" style="background:#5c6b4e; color:#fff; border:none; padding:12px 32px; border-radius:50px; font-family:Nunito,sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer;">Got it, let me sniff around!</button></div></div>';
-        document.body.appendChild(banner);
-      }).catch(function(){});
-    }
+    // Popups — construction overrides custom popup, both dismiss per-session
+    fetch('/api/settings').then(function(r){return r.json();}).then(function(s) {
+      var ucOn = s.under_construction === true || s.under_construction === 'true';
+      var popupOn = s.popup_enabled === true || s.popup_enabled === 'true';
+
+      // Under construction popup (priority — overrides custom)
+      if (ucOn && !sessionStorage.getItem('wcahs_uc_dismissed')) {
+        var uc = document.createElement('div');
+        uc.id = 'constructionBanner';
+        uc.innerHTML = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="background:#fff;border-radius:20px;padding:36px 32px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);"><div style="font-size:40px;margin-bottom:12px;">\uD83D\uDC3E</div><h2 style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:#3b4434;margin-bottom:8px;">Pardon Our Muddy Paws!</h2><p style="color:#666;font-size:0.95rem;line-height:1.6;margin-bottom:24px;">We\'re still housebreaking this new website. You might spot a few accidents here and there \u2014 bear with us while we get everything cleaned up!</p><button onclick="document.getElementById(\'constructionBanner\').remove();sessionStorage.setItem(\'wcahs_uc_dismissed\',\'1\');" style="background:#5c6b4e;color:#fff;border:none;padding:12px 32px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;">Got it, let me sniff around!</button></div></div>';
+        document.body.appendChild(uc);
+        return; // don't show custom popup
+      }
+
+      // Custom popup (only if construction is off)
+      if (popupOn && !ucOn && !sessionStorage.getItem('wcahs_popup_dismissed') && s.popup_message) {
+        var styles = {
+          sage:  { btn:'#5c6b4e', bg:'#fff', text:'#3b4434', btnText:'#fff' },
+          amber: { btn:'#d97706', bg:'#fffbeb', text:'#78350f', btnText:'#fff' },
+          sky:   { btn:'#0284c7', bg:'#f0f9ff', text:'#0c4a6e', btnText:'#fff' },
+          rose:  { btn:'#e11d48', bg:'#fff1f2', text:'#881337', btnText:'#fff' },
+          dark:  { btn:'#a8a29e', bg:'#1c1917', text:'#fafaf9', btnText:'#1c1917' }
+        };
+        var st = styles[s.popup_style] || styles.sage;
+        var icon = s.popup_icon || '';
+        var msg = (s.popup_message || '').substring(0, 200);
+        var btnText = (s.popup_button_text || '').substring(0, 40);
+        var btnLink = s.popup_button_link || '';
+
+        // Escape HTML in message
+        var esc = document.createElement('span');
+        esc.textContent = msg;
+        var safeMsg = esc.innerHTML;
+        esc.textContent = btnText;
+        var safeBtnText = esc.innerHTML;
+
+        var dismissFn = "document.getElementById('sitePopup').remove();sessionStorage.setItem('wcahs_popup_dismissed','1');";
+        var iconHtml = icon ? '<div style="font-size:40px;margin-bottom:12px;">'+icon+'</div>' : '';
+        var btnHtml = '';
+        if (btnText && btnLink) {
+          btnHtml = '<div style="display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;"><a href="'+btnLink.replace(/"/g,'&quot;')+'" style="display:inline-block;background:'+st.btn+';color:'+st.btnText+';border:none;padding:10px 28px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.9rem;font-weight:700;text-decoration:none;cursor:pointer;">'+safeBtnText+'</a><button onclick="'+dismissFn+'" style="background:none;border:none;color:'+st.text+';opacity:0.5;font-size:0.8rem;cursor:pointer;font-family:Nunito,sans-serif;">Dismiss</button></div>';
+        } else if (btnText) {
+          btnHtml = '<button onclick="'+dismissFn+'" style="background:'+st.btn+';color:'+st.btnText+';border:none;padding:10px 28px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;">'+safeBtnText+'</button>';
+        }
+        var closeX = '<button onclick="'+dismissFn+'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:20px;color:'+st.text+';opacity:0.4;cursor:pointer;line-height:1;" aria-label="Close">&times;</button>';
+
+        var popup = document.createElement('div');
+        popup.id = 'sitePopup';
+        popup.innerHTML = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="background:'+st.bg+';border-radius:20px;padding:36px 32px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;">'+closeX+iconHtml+'<p style="color:'+st.text+';font-size:0.95rem;line-height:1.6;margin-bottom:'+(btnHtml?'24':'0')+'px;font-family:Nunito,sans-serif;">'+safeMsg+'</p>'+btnHtml+'</div></div>';
+        document.body.appendChild(popup);
+      }
+    }).catch(function(){});
   });
 
   document.addEventListener('click', function(e) {

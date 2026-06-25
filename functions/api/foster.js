@@ -40,21 +40,8 @@ export async function onRequestPost(context) {
       <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-sub-${subId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">View in Admin &rarr;</a></div>`,
   });
 
-  await sendAutoReply(env, {
-    to: body.email,
-    subject: 'Foster Application Received!',
-    bodyHtml: `<h2 style="color:#48543e;margin:0 0 16px;font-family:Georgia,serif">Thank you for your interest in fostering, ${body.name}!</h2>
-      <p style="color:#666;font-size:15px;line-height:1.6">We received your foster application and are so excited you want to help! A member of our team will review your application and reach out soon.</p>
-      <h3 style="color:#48543e;font-size:15px;margin:24px 0 12px">What happens next?</h3>
-      <ol style="color:#666;font-size:14px;line-height:1.8;padding-left:20px">
-        <li>Our team reviews your application</li>
-        <li>We'll reach out to schedule a quick chat</li>
-        <li>We'll match you with a pet that fits your home</li>
-        <li>You'll receive supplies and support from our team</li>
-      </ol>
-      <p style="color:#666;font-size:15px;line-height:1.6;margin-top:20px">Have questions in the meantime? Reply to this email or call us at <strong>(507) 201-7287</strong>.</p>
-      <p style="color:#999;font-size:13px;margin-top:24px">— The WCAHS Team</p>`,
-  });
+  // Auto-reply to submitter disabled for now
+  // await sendAutoReply(env, { ... });
 
   return json({ ok: true, message: 'Foster application submitted! We\'ll be in touch.' });
 }
