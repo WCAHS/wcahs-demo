@@ -20,21 +20,43 @@ jobs:
           D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
         run: |
           set -e
+          D1_URL="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query"
+          SL_URL="https://new.shelterluv.com/api/v1"
 
-          # Fetch publishable animals from ShelterLuv
+          d1_query() {
+            curl -sf -X POST "$D1_URL" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"sql\": $(echo "$1" | jq -Rs .)}"
+          }
+
+          # Run migrations (idempotent)
+          for col in "dob TEXT" "pattern TEXT" "videos TEXT" "campus TEXT" "location TEXT" "location_tier2 TEXT" "litter_group_id TEXT" "intake_date TEXT" "last_sl_update TEXT" "foster_name TEXT"; do
+            d1_query "ALTER TABLE animals ADD COLUMN $col" 2>/dev/null || true
+          done
+          d1_query "CREATE TABLE IF NOT EXISTS animal_events (id INTEGER PRIMARY KEY AUTOINCREMENT, animal_id TEXT NOT NULL, event_type TEXT NOT NULL, event_subtype TEXT, event_time TEXT, user TEXT, associated_records TEXT, jurisdiction TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)" | jq '.success'
+
+          # Fetch all animals from ShelterLuv (paginated)
           echo "Fetching from ShelterLuv..."
-          RESPONSE=$(curl -sf -H "X-Api-Key: $SHELTERLUV_API_KEY" \
-            "https://www.shelterluv.com/api/v1/animals?limit=100")
+          ALL_ANIMALS="[]"
+          OFFSET=0
+          while true; do
+            RESPONSE=$(curl -sf -H "Authorization: Bearer $SHELTERLUV_API_KEY" \
+              "$SL_URL/animals?limit=100&offset=$OFFSET")
+            PAGE=$(echo "$RESPONSE" | jq '.animals // []')
+            PAGE_COUNT=$(echo "$PAGE" | jq 'length')
+            ALL_ANIMALS=$(echo "$ALL_ANIMALS $PAGE" | jq -s '.[0] + .[1]')
+            HAS_MORE=$(echo "$RESPONSE" | jq '.has_more // false')
+            echo "  Fetched $PAGE_COUNT animals at offset $OFFSET (has_more: $HAS_MORE)"
+            if [ "$HAS_MORE" != "true" ] || [ "$PAGE_COUNT" -eq 0 ]; then break; fi
+            OFFSET=$((OFFSET + PAGE_COUNT))
+          done
 
-          ANIMAL_COUNT=$(echo "$RESPONSE" | jq '.animals | length')
-          echo "Found $ANIMAL_COUNT publishable animals"
+          ANIMAL_COUNT=$(echo "$ALL_ANIMALS" | jq 'length')
+          echo "Total: $ANIMAL_COUNT animals"
 
           # Get hidden animal IDs before sync
-          HIDDEN_IDS=$(curl -sf -X POST \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"sql": "SELECT id FROM animals WHERE hidden = 1"}' \
+          HIDDEN_IDS=$(d1_query "SELECT id FROM animals WHERE hidden = 1" \
             | jq -r '.result[0].results[]?.id // empty' | sed "s/.*/'&'/" | tr '\n' ',' | sed 's/,$//')
           echo "Hidden IDs to preserve: $HIDDEN_IDS"
 
@@ -42,8 +64,7 @@ jobs:
           SQL="DELETE FROM animals WHERE is_manual = 0 OR is_manual IS NULL;"
 
           if [ "$ANIMAL_COUNT" -gt 0 ]; then
-            # Process each animal into an INSERT statement
-            SQL+=$(echo "$RESPONSE" | jq -r '.animals[] | @json' | while IFS= read -r animal; do
+            SQL+=$(echo "$ALL_ANIMALS" | jq -r '.[] | @json' | while IFS= read -r animal; do
               ID=$(echo "$animal" | jq -r '.["Internal-ID"]')
               SLID=$(echo "$animal" | jq -r '.ID // ""')
               NAME=$(echo "$animal" | jq -r '.Name // ""' | sed "s/'/''/g")
@@ -54,16 +75,40 @@ jobs:
               SIZE=$(echo "$animal" | jq -r '.Size // ""')
               WEIGHT=$(echo "$animal" | jq -r '.CurrentWeightPounds // ""')
               COLOR=$(echo "$animal" | jq -r '.Color // ""' | sed "s/'/''/g")
+              PATTERN=$(echo "$animal" | jq -r '.Pattern // ""' | sed "s/'/''/g")
               ALTERED=$(echo "$animal" | jq -r '.Altered // ""')
               MICRO=$(echo "$animal" | jq -r 'if (.Microchips // [] | length) > 0 then 1 else 0 end')
               DESC=$(echo "$animal" | jq -r '.Description // ""' | sed "s/'/''/g")
               COVER=$(echo "$animal" | jq -r '.CoverPhoto // ""')
               PHOTOS=$(echo "$animal" | jq -c '.Photos // []')
+              VIDEOS=$(echo "$animal" | jq -c '.Videos // []')
               ATTRS=$(echo "$animal" | jq -c '[.Attributes // [] | .[] | select(.Publish == "Yes") | .AttributeName]')
               FEE=$(echo "$animal" | jq -r '.AdoptionFeeGroup.Price // "null"')
               FEE_NAME=$(echo "$animal" | jq -r '.AdoptionFeeGroup.Name // ""' | sed "s/'/''/g")
               IN_FOSTER=$(echo "$animal" | jq -r 'if .InFoster then 1 else 0 end')
               STATUS=$(echo "$animal" | jq -r '.Status // ""')
+              CAMPUS=$(echo "$animal" | jq -r '.Campus // ""' | sed "s/'/''/g")
+              LOC1=$(echo "$animal" | jq -r '.CurrentLocation.Tier1 // ""' | sed "s/'/''/g")
+              LOC2=$(echo "$animal" | jq -r '.CurrentLocation.Tier2 // ""' | sed "s/'/''/g")
+              LITTER=$(echo "$animal" | jq -r '.LitterGroupId // ""')
+
+              # DOB, intake, last updated — convert unix to ISO
+              DOB_UNIX=$(echo "$animal" | jq -r '.DOBUnixTime // ""')
+              INTAKE_UNIX=$(echo "$animal" | jq -r '.LastIntakeUnixTime // ""')
+              UPDATED_UNIX=$(echo "$animal" | jq -r '.LastUpdatedUnixTime // ""')
+              DOB=""; [ -n "$DOB_UNIX" ] && [ "$DOB_UNIX" != "null" ] && DOB=$(date -u -d "@$DOB_UNIX" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
+              INTAKE=""; [ -n "$INTAKE_UNIX" ] && [ "$INTAKE_UNIX" != "null" ] && INTAKE=$(date -u -d "@$INTAKE_UNIX" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
+              SL_UPDATED=""; [ -n "$UPDATED_UNIX" ] && [ "$UPDATED_UNIX" != "null" ] && SL_UPDATED=$(date -u -d "@$UPDATED_UNIX" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
+
+              # Foster name from AssociatedPerson
+              FOSTER_NAME=$(echo "$animal" | jq -r '
+                (if (.AssociatedPerson | type) == "array" then .AssociatedPerson
+                 elif (.AssociatedPerson | type) == "object" and (.AssociatedPerson | length) > 0 then [.AssociatedPerson]
+                 else [] end)
+                | map(select(.RelationshipType == "foster"))
+                | first
+                | if . then [.FirstName // "", .LastName // ""] | map(select(. != "")) | join(" ") else "" end
+              ' | sed "s/'/''/g")
 
               # Format age display
               if [ "$AGE" -lt 12 ]; then
@@ -78,36 +123,39 @@ jobs:
                 fi
               fi
 
-              echo "INSERT INTO animals (id,shelterluv_id,name,type,breed,sex,age,age_display,size,weight,color,altered,microchipped,description,cover_photo,photos,attributes,adoption_fee,adoption_fee_name,in_foster,status,last_updated) VALUES ('$ID','$SLID','$NAME','$TYPE','$BREED','$SEX',$AGE,'$AGE_DISPLAY','$SIZE','$WEIGHT','$COLOR','$ALTERED',$MICRO,'$DESC','$COVER','$PHOTOS','$ATTRS',$FEE,'$FEE_NAME',$IN_FOSTER,'$STATUS',datetime('now'));"
+              echo "INSERT INTO animals (id,shelterluv_id,name,type,breed,sex,age,age_display,size,weight,color,pattern,altered,microchipped,description,cover_photo,photos,videos,attributes,adoption_fee,adoption_fee_name,in_foster,foster_name,status,dob,campus,location,location_tier2,litter_group_id,intake_date,last_sl_update,last_updated) VALUES ('$ID','$SLID','$NAME','$TYPE','$BREED','$SEX',$AGE,'$AGE_DISPLAY','$SIZE','$WEIGHT','$COLOR','$PATTERN','$ALTERED',$MICRO,'$DESC','$COVER','$PHOTOS','$VIDEOS','$ATTRS',$FEE,'$FEE_NAME',$IN_FOSTER,'$FOSTER_NAME','$STATUS','$DOB','$CAMPUS','$LOC1','$LOC2','$LITTER','$INTAKE','$SL_UPDATED',datetime('now'));"
             done)
           fi
 
           # Execute main sync (delete + inserts)
           echo "Executing sync SQL against D1..."
-          curl -sf -X POST \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"sql\": $(echo "$SQL" | jq -Rs .)}" \
-            | jq '.success'
+          d1_query "$SQL" | jq '.success'
 
-          # Restore hidden flags (separate call so it actually runs)
+          # Restore hidden flags
           if [ -n "$HIDDEN_IDS" ]; then
             echo "Restoring hidden flags for: $HIDDEN_IDS"
-            curl -sf -X POST \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{\"sql\": \"UPDATE animals SET hidden = 1 WHERE id IN ($HIDDEN_IDS)\"}" \
-              | jq '.success'
+            d1_query "UPDATE animals SET hidden = 1 WHERE id IN ($HIDDEN_IDS)" | jq '.success'
           fi
 
-          # Log the sync (separate call)
-          curl -sf -X POST \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"sql\": \"INSERT INTO sync_log (animal_count, status) VALUES ($ANIMAL_COUNT, 'success')\"}" \
-            | jq '.success'
+          # Sync events for each animal
+          echo "Syncing events..."
+          d1_query "DELETE FROM animal_events" | jq '.success'
+
+          echo "$ALL_ANIMALS" | jq -r '.[]["Internal-ID"]' | while IFS= read -r AID; do
+            EVENTS=$(curl -sf -H "Authorization: Bearer $SHELTERLUV_API_KEY" \
+              "$SL_URL/animals/$AID/events?limit=100" 2>/dev/null || echo '{"events":[]}')
+            EVT_COUNT=$(echo "$EVENTS" | jq '.events // [] | length')
+            if [ "$EVT_COUNT" -gt 0 ]; then
+              EVT_SQL=$(echo "$EVENTS" | jq -r --arg aid "$AID" '
+                .events[] |
+                "INSERT INTO animal_events (animal_id,event_type,event_subtype,event_time,user,associated_records,jurisdiction) VALUES (\x27" + $aid + "\x27,\x27" + (.Type // "") + "\x27,\x27" + (.Subtype // "") + "\x27,\x27" + (if .Time then (.Time | tonumber | strftime("%Y-%m-%dT%H:%M:%SZ")) else "" end) + "\x27,\x27" + (.User // "") + "\x27,\x27" + (.AssociatedRecords // [] | tojson | gsub("\x27"; "\x27\x27")) + "\x27,\x27" + (if .Jurisdiction then (.Jurisdiction | tojson | gsub("\x27"; "\x27\x27")) else "" end) + "\x27);"
+              ')
+              d1_query "$EVT_SQL" | jq '.success'
+              echo "  $AID: $EVT_COUNT events"
+            fi
+          done
+
+          # Log the sync
+          d1_query "INSERT INTO sync_log (animal_count, status) VALUES ($ANIMAL_COUNT, 'success')" | jq '.success'
 
           echo "Sync complete: $ANIMAL_COUNT animals"

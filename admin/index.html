@@ -52,15 +52,18 @@
     .chart-bar:hover .chart-bar-tooltip { display: block; }
 
     /* Inbox item accents — all within sage/amber/warm palette */
-    .inbox-item { border-left: 3px solid transparent; transition: all 0.15s ease; }
+    .inbox-item { border-left: 4px solid transparent; transition: all 0.15s ease; }
     .inbox-item.type-contact { border-left-color: #93a27e; }
     .inbox-item.type-foster { border-left-color: #d97706; }
     .inbox-item.type-lost { border-left-color: #b45309; }
     .inbox-item.type-found { border-left-color: #48543e; }
-    .inbox-item.unread { background: #fffcf8; }
+    .inbox-item.unread { background: #f0f3ec; border-left-width: 5px; }
     .inbox-item.unread .inbox-name { font-weight: 800; color: #1f2937; }
-    .inbox-item.read { background: #fff; }
-    .inbox-item.read .inbox-name { font-weight: 600; color: #6b7280; }
+    .inbox-item.unread .inbox-snippet { color: #374151; }
+    .inbox-item.read { background: #fff; opacity: 0.7; }
+    .inbox-item.read:hover { opacity: 1; }
+    .inbox-item.read .inbox-name { font-weight: 600; color: #9ca3af; }
+    .inbox-item.read .inbox-snippet { color: #d1d5db; }
 
     /* Status dots */
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -164,7 +167,7 @@
         <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
         <div class="border-t border-sage-800 my-2 staff-visible"></div>
         <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mb-1 staff-visible">Quick Links</p>
-        <a href="https://mail.zoho.com/signin" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white staff-visible">
+        <a href="https://mail.wcahs.org" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white staff-visible">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           Zoho Mail
         </a>
@@ -206,11 +209,18 @@
 <script>
 // ── API helpers ──
 async function api(path, opts = {}) {
-  const res = await fetch('/api' + path, {
+  const fetchOpts = {
+    method: opts.method || 'GET',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', ...opts.headers },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
+  };
+  if (opts.body) fetchOpts.body = JSON.stringify(opts.body);
+  const res = await fetch('/api' + path, fetchOpts);
+  if (res.status === 401 && !path.includes('/auth/')) {
+    document.getElementById('dashboard').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    return { error: 'Session expired' };
+  }
   return res.json();
 }
 
@@ -239,18 +249,21 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   const turnstileEl = document.querySelector('[name="cf-turnstile-response"]');
   const turnstileToken = turnstileEl ? turnstileEl.value : '';
 
-  const setupRes = await api('/auth/setup', { method: 'POST', body: { username: user, password: pass } });
-
   try {
+    // Setup call (only matters on first-ever login)
+    await api('/auth/setup', { method: 'POST', body: { username: user, password: pass } }).catch(function(){});
+
     const loginRes = await api('/auth/login', { method: 'POST', body: { username: user, password: pass, turnstile_token: turnstileToken } });
     if (loginRes.ok) {
       showDashboard(loginRes);
     } else {
       errEl.textContent = loginRes.error || 'Login failed';
+      errEl.style.color = '#dc2626';
       errEl.classList.remove('hidden');
     }
   } catch(loginErr) {
     errEl.textContent = 'Login error: ' + loginErr.message;
+    errEl.style.color = '#dc2626';
     errEl.classList.remove('hidden');
   }
 });
@@ -351,6 +364,7 @@ function navigate(page) {
 
 // ── Helpers ──
 function h(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function zohoCompose(to, subject) { window.open('https://mail.zoho.com/zm/#/compose?to='+encodeURIComponent(to)+(subject?'&subject='+encodeURIComponent(subject):''), 'zoho_compose', 'width=700,height=600,scrollbars=yes,resizable=yes'); }
 function fmtPhone(p) { if(!p)return''; const d=p.replace(/\D/g,''); if(d.length===10)return'('+d.substring(0,3)+') '+d.substring(3,6)+'-'+d.substring(6); if(d.length===11&&d[0]==='1')return'('+d.substring(1,4)+') '+d.substring(4,7)+'-'+d.substring(7); return p; }
 function formatDate(d) { if (!d) return ''; return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
 function timeAgo(dt) {
@@ -565,7 +579,7 @@ async function renderSubmissions(el) {
               <span class="text-[10px] font-bold shrink-0" style="color:${typeLabelColor}">${typeLabel}</span>
               <span class="text-[11px] text-gray-300 ml-auto shrink-0">${timeAgo(item.created_at)}</span>
             </div>
-            <p class="text-xs text-gray-400 truncate">${h(snippet)}</p>
+            <p class="inbox-snippet text-xs text-gray-400 truncate">${h(snippet)}</p>
           </div>
           <svg class="w-4 h-4 text-gray-300 shrink-0 transition-transform ml-1" id="${arrowId}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
@@ -594,7 +608,7 @@ function renderSubExpanded(item) {
     return `<div class="p-5">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-4">
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Name</p><p class="text-sm text-gray-800 font-semibold">${h(item.name)}</p></div>
-        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="https://mail.zoho.com/zm/#/compose?to=${encodeURIComponent(item.email)}" target="_blank" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="#" onclick="event.preventDefault();zohoCompose('${item.email.replace(/'/g,"\\'")}');" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Phone</p><p class="text-sm text-gray-800">${item.phone ? '<a href="tel:' + item.phone.replace(/\\D/g,'') + '" class="text-sage-700 hover:underline">' + h(fmtPhone(item.phone)) + '</a>' : '<span class="text-gray-300">&mdash;</span>'}</p></div>
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Subject</p><p class="text-sm text-gray-800">${item.subject ? h(item.subject) : '<span class="text-gray-300">&mdash;</span>'}</p></div>
       </div>
@@ -609,7 +623,7 @@ function renderSubExpanded(item) {
     return `<div class="p-5">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-4">
         <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Name</p><p class="text-sm text-gray-800 font-semibold">${h(item.name)}</p></div>
-        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="https://mail.zoho.com/zm/#/compose?to=${encodeURIComponent(item.email)}" target="_blank" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
+        <div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Email</p><p class="text-sm"><a href="#" onclick="event.preventDefault();zohoCompose('${item.email.replace(/'/g,"\\'")}');" class="text-sage-700 hover:underline">${h(item.email)}</a></p></div>
       </div>
       <div class="mb-4">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">About Yourself</p>
@@ -623,7 +637,7 @@ function renderSubExpanded(item) {
 function subActionBar(item, statusLabels, st) {
   const unread = !item.is_read;
   return `<div class="flex items-center gap-3 flex-wrap pt-3 border-t border-sage-100">
-    ${item.email ? `<a href="https://mail.zoho.com/zm/#/compose?to=${encodeURIComponent(item.email)}&subject=${encodeURIComponent('Re: ' + (item.subject || 'Your inquiry'))}" target="_blank" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-7 9 7v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"/></svg>Reply</a>` : ''}
+    ${item.email ? `<a href="#" onclick="event.preventDefault();zohoCompose('${item.email.replace(/'/g,"\\'")}','Re: ${(item.subject||'Your inquiry').replace(/'/g,"\\'")}');" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-7 9 7v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"/></svg>Reply</a>` : ''}
     <select onchange="updateSubStatus(${item.id}, this.value)" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-sage-400">
       ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
     </select>
@@ -657,7 +671,7 @@ function renderLFExpanded(item) {
         <div class="space-y-1.5 text-sm">
           <p class="font-semibold">${h(r.reporter_name)}</p>
           ${r.reporter_phone ? '<p><a href="tel:'+r.reporter_phone.replace(/\\D/g,'')+'" class="text-sage-700 hover:underline">'+h(fmtPhone(r.reporter_phone))+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
-          ${r.reporter_email ? '<p><a href="https://mail.zoho.com/zm/#/compose?to='+encodeURIComponent(r.reporter_email)+'" target="_blank" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
+          ${r.reporter_email ? '<p><a href="#" onclick="event.preventDefault();zohoCompose(\''+r.reporter_email.replace(/'/g,"\\'")+'\')" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
         </div>
         ${r.location_details ? '<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">Location</h4><p class="text-sm font-semibold">'+h(r.location_details)+'</p>' : ''}
       </div>
@@ -699,10 +713,25 @@ window.toggleSub = function(id) {
 
 window.markRead = async function(id, read) {
   await api('/admin/submissions/' + id, { method: 'PUT', body: { is_read: read } });
-  // Update visual state without re-rendering (which would collapse open items)
   const item = document.querySelector('.inbox-item:has(#sub-' + id + ')');
-  if (item && read) { item.classList.remove('unread'); item.classList.add('read'); }
-  else if (item && !read) { item.classList.remove('read'); item.classList.add('unread'); }
+  if (item && read) {
+    item.classList.remove('unread'); item.classList.add('read');
+  } else if (item && !read) {
+    item.classList.remove('read'); item.classList.add('unread');
+    // Collapse the expanded detail when marking unread
+    var detail = document.getElementById('sub-' + id);
+    var arrow = document.getElementById('sub-arrow-' + id);
+    if (detail && !detail.classList.contains('hidden')) { detail.classList.add('hidden'); if (arrow) arrow.style.transform = ''; }
+  }
+  // Swap the button text
+  if (item) {
+    const btn = item.querySelector('button[onclick*="markRead"]');
+    if (btn) {
+      btn.textContent = read ? 'Mark unread' : 'Mark read';
+      btn.className = read ? 'text-xs text-gray-400 hover:underline' : 'text-xs text-sage-700 hover:underline';
+      btn.setAttribute('onclick', 'event.stopPropagation(); markRead(' + id + ', ' + !read + ')');
+    }
+  }
   loadBadgeCounts();
 };
 
@@ -1435,80 +1464,130 @@ async function renderSettings(el) {
   </div>`;
 
   // Custom popup editor
-  const popupIcons = [
-    { value: '', label: 'No Icon' },
-    { value: '🐾', label: '🐾 Paw Prints' },
-    { value: '🐶', label: '🐶 Dog' },
-    { value: '🐱', label: '🐱 Cat' },
-    { value: '❤️', label: '❤️ Heart' },
-    { value: '⭐', label: '⭐ Star' },
-    { value: '📢', label: '📢 Megaphone' },
-    { value: '🎉', label: '🎉 Party' },
-    { value: '🏠', label: '🏠 House' },
-    { value: '⚠️', label: '⚠️ Warning' },
-    { value: '🎄', label: '🎄 Holiday' },
-    { value: '🌟', label: '🌟 Sparkle' },
-  ];
-  const popupStyles = [
-    { value: 'sage', label: 'Sage', btn: '#5c6b4e', bg: '#fff', text: '#3b4434', border: '' },
-    { value: 'amber', label: 'Warm Amber', btn: '#d97706', bg: '#fffbeb', text: '#78350f', border: '' },
-    { value: 'sky', label: 'Sky Blue', btn: '#0284c7', bg: '#f0f9ff', text: '#0c4a6e', border: '' },
-    { value: 'rose', label: 'Rose', btn: '#e11d48', bg: '#fff1f2', text: '#881337', border: '' },
-    { value: 'dark', label: 'Dark', btn: '#f5f5f4', bg: '#1c1917', text: '#fafaf9', border: '' },
-  ];
   const popupIcon = data.popup_icon || '';
-  const popupStyle = data.popup_style || 'sage';
+  const popupBtnShape = data.popup_button_shape || 'pill';
+  const popupBtnVariant = data.popup_button_variant || 'filled';
   const popupMsg = data.popup_message || '';
   const popupBtnText = data.popup_button_text || '';
   const popupBtnLink = data.popup_button_link || '';
   const popupEnabled = data.popup_enabled === true || data.popup_enabled === 'true';
   const popupMsgLen = popupMsg.length;
+  const popupColorBg = data.popup_color_bg || '#ffffff';
+  const popupColorBtn = data.popup_color_btn || '#5c6b4e';
+  const popupColorText = data.popup_color_text || '#3b4434';
+  const popupFont = data.popup_font || 'nunito';
+
+  const popupIconList = ['', '🐾', '🐶', '🐱', '❤️', '⭐', '📢', '🎉', '🏠', '⚠️', '🎄', '🌟', '🦴', '🐕', '🐈', '💛'];
+  const popupPresets = [
+    { label: 'Sage', bg: '#ffffff', btn: '#5c6b4e', text: '#3b4434' },
+    { label: 'Amber', bg: '#fffbeb', btn: '#d97706', text: '#78350f' },
+    { label: 'Sky', bg: '#f0f9ff', btn: '#0284c7', text: '#0c4a6e' },
+    { label: 'Rose', bg: '#fff1f2', btn: '#e11d48', text: '#881337' },
+    { label: 'Violet', bg: '#f5f3ff', btn: '#7c3aed', text: '#4c1d95' },
+    { label: 'Dark', bg: '#1c1917', btn: '#a8a29e', text: '#fafaf9' },
+  ];
 
   settingsHtml += `<div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Site Popup</h2>
-    <p class="text-xs text-gray-400 mb-4">A one-time popup shown to visitors. Dismissed per session.</p>
-    <div class="flex items-center gap-4 mb-4">
-      <label class="flex items-center gap-2 text-sm"><input id="setPopupEnabled" type="checkbox" ${popupEnabled?'checked':''} onchange="updatePopupPreview()"> Enable popup</label>
+    <p class="text-xs text-gray-400 mb-4">A one-time popup shown to visitors per session. Customize the look and message below.</p>
+    <div class="flex items-center gap-4 mb-5">
+      <label class="flex items-center gap-2 text-sm font-semibold"><input id="setPopupEnabled" type="checkbox" ${popupEnabled?'checked':''} onchange="updatePopupPreview()"> Enable popup</label>
     </div>
     <div id="popupFields">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Icon</label>
-          <select id="setPopupIcon" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" onchange="updatePopupPreview()">
-            ${popupIcons.map(ic => '<option value="'+ic.value+'"'+(popupIcon===ic.value?' selected':'')+'>'+ic.label+'</option>').join('')}
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Style</label>
-          <select id="setPopupStyle" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" onchange="updatePopupPreview()">
-            ${popupStyles.map(s => '<option value="'+s.value+'"'+(popupStyle===s.value?' selected':'')+'>'+s.label+'</option>').join('')}
-          </select>
+      <!-- Icon picker -->
+      <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Icon</label>
+        <input type="hidden" id="setPopupIcon" value="${popupIcon}">
+        <div class="flex flex-wrap gap-1.5" id="popupIconGrid">
+          ${popupIconList.map(ic => {
+            const sel = ic === popupIcon;
+            const display = ic || '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>';
+            return '<button type="button" onclick="selectPopupIcon(this,\''+ic+'\')" class="popup-icon-btn w-10 h-10 rounded-xl flex items-center justify-center text-xl border-2 transition hover:scale-110 '+(sel?'border-sage-600 bg-sage-50 ring-2 ring-sage-300':'border-gray-200 bg-white hover:border-gray-300')+'" data-icon="'+ic+'">'+display+'</button>';
+          }).join('')}
         </div>
       </div>
-      <div class="mb-4">
+      <!-- Color presets + custom pickers -->
+      <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Quick Presets</label>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          ${popupPresets.map(p => '<button type="button" onclick="applyPopupPreset(\''+p.bg+'\',\''+p.btn+'\',\''+p.text+'\')" class="w-8 h-8 rounded-lg border border-gray-200 hover:scale-110 transition shadow-sm" style="background:linear-gradient(135deg, '+p.bg+' 50%, '+p.btn+' 50%);" title="'+p.label+'"></button>').join('')}
+        </div>
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Colors</label>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Background</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="setPopupColorBg" value="${popupColorBg}" onchange="updatePopupPreview()" class="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer" style="padding:1px;">
+              <span id="popupColorBgLabel" class="text-[10px] text-gray-400 font-mono">${popupColorBg}</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Button</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="setPopupColorBtn" value="${popupColorBtn}" onchange="updatePopupPreview()" class="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer" style="padding:1px;">
+              <span id="popupColorBtnLabel" class="text-[10px] text-gray-400 font-mono">${popupColorBtn}</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Text</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="setPopupColorText" value="${popupColorText}" onchange="updatePopupPreview()" class="w-8 h-8 rounded-lg border border-gray-200 cursor-pointer" style="padding:1px;">
+              <span id="popupColorTextLabel" class="text-[10px] text-gray-400 font-mono">${popupColorText}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Font -->
+      <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Font</label>
+        <div class="flex flex-wrap gap-1.5">
+          ${[
+            { value: 'nunito', label: 'Nunito', css: 'Nunito, sans-serif' },
+            { value: 'playfair', label: 'Playfair', css: 'Playfair Display, serif' },
+            { value: 'georgia', label: 'Georgia', css: 'Georgia, serif' },
+            { value: 'system', label: 'System', css: '-apple-system, sans-serif' },
+          ].map(f => '<button type="button" onclick="selectPopupFont(\''+f.value+'\')" class="popup-font-btn px-3 py-1.5 rounded-lg text-xs border-2 transition '+(popupFont===f.value?'border-sage-600 bg-sage-50 font-bold':'border-gray-200 bg-white hover:border-gray-300')+'" data-font="'+f.value+'" style="font-family:'+f.css+'">'+f.label+'</button>').join('')}
+        </div>
+      </div>
+      <!-- Message -->
+      <div class="mb-5">
         <label class="block text-xs font-semibold text-gray-600 mb-1">Message</label>
         <textarea id="setPopupMsg" maxlength="200" rows="3" oninput="updatePopupCharCount();updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" placeholder="e.g. We're hosting an adoption event this Saturday!">${h(popupMsg)}</textarea>
-        <p class="text-xs text-gray-400 mt-1"><span id="popupCharCount">${popupMsgLen}</span>/200 characters</p>
+        <p class="text-xs text-gray-400 mt-1"><span id="popupCharCount" style="${popupMsgLen>180?'color:#d97706':''}">${popupMsgLen}</span>/200 characters</p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Button Text <span class="font-normal text-gray-400">(optional)</span></label>
-          <input id="setPopupBtnText" value="${h(popupBtnText)}" maxlength="40" oninput="updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Learn More">
-          <p class="text-xs text-gray-400 mt-1">Leave blank for just a dismiss X button</p>
+      <!-- Button config -->
+      <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Button <span class="font-normal text-gray-400">(optional — leave text blank for dismiss-only)</span></label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <input id="setPopupBtnText" value="${h(popupBtnText)}" maxlength="40" oninput="updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="Button text, e.g. Learn More">
+          <input id="setPopupBtnLink" value="${h(popupBtnLink)}" oninput="updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="Link, e.g. /events.html">
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Button Link <span class="font-normal text-gray-400">(optional)</span></label>
-          <input id="setPopupBtnLink" value="${h(popupBtnLink)}" oninput="updatePopupPreview()" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. /events.html or https://...">
-          <p class="text-xs text-gray-400 mt-1">Where the button goes when clicked</p>
+        <div class="flex flex-wrap gap-3">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Shape:</span>
+            <input type="hidden" id="setPopupBtnShape" value="${popupBtnShape}">
+            <button type="button" onclick="selectBtnShape('pill')" class="btn-shape-btn px-3 py-1 rounded-full text-xs font-semibold border-2 transition ${popupBtnShape==='pill'?'border-sage-600 bg-sage-50':'border-gray-200 bg-white hover:border-gray-300'}" data-shape="pill">Pill</button>
+            <button type="button" onclick="selectBtnShape('rounded')" class="btn-shape-btn px-3 py-1 rounded-lg text-xs font-semibold border-2 transition ${popupBtnShape==='rounded'?'border-sage-600 bg-sage-50':'border-gray-200 bg-white hover:border-gray-300'}" data-shape="rounded">Rounded</button>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Style:</span>
+            <input type="hidden" id="setPopupBtnVariant" value="${popupBtnVariant}">
+            <button type="button" onclick="selectBtnVariant('filled')" class="btn-var-btn px-3 py-1 rounded-lg text-xs font-semibold border-2 transition ${popupBtnVariant==='filled'?'border-sage-600 bg-sage-50':'border-gray-200 bg-white hover:border-gray-300'}" data-variant="filled">Filled</button>
+            <button type="button" onclick="selectBtnVariant('outline')" class="btn-var-btn px-3 py-1 rounded-lg text-xs font-semibold border-2 transition ${popupBtnVariant==='outline'?'border-sage-600 bg-sage-50':'border-gray-200 bg-white hover:border-gray-300'}" data-variant="outline">Outline</button>
+          </div>
         </div>
       </div>
     </div>
-    <div id="popupPreviewWrap" class="rounded-xl overflow-hidden mt-2 ${popupEnabled?'':'hidden'}">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">Preview</p>
-      <div id="popupPreviewBox" class="rounded-2xl p-8 text-center relative max-w-sm mx-auto shadow-lg" style="background:#fff;">
-        <div id="popupPreviewIcon" class="text-4xl mb-3">${popupIcon||''}</div>
-        <p id="popupPreviewMsg" class="text-sm leading-relaxed mb-5" style="color:#3b4434;">${h(popupMsg)||'Your popup message here...'}</p>
-        <div id="popupPreviewBtn"></div>
+    <!-- Live preview — always visible so you can see what you're building -->
+    <div id="popupPreviewWrap">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">Live Preview</p>
+      <div class="rounded-2xl overflow-hidden" style="background:rgba(0,0,0,0.45);padding:32px 16px;min-height:200px;display:flex;align-items:center;justify-content:center;">
+        <div id="popupPreviewBox" class="rounded-2xl relative w-full text-center" style="background:#fff;max-width:400px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+          <div id="popupPreviewClose" style="position:absolute;top:10px;right:14px;font-size:18px;color:#999;cursor:default;line-height:1;">&times;</div>
+          <div id="popupPreviewIcon" class="mb-3" style="font-size:36px;line-height:1;">${popupIcon||''}</div>
+          <p id="popupPreviewMsg" style="color:#3b4434;font-size:0.92rem;line-height:1.6;margin:0 0 20px;font-family:Nunito,sans-serif;">${h(popupMsg)||'Your popup message here...'}</p>
+          <div id="popupPreviewBtn"></div>
+        </div>
       </div>
     </div>
   </div>`;
@@ -1532,6 +1611,7 @@ async function renderSettings(el) {
   const partnerArr = Array.isArray(data.partners) ? data.partners : (data.partners ? data.partners.split(',').map(s=>s.trim()).filter(Boolean) : []);
   setTimeout(() => {
     renderPartnersList(partnerArr);
+    if (document.getElementById('popupPreviewBox')) updatePopupPreview();
   }, 0);
 }
 
@@ -1604,6 +1684,43 @@ window.updatePopupCharCount = function() {
   }
 };
 
+window.selectPopupIcon = function(btn, icon) {
+  document.getElementById('setPopupIcon').value = icon;
+  document.querySelectorAll('.popup-icon-btn').forEach(b => { b.classList.remove('border-sage-600','bg-sage-50','ring-2','ring-sage-300'); b.classList.add('border-gray-200','bg-white'); });
+  btn.classList.remove('border-gray-200','bg-white'); btn.classList.add('border-sage-600','bg-sage-50','ring-2','ring-sage-300');
+  updatePopupPreview();
+};
+
+window.applyPopupPreset = function(bg, btn, text) {
+  document.getElementById('setPopupColorBg').value = bg;
+  document.getElementById('setPopupColorBtn').value = btn;
+  document.getElementById('setPopupColorText').value = text;
+  updatePopupPreview();
+};
+
+window.selectPopupFont = function(font) {
+  document.querySelectorAll('.popup-font-btn').forEach(b => { b.classList.remove('border-sage-600','bg-sage-50','font-bold'); b.classList.add('border-gray-200','bg-white'); });
+  var btn = document.querySelector('.popup-font-btn[data-font="'+font+'"]');
+  if (btn) { btn.classList.remove('border-gray-200','bg-white'); btn.classList.add('border-sage-600','bg-sage-50','font-bold'); }
+  updatePopupPreview();
+};
+
+window.selectBtnShape = function(shape) {
+  document.getElementById('setPopupBtnShape').value = shape;
+  document.querySelectorAll('.btn-shape-btn').forEach(b => { b.classList.remove('border-sage-600','bg-sage-50'); b.classList.add('border-gray-200','bg-white'); });
+  document.querySelector('.btn-shape-btn[data-shape="'+shape+'"]').classList.remove('border-gray-200','bg-white');
+  document.querySelector('.btn-shape-btn[data-shape="'+shape+'"]').classList.add('border-sage-600','bg-sage-50');
+  updatePopupPreview();
+};
+
+window.selectBtnVariant = function(variant) {
+  document.getElementById('setPopupBtnVariant').value = variant;
+  document.querySelectorAll('.btn-var-btn').forEach(b => { b.classList.remove('border-sage-600','bg-sage-50'); b.classList.add('border-gray-200','bg-white'); });
+  document.querySelector('.btn-var-btn[data-variant="'+variant+'"]').classList.remove('border-gray-200','bg-white');
+  document.querySelector('.btn-var-btn[data-variant="'+variant+'"]').classList.add('border-sage-600','bg-sage-50');
+  updatePopupPreview();
+};
+
 window.updatePopupPreview = function() {
   const enabled = document.getElementById('setPopupEnabled');
   const wrap = document.getElementById('popupPreviewWrap');
@@ -1611,21 +1728,33 @@ window.updatePopupPreview = function() {
   const iconEl = document.getElementById('popupPreviewIcon');
   const msgEl = document.getElementById('popupPreviewMsg');
   const btnEl = document.getElementById('popupPreviewBtn');
+  const closeEl = document.getElementById('popupPreviewClose');
   if (!wrap || !box) return;
 
-  if (enabled && !enabled.checked) { wrap.classList.add('hidden'); return; }
+  // Always show preview so they can see what they're building
   wrap.classList.remove('hidden');
 
-  const styles = {
-    sage:  { btn: '#5c6b4e', bg: '#fff', text: '#3b4434', btnText: '#fff' },
-    amber: { btn: '#d97706', bg: '#fffbeb', text: '#78350f', btnText: '#fff' },
-    sky:   { btn: '#0284c7', bg: '#f0f9ff', text: '#0c4a6e', btnText: '#fff' },
-    rose:  { btn: '#e11d48', bg: '#fff1f2', text: '#881337', btnText: '#fff' },
-    dark:  { btn: '#a8a29e', bg: '#1c1917', text: '#fafaf9', btnText: '#1c1917' },
-  };
-  const style = styles[document.getElementById('setPopupStyle').value] || styles.sage;
-  box.style.background = style.bg;
-  msgEl.style.color = style.text;
+  const bg = document.getElementById('setPopupColorBg').value;
+  const btn = document.getElementById('setPopupColorBtn').value;
+  const text = document.getElementById('setPopupColorText').value;
+  // Compute contrasting button text color (white or dark)
+  const r = parseInt(btn.slice(1,3),16), g = parseInt(btn.slice(3,5),16), b2 = parseInt(btn.slice(5,7),16);
+  const btnTextColor = (r*0.299 + g*0.587 + b2*0.114) > 150 ? '#1c1917' : '#ffffff';
+  const st = { btn: btn, bg: bg, text: text, btnText: btnTextColor };
+  box.style.background = st.bg;
+  msgEl.style.color = st.text;
+  if (closeEl) closeEl.style.color = st.text;
+  // Update hex labels
+  var lbl;
+  lbl = document.getElementById('popupColorBgLabel'); if(lbl) lbl.textContent = bg;
+  lbl = document.getElementById('popupColorBtnLabel'); if(lbl) lbl.textContent = btn;
+  lbl = document.getElementById('popupColorTextLabel'); if(lbl) lbl.textContent = text;
+  // Font
+  const fonts = { nunito: 'Nunito, sans-serif', playfair: 'Playfair Display, serif', georgia: 'Georgia, serif', system: '-apple-system, BlinkMacSystemFont, sans-serif' };
+  const selFont = document.querySelector('.popup-font-btn.border-sage-600');
+  const fontVal = selFont ? selFont.dataset.font : 'nunito';
+  const fontCss = fonts[fontVal] || fonts.nunito;
+  msgEl.style.fontFamily = fontCss;
 
   const icon = document.getElementById('setPopupIcon').value;
   iconEl.textContent = icon;
@@ -1635,15 +1764,30 @@ window.updatePopupPreview = function() {
   msgEl.textContent = msg || 'Your popup message here...';
 
   const btnText = document.getElementById('setPopupBtnText').value;
+  const shape = document.getElementById('setPopupBtnShape').value;
+  const variant = document.getElementById('setPopupBtnVariant').value;
+  const radius = shape === 'pill' ? '50px' : '12px';
+
   if (btnText) {
-    btnEl.innerHTML = '<span style="display:inline-block;background:'+style.btn+';color:'+style.btnText+';border:none;padding:10px 28px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.9rem;font-weight:700;">'+btnText.replace(/</g,'&lt;')+'</span>';
+    const safeText = btnText.replace(/</g,'&lt;');
+    let btnStyle = '';
+    if (variant === 'filled') {
+      btnStyle = 'background:'+st.btn+';color:'+st.btnText+';border:2px solid '+st.btn;
+    } else {
+      btnStyle = 'background:transparent;color:'+st.btn+';border:2px solid '+st.btn;
+    }
+    btnEl.innerHTML = '<span style="display:inline-block;'+btnStyle+';padding:10px 28px;border-radius:'+radius+';font-family:Nunito,sans-serif;font-size:0.88rem;font-weight:700;cursor:default;">'+safeText+'</span>';
   } else {
-    btnEl.innerHTML = '<span style="color:'+style.text+';opacity:0.5;font-size:12px;">(dismiss X only)</span>';
+    let dismissStyle = '';
+    if (variant === 'filled') {
+      dismissStyle = 'background:'+st.btn+';color:'+st.btnText+';border:2px solid '+st.btn;
+    } else {
+      dismissStyle = 'background:transparent;color:'+st.btn+';border:2px solid '+st.btn;
+    }
+    btnEl.innerHTML = '<span style="display:inline-block;'+dismissStyle+';padding:8px 24px;border-radius:'+radius+';font-family:Nunito,sans-serif;font-size:0.85rem;font-weight:600;cursor:default;">Dismiss</span>';
   }
 };
 
-// Run preview on load after DOM renders
-setTimeout(function(){ if(document.getElementById('popupPreviewBox')) updatePopupPreview(); }, 0);
 
 window.saveSettings = async function() {
   try {
@@ -1661,10 +1805,16 @@ window.saveSettings = async function() {
   if (popupEl) {
     body.popup_enabled = popupEl.checked ? 'true' : 'false';
     body.popup_icon = document.getElementById('setPopupIcon').value;
-    body.popup_style = document.getElementById('setPopupStyle').value;
+    body.popup_color_bg = document.getElementById('setPopupColorBg').value;
+    body.popup_color_btn = document.getElementById('setPopupColorBtn').value;
+    body.popup_color_text = document.getElementById('setPopupColorText').value;
+    var selFontBtn = document.querySelector('.popup-font-btn.border-sage-600');
+    body.popup_font = selFontBtn ? selFontBtn.dataset.font : 'nunito';
     body.popup_message = document.getElementById('setPopupMsg').value;
     body.popup_button_text = document.getElementById('setPopupBtnText').value;
     body.popup_button_link = document.getElementById('setPopupBtnLink').value;
+    body.popup_button_shape = document.getElementById('setPopupBtnShape').value;
+    body.popup_button_variant = document.getElementById('setPopupBtnVariant').value;
   }
   // Under construction — only save if techadmin
   const ucEl = document.getElementById('setUcEnabled');
@@ -2000,15 +2150,23 @@ function petCard(pet, showActions) {
       <p class="text-[11px] mt-1"><span class="inline-block px-2 py-0.5 rounded-full ${statusColor} font-semibold">${isHidden ? 'Hidden' : h(pet.status || 'Available')}</span></p>
       <div id="${detailId}" class="hidden mt-3 pt-3 border-t border-sage-100 text-xs space-y-1 text-gray-500">
         ${pet.color ? '<p><span class="text-gray-400">Color:</span> ' + h(pet.color) + '</p>' : ''}
+        ${pet.pattern ? '<p><span class="text-gray-400">Pattern:</span> ' + h(pet.pattern) + '</p>' : ''}
         ${pet.size ? '<p><span class="text-gray-400">Size:</span> ' + h(pet.size) + '</p>' : ''}
         ${pet.weight ? '<p><span class="text-gray-400">Weight:</span> ' + h(pet.weight) + ' lbs</p>' : ''}
+        ${pet.dob ? '<p><span class="text-gray-400">DOB:</span> ' + new Date(pet.dob).toLocaleDateString() + '</p>' : ''}
         ${pet.altered ? '<p><span class="text-gray-400">Altered:</span> ' + h(pet.altered) + '</p>' : ''}
         ${pet.microchipped ? '<p><span class="text-gray-400">Microchipped:</span> Yes</p>' : ''}
         ${pet.adoption_fee != null ? '<p><span class="text-gray-400">Fee:</span> $' + pet.adoption_fee + (pet.adoption_fee_name ? ' (' + h(pet.adoption_fee_name) + ')' : '') + '</p>' : ''}
-        ${pet.in_foster ? '<p><span class="text-gray-400">In Foster:</span> Yes</p>' : ''}
+        ${pet.in_foster ? '<p><span class="text-gray-400">In Foster:</span> Yes' + (pet.foster_name ? ' (' + h(pet.foster_name) + ')' : '') + '</p>' : ''}
+        ${pet.campus ? '<p><span class="text-gray-400">Campus:</span> ' + h(pet.campus) + '</p>' : ''}
+        ${pet.location ? '<p><span class="text-gray-400">Location:</span> ' + h(pet.location) + (pet.location_tier2 ? ' &rarr; ' + h(pet.location_tier2) : '') + '</p>' : ''}
+        ${pet.intake_date ? '<p><span class="text-gray-400">Intake:</span> ' + new Date(pet.intake_date).toLocaleDateString() + '</p>' : ''}
+        ${pet.litter_group_id ? '<p><span class="text-gray-400">Litter Group:</span> ' + h(pet.litter_group_id) + '</p>' : ''}
         ${pet.description ? '<p class="mt-2 text-gray-600">' + h(pet.description) + '</p>' : ''}
         ${(pet.attributes || []).length > 0 ? '<div class="flex flex-wrap gap-1 mt-2">' + pet.attributes.map(a => '<span class="px-1.5 py-0.5 bg-sage-50 text-sage-600 rounded text-[10px]">' + h(a) + '</span>').join('') + '</div>' : ''}
-        ${fosterNames.length > 0 ? '<p class="mt-2"><span class="text-gray-400">Foster:</span> ' + h(fosterNames.join(', ')) + '</p>' : ''}
+        ${(pet.videos || []).length > 0 ? '<div class="mt-2"><span class="text-gray-400">Videos:</span> ' + pet.videos.flat().map(v => v.YoutubeUrl ? '<a href="' + h(v.YoutubeUrl) + '" target="_blank" class="text-sage-600 hover:underline ml-1">YouTube</a>' : '').join('') + '</div>' : ''}
+        ${fosterNames.length > 0 ? '<p class="mt-2"><span class="text-gray-400">Assigned Foster:</span> ' + h(fosterNames.join(', ')) + '</p>' : ''}
+        ${(pet.events || []).length > 0 ? '<div class="mt-2"><p class="text-gray-400 text-[10px] uppercase tracking-wider font-bold mb-1">ShelterLuv Events</p>' + pet.events.map(e => '<div class="py-1 border-b border-gray-50"><span class="font-semibold text-gray-600">' + h(e.event_type.replace('.',  ' &rarr; ')) + '</span>' + (e.event_subtype ? ' <span class="text-gray-400">(' + h(e.event_subtype) + ')</span>' : '') + (e.event_time ? ' <span class="text-[10px] text-gray-300">' + new Date(e.event_time).toLocaleDateString() + '</span>' : '') + '</div>').join('') + '</div>' : ''}
         <div id="pet-foster-updates-${pet.id}"></div>
       </div>
       ${actions}
@@ -2729,7 +2887,7 @@ async function renderUsers(el) {
         <div>
           <span class="font-bold text-gray-900 text-sm">${h(u.username)}</span>
           <span class="text-xs text-gray-400 ml-2 capitalize">${u.role}</span>
-          <span class="text-xs text-gray-300 ml-2">Created ${new Date(u.created_at).toLocaleDateString()}</span>
+          <br><span class="text-xs text-gray-300">Created ${new Date(u.created_at).toLocaleDateString()}</span>
         </div>
       </div>
       <div class="flex gap-3">

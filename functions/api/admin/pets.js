@@ -1,10 +1,22 @@
 import { json, error } from '../_helpers.js';
 
 async function runMigrations(db) {
-  // Add hidden column if missing
-  try { await db.prepare("ALTER TABLE animals ADD COLUMN hidden INTEGER DEFAULT 0").run(); } catch(e) {}
-  // Add is_manual column if missing
-  try { await db.prepare("ALTER TABLE animals ADD COLUMN is_manual INTEGER DEFAULT 0").run(); } catch(e) {}
+  // Add columns if missing (idempotent — ALTER throws if column exists)
+  const addCol = (col, def) => db.prepare(`ALTER TABLE animals ADD COLUMN ${col} ${def}`).run().catch(() => {});
+  await Promise.all([
+    addCol('hidden', 'INTEGER DEFAULT 0'),
+    addCol('is_manual', 'INTEGER DEFAULT 0'),
+    addCol('dob', 'TEXT'),
+    addCol('pattern', 'TEXT'),
+    addCol('videos', 'TEXT'),
+    addCol('campus', 'TEXT'),
+    addCol('location', 'TEXT'),
+    addCol('location_tier2', 'TEXT'),
+    addCol('litter_group_id', 'TEXT'),
+    addCol('intake_date', 'TEXT'),
+    addCol('last_sl_update', 'TEXT'),
+    addCol('foster_name', 'TEXT'),
+  ]);
   // Create happy_tails table
   await db.prepare(`CREATE TABLE IF NOT EXISTS happy_tails (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,6 +27,18 @@ async function runMigrations(db) {
     family_photo_url TEXT,
     adoption_date TEXT,
     description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  // Create animal_events table for ShelterLuv intake/outcome events
+  await db.prepare(`CREATE TABLE IF NOT EXISTS animal_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    animal_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    event_subtype TEXT,
+    event_time TEXT,
+    user TEXT,
+    associated_records TEXT,
+    jurisdiction TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`).run();
 }
@@ -40,13 +64,27 @@ export async function onRequestGet(context) {
     assignmentMap[a.animal_id].push(a.username);
   });
 
+  // Get events grouped by animal
+  let eventMap = {};
+  try {
+    const { results: events } = await context.env.DB.prepare(
+      'SELECT animal_id, event_type, event_subtype, event_time FROM animal_events ORDER BY event_time DESC'
+    ).all();
+    for (const e of (events || [])) {
+      if (!eventMap[e.animal_id]) eventMap[e.animal_id] = [];
+      eventMap[e.animal_id].push(e);
+    }
+  } catch(e) {}
+
   const animals = results.map(a => ({
     ...a,
     photos: JSON.parse(a.photos || '[]'),
+    videos: JSON.parse(a.videos || '[]'),
     attributes: JSON.parse(a.attributes || '[]'),
     hidden: a.hidden || 0,
     is_manual: a.is_manual || 0,
     foster_names: assignmentMap[a.id] || [],
+    events: eventMap[a.id] || [],
   }));
   return json({ animals, count: animals.length });
 }

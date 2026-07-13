@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Reporte una mascota perdida o encontrada en el condado de Waseca. Consulte los listados de animales perdidos y encontrados en Waseca County Animal Humane Society para ayudar a reunir mascotas con sus familias.">
+  <link rel="canonical" href="https://wcahs.org/es/lost-found.html">
+  <meta property="og:title" content="Mascotas Perdidas y Encontradas - WCAHS">
+  <meta property="og:description" content="Reporte una mascota perdida o encontrada en el condado de Waseca. Ayude a reunir mascotas con sus familias.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wcahs.org/es/lost-found.html">
+  <meta property="og:image" content="https://wcahs.org/images/logo.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Mascotas Perdidas y Encontradas - WCAHS">
+  <meta name="twitter:description" content="Reporte una mascota perdida o encontrada en el condado de Waseca. Ayude a reunir mascotas con sus familias.">
+  <meta name="twitter:image" content="https://wcahs.org/images/logo.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon-180.png">
+  <title>Mascotas Perdidas y Encontradas - WCAHS</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: { 50: '#f6f7f4', 100: '#e8ebe3', 200: '#d2d8c8', 300: '#b3bea3', 400: '#93a27e', 500: '#758762', 600: '#5c6b4e', 700: '#48543e', 800: '#3b4434', 900: '#33392e' },
+            amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+            warm: { 50: '#fdf8f3', 100: '#f9ede0', 200: '#f2d9bf' }
+          },
+          fontFamily: { display: ['Playfair Display', 'serif'], body: ['Nunito', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+    .bg-sage-50 { background-color: #f6f7f4 !important; }
+    .bg-sage-100 { background-color: #e8ebe3 !important; }
+    .bg-sage-600 { background-color: #5c6b4e !important; }
+    .bg-sage-700 { background-color: #48543e !important; }
+    .bg-sage-800 { background-color: #3b4434 !important; }
+    .bg-sage-900 { background-color: #33392e !important; }
+    .text-sage-100 { color: #e8ebe3 !important; }
+    .text-sage-200 { color: #d2d8c8 !important; }
+    .text-sage-300 { color: #b3bea3 !important; }
+    .text-sage-400 { color: #93a27e !important; }
+    .text-sage-600 { color: #5c6b4e !important; }
+    .text-sage-700 { color: #48543e !important; }
+    .text-sage-800 { color: #3b4434 !important; }
+    .border-sage-500 { border-color: #758762 !important; }
+    .border-sage-700 { border-color: #48543e !important; }
+    .bg-warm-50 { background-color: #fdf8f3 !important; }
+    .hover\:bg-sage-700:hover { background-color: #48543e !important; }
+    .hover\:text-sage-700:hover { color: #48543e !important; }
+    .hover\:text-sage-800:hover { color: #3b4434 !important; }
+    .tab-btn.active { background-color: #5c6b4e; color: white; border-color: #5c6b4e; }
+  </style>
+</head>
+<body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
+
+  <!-- Nav -->
+  <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/es/" class="flex items-center gap-3">
+        <img src="/images/logo.png" alt="WCAHS Logo" class="h-12">
+      </a>
+      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+        <a href="/es/" class="text-gray-600 hover:text-sage-700 transition">Inicio</a>
+        <a href="/es/pets" class="text-gray-600 hover:text-sage-700 transition">Adoptar</a>
+        <a href="/es/events" class="text-gray-600 hover:text-sage-700 transition">Eventos</a>
+        <a href="/es/lost-found" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">Perdidos y Encontrados</a>
+        <a href="/es/happy-tails" class="text-gray-600 hover:text-sage-700 transition">Finales Felices</a>
+        <a href="/es/about" class="text-gray-600 hover:text-sage-700 transition">Nosotros</a>
+        <a href="/es/contact" class="text-gray-600 hover:text-sage-700 transition">Contacto</a>
+        <a href="../lost-found.html" class="text-gray-500 hover:text-sage-700 transition text-xs border border-gray-300 px-3 py-1 rounded-full">English</a>
+        <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donar</a>
+        <a href="/lost-found" class="text-gray-400 hover:text-sage-700 transition text-xs font-semibold">EN</a>
+      </div>
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+      <a href="/es/" class="block py-2 text-gray-600">Inicio</a>
+      <a href="/es/pets" class="block py-2 text-gray-600">Adoptar</a>
+      <a href="/es/events" class="block py-2 text-gray-600">Eventos</a>
+      <a href="/es/lost-found" class="block py-2 font-semibold text-sage-700">Perdidos y Encontrados</a>
+      <a href="/es/happy-tails" class="block py-2 text-gray-600">Finales Felices</a>
+      <a href="/es/about" class="block py-2 text-gray-600">Nosotros</a>
+      <a href="/es/contact" class="block py-2 text-gray-600">Contacto</a>
+      <a href="../lost-found.html" class="block py-2 text-gray-500">English</a>
+      <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donar</a>
+      <div class="text-right mt-2 pt-2 border-t border-gray-100"><a href="/lost-found" class="text-gray-400 text-xs hover:text-sage-600 transition">English</a></div>
+    </div>
+  </nav>
+
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
+  <!-- Header -->
+  <section class="bg-sage-700 py-16 relative overflow-hidden">
+    <img src="/images/dogs/dog_06.png" alt="" style="position:absolute; bottom:-5px; right:40px; height:120px; opacity:0.08; filter:invert(1);">
+    <img src="/images/cats/cat_03.png" alt="" style="position:absolute; bottom:-5px; left:40px; height:100px; opacity:0.07; filter:invert(1);">
+    <img src="/images/paws/paw_01.png" alt="" style="position:absolute; top:10px; left:30%; height:35px; opacity:0.06; filter:invert(1); transform:rotate(-20deg);">
+    <div class="max-w-6xl mx-auto px-4 text-center relative z-10">
+      <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-3">Mascotas Perdidas y Encontradas</h1>
+      <p class="text-sage-200 text-lg">Ayude a reunir a las mascotas del condado de Waseca con sus familias</p>
+    </div>
+  </section>
+
+  <!-- Quick Action Buttons -->
+  <section class="max-w-3xl mx-auto px-4 -mt-6 relative z-20">
+    <div class="bg-white rounded-2xl shadow-md p-5 flex flex-col sm:flex-row gap-3 items-center justify-center">
+      <span class="text-gray-500 text-sm font-semibold">&iquest;Necesita reportar?</span>
+      <a href="#report" onclick="selectReportType('lost')" class="inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition" style="border:2px solid #d4a057; color:#92690d; background:transparent;" onmouseover="this.style.background='#fef9f0'" onmouseout="this.style.background='transparent'">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+        Mascota Perdida
+      </a>
+      <a href="#report" onclick="selectReportType('found')" class="inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition" style="border:2px solid #93a27e; color:#48543e; background:transparent;" onmouseover="this.style.background='#f6f7f4'" onmouseout="this.style.background='transparent'">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        Mascota Encontrada
+      </a>
+    </div>
+  </section>
+
+  <!-- Tabs: Lost / Found -->
+  <section class="max-w-6xl mx-auto px-4 pt-14 pb-4">
+    <div class="flex gap-3 justify-center">
+      <button onclick="showTab('lost')" class="tab-btn active px-8 py-3 rounded-full border-2 border-sage-600 font-bold text-sm transition">Mascotas Perdidas</button>
+      <button onclick="showTab('found')" class="tab-btn px-8 py-3 rounded-full border-2 border-gray-300 text-gray-600 font-bold text-sm transition">Mascotas Encontradas</button>
+    </div>
+  </section>
+
+  <!-- Lost Pets Grid -->
+  <section id="lostGrid" class="max-w-6xl mx-auto px-4 py-8 pb-20">
+    <div id="lostCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    <p id="lostEmpty" class="text-gray-400 text-center py-12">No hay mascotas perdidas reportadas en este momento. &iexcl;Esperamos que siga as&iacute;!</p>
+  </section>
+
+  <!-- Found Pets Grid (hidden by default) -->
+  <section id="foundGrid" class="max-w-6xl mx-auto px-4 py-8 pb-20 hidden">
+    <div id="foundCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    <p id="foundEmpty" class="text-gray-400 text-center py-12">No hay mascotas encontradas reportadas en este momento.</p>
+  </section>
+
+  <script>
+    fetch('/api/lost-found').then(r=>r.json()).then(function(reports) {
+      var lost = reports.filter(r=>r.type==='lost');
+      var found = reports.filter(r=>r.type==='found');
+      // Store reports globally for modal access
+      window._lfReports = [];
+      function renderCards(items, containerId, emptyId) {
+        if (!items.length) return;
+        window._lfReports = window._lfReports.concat(items);
+        document.getElementById(emptyId).classList.add('hidden');
+        document.getElementById(containerId).innerHTML = items.map(function(r) {
+          var photos = [];
+          if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+          var photoHtml = photos[0] ? '<div class="h-56 overflow-hidden"><img src="'+photos[0]+'" alt="" class="w-full h-full object-cover"></div>' : '<div class="h-40 bg-sage-50 flex items-center justify-center"><svg class="w-12 h-12 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>';
+          var typeColor = r.type === 'lost' ? 'bg-red-500' : 'bg-green-600';
+          var typeLabel = r.type === 'lost' ? 'PERDIDO' : 'ENCONTRADO';
+          return '<div class="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer card-hover" onclick="openLFModal('+r.id+')">' +
+            '<div class="relative">' + photoHtml +
+            '<span class="absolute top-3 left-3 '+typeColor+' text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">'+typeLabel+'</span>' +
+            '</div>' +
+            '<div class="p-5"><h3 class="font-bold text-lg text-gray-900">'+(r.pet_name||'Mascota Desconocida')+'</h3>' +
+            '<p class="text-gray-500 text-sm mt-1">'+r.species+(r.breed?' &bull; '+r.breed:'')+'</p>' +
+            (r.location_details?'<p class="text-gray-500 text-sm mt-1.5"><svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>'+r.location_details+'</p>':'') +
+            '<p class="text-gray-400 text-xs mt-3">Reportado el '+new Date(r.created_at).toLocaleDateString('es-ES')+'</p>' +
+            '</div></div>';
+        }).join('');
+      }
+
+      window.openLFModal = function(id) {
+        var r = window._lfReports.find(function(x) { return x.id === id; });
+        if (!r) return;
+        var photos = [];
+        if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
+        var isLost = r.type === 'lost';
+        var typeColor = isLost ? '#cc1f1f' : '#2d7a3a';
+        var typeLabel = isLost ? 'PERDIDO' : 'ENCONTRADO';
+        var locLabel = isLost ? 'Visto por &uacute;ltima vez' : 'Encontrado en';
+
+        var mainPhoto = photos[0] ? '<img src="'+photos[0]+'" class="w-full max-h-80 object-cover rounded-xl" alt="">' : '';
+        var thumbsHtml = photos.length > 1 ? '<div class="flex gap-2 mt-3 overflow-x-auto pb-1">' + photos.map(function(p,i) {
+          return '<img src="'+p+'" class="w-20 h-20 rounded-lg object-cover border-2 '+(i===0?'border-sage-500':'border-gray-200')+' cursor-pointer shrink-0" onclick="document.getElementById(\'lfModalMainPhoto\').src=this.src">';
+        }).join('') + '</div>' : '';
+
+        var overlay = document.createElement('div');
+        overlay.id = 'lfModal';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        overlay.innerHTML = '<div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" style="font-family:Nunito,sans-serif">' +
+          '<div class="p-6">' +
+            '<div class="flex items-center justify-between mb-4">' +
+              '<div class="flex items-center gap-2">' +
+                '<span style="background:'+typeColor+'" class="text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">'+typeLabel+'</span>' +
+                '<h2 class="font-bold text-xl text-gray-900">'+(r.pet_name||'Mascota Desconocida')+'</h2>' +
+              '</div>' +
+              '<button onclick="document.getElementById(\'lfModal\').remove()" class="text-gray-400 hover:text-gray-600 p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>' +
+            '</div>' +
+            (mainPhoto ? '<div class="mb-4"><img id="lfModalMainPhoto" src="'+photos[0]+'" class="w-full max-h-80 object-cover rounded-xl" alt=""></div>' : '') +
+            thumbsHtml +
+            '<div class="grid grid-cols-2 gap-3 mt-4">' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Especie</p><p class="text-sm font-semibold text-gray-900">'+(r.species||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Raza</p><p class="text-sm font-semibold text-gray-900">'+(r.breed||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Color</p><p class="text-sm font-semibold text-gray-900">'+(r.color||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Sexo</p><p class="text-sm font-semibold text-gray-900">'+(r.gender||'\u2014')+'</p></div>' +
+            '</div>' +
+            (r.location_details ? '<div class="mt-4 rounded-xl p-4 text-center" style="background:'+(isLost?'#fef9e7':'#eef8f0')+';border:1.5px solid '+(isLost?'#f5d67a':'#8cd4a0')+'"><p class="text-[10px] uppercase font-bold opacity-60" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+locLabel+'</p><p class="font-bold" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+r.location_details+'</p></div>' : '') +
+            (r.description ? '<div class="mt-4"><p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Descripci\u00f3n</p><p class="text-sm text-gray-600 leading-relaxed">'+r.description+'</p></div>' : '') +
+            '<p class="text-gray-400 text-xs mt-4">Reportado el '+new Date(r.created_at).toLocaleDateString('es-ES',{month:'long',day:'numeric',year:'numeric'})+'</p>' +
+            '<div class="mt-4 pt-4 border-t border-gray-100 text-center">' +
+              '<p class="text-gray-500 text-sm">&iquest;Reconoce a esta mascota? <a href="tel:5072017287" class="text-sage-600 font-bold hover:underline">(507) 201-7287</a></p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+        document.body.appendChild(overlay);
+      };
+      renderCards(lost, 'lostCards', 'lostEmpty');
+      renderCards(found, 'foundCards', 'foundEmpty');
+    }).catch(function(){});
+  </script>
+
+  <!-- Report Form -->
+  <section id="report" class="bg-white py-20 relative overflow-hidden">
+    <img src="/images/dogs/dog_01.png" alt="" style="position:absolute; bottom:0; right:20px; height:140px; opacity:0.04;">
+    <img src="/images/cats/cat_12.png" alt="" style="position:absolute; top:30px; left:20px; height:100px; opacity:0.03;">
+    <div class="max-w-2xl mx-auto px-4 relative z-10">
+      <h2 class="font-display text-3xl font-bold text-gray-900 mb-3 text-center">Reportar una Mascota Perdida o Encontrada</h2>
+      <p class="text-gray-500 text-center mb-4">Complete el formulario y lo publicaremos en esta p&aacute;gina y lo compartiremos en nuestro Facebook.</p>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-10">
+        <p class="text-amber-800 text-sm font-semibold mb-2">Consejos para un mejor reporte:</p>
+        <ul class="text-amber-700 text-sm space-y-1">
+          <li>&bull; <strong>Act&uacute;e r&aacute;pido</strong> &mdash; cuanto antes reporte, mayores ser&aacute;n las probabilidades de un reencuentro</li>
+          <li>&bull; <strong>Sea espec&iacute;fico con la ubicaci&oacute;n</strong> &mdash; incluya calles, puntos de referencia o vecindarios</li>
+          <li>&bull; <strong>Incluya la fecha y hora exactas</strong> en que la mascota fue vista por &uacute;ltima vez o encontrada</li>
+          <li>&bull; <strong>Suba una foto clara y reciente</strong> &mdash; use una foto original, no una captura de pantalla de redes sociales</li>
+          <li>&bull; <strong>Anote detalles del collar</strong> &mdash; color, placas, si tiene microchip</li>
+          <li>&bull; <strong>Mencione el temperamento</strong> &mdash; &iquest;es amigable, asustadizo, agresivo? Esto ayuda a las personas a acercarse de forma segura</li>
+        </ul>
+      </div>
+
+      <form class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Su Nombre</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Su nombre">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">N&uacute;mero de Tel&eacute;fono</label>
+            <input type="tel" oninput="formatPhone(this)" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="(507) 555-1234">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Correo Electr&oacute;nico</label>
+            <input type="email" id="reporterEmail" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="su@correo.com">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo de Reporte</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center gap-3 border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-amber-300 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
+              <input type="radio" name="type" value="lost" class="accent-amber-600" checked onchange="updateFormType()">
+              <div>
+                <div class="font-bold text-gray-900">Mascota Perdida</div>
+                <div class="text-xs text-gray-500">Mi mascota est&aacute; perdida</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-sage-400 transition has-[:checked]:border-sage-500 has-[:checked]:bg-sage-50">
+              <input type="radio" name="type" value="found" class="accent-sage-600" style="accent-color:#5c6b4e;" onchange="updateFormType()">
+              <div>
+                <div class="font-bold text-gray-900">Mascota Encontrada</div>
+                <div class="text-xs text-gray-500">Encontr&eacute; un animal</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label id="nameLabel" class="block text-sm font-semibold text-gray-700 mb-1">Nombre de la Mascota</label>
+            <input id="nameInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Nombre de la mascota">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Especie</label>
+            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+              <option>Perro</option>
+              <option>Gato</option>
+              <option>Otro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Raza</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Raza o mezcla">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Color</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Color/marcas">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Sexo</label>
+            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+              <option>Macho</option>
+              <option>Hembra</option>
+              <option>Desconocido</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label id="locationLabel" class="block text-sm font-semibold text-gray-700 mb-1">Fecha y Lugar Donde se Vio por &Uacute;ltima Vez</label>
+          <input id="locationInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Ej. 15 de junio cerca de 3rd Ave NE, Waseca">
+        </div>
+
+        <!-- Lost-only: collar/microchip -->
+        <div id="lostFields">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Detalles del Collar y Microchip</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Color del collar, informaci&oacute;n de placas, n&uacute;mero de microchip si se conoce">
+          </div>
+        </div>
+
+        <!-- Found-only: temperament & current location -->
+        <div id="foundFields" class="hidden space-y-5">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Temperamento</label>
+            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+              <option>Amigable / Se deja acercar</option>
+              <option>Asustado / Nervioso</option>
+              <option>Agresivo / No acercarse</option>
+              <option>Desconocido / No pude acercarme</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">&iquest;D&oacute;nde Est&aacute; el Animal Ahora?</label>
+            <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Ej. En mi garaje, sigue en la zona, lo llev&eacute; al veterinario">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">&iquest;Tiene Collar o Placas Visibles?</label>
+            <select class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+              <option>Sin collar</option>
+              <option>Collar pero sin placas</option>
+              <option>Collar con placas</option>
+              <option>No pude ver</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label id="descLabel" class="block text-sm font-semibold text-gray-700 mb-1">Descripci&oacute;n</label>
+          <textarea id="descInput" rows="4" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition resize-none" placeholder="Cualquier detalle identificativo &mdash; collar, microchip, temperamento, tama&ntilde;o, marcas distintivas..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Subir Fotos <span class="font-normal text-gray-400">(hasta 5)</span></label>
+          <div id="photoDropzone" onclick="document.getElementById('photoInput').click()" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-sage-400 transition cursor-pointer">
+            <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p class="text-gray-500 text-sm">Haga clic para seleccionar fotos o arrastre y suelte</p>
+            <p class="text-gray-400 text-xs mt-1">PNG, JPG, WebP &bull; Hasta 10MB cada una</p>
+          </div>
+          <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" onchange="handlePhotoSelect(this.files)">
+          <div id="photoPreviews" class="flex flex-wrap gap-3 mt-3"></div>
+          <p class="text-gray-400 text-xs mt-2">Use una foto original, clara y bien iluminada &mdash; no una captura de pantalla de Facebook ni un recorte borroso con zoom. Muestre el cuerpo completo si es posible. Varios &aacute;ngulos ayudan.</p>
+        </div>
+        <script>
+          var _selectedPhotos = [];
+          function handlePhotoSelect(files) {
+            for (var i = 0; i < files.length && _selectedPhotos.length < 5; i++) {
+              if (files[i].size > 10*1024*1024) { alert('El archivo "' + files[i].name + '" es demasiado grande (m\u00e1x 10MB)'); continue; }
+              _selectedPhotos.push(files[i]);
+            }
+            if (_selectedPhotos.length >= 5) document.getElementById('photoDropzone').style.display = 'none';
+            renderPreviews();
+          }
+          function removePhoto(idx) {
+            _selectedPhotos.splice(idx, 1);
+            document.getElementById('photoDropzone').style.display = '';
+            renderPreviews();
+          }
+          function renderPreviews() {
+            var el = document.getElementById('photoPreviews');
+            el.innerHTML = _selectedPhotos.map(function(f, i) {
+              var url = URL.createObjectURL(f);
+              return '<div class="relative"><img src="' + url + '" class="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"><button type="button" onclick="removePhoto(' + i + ')" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs leading-none flex items-center justify-center">&times;</button></div>';
+            }).join('');
+          }
+          // Drag and drop
+          var dz = document.getElementById('photoDropzone');
+          dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('border-sage-500', 'bg-sage-50'); });
+          dz.addEventListener('dragleave', function() { dz.classList.remove('border-sage-500', 'bg-sage-50'); });
+          dz.addEventListener('drop', function(e) { e.preventDefault(); dz.classList.remove('border-sage-500', 'bg-sage-50'); handlePhotoSelect(e.dataTransfer.files); });
+        </script>
+
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><input id="lfOptIn" type="checkbox"> Mant&eacute;ngame informado sobre noticias y eventos de WCAHS</label>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+        <div id="lfStatus" class="hidden"></div>
+        <button id="submitBtn" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg">Enviar Reporte de Mascota Perdida</button>
+      </form>
+      <script>
+        document.querySelector('#report form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          var status = document.getElementById('lfStatus');
+          var btn = document.getElementById('submitBtn');
+          var turnstile = document.querySelector('#report [name="cf-turnstile-response"]');
+          var isLost = document.querySelector('input[name="type"][value="lost"]').checked;
+          btn.disabled = true; btn.textContent = 'Enviando...';
+          status.classList.add('hidden');
+          var body = {
+            type: isLost ? 'lost' : 'found',
+            reporter_name: e.target.querySelector('input[placeholder="Su nombre"]').value,
+            reporter_phone: e.target.querySelector('input[type="tel"]').value,
+            reporter_email: document.getElementById('reporterEmail').value,
+            pet_name: document.getElementById('nameInput').value,
+            species: e.target.querySelector('select').value,
+            breed: e.target.querySelector('input[placeholder="Raza o mezcla"]').value,
+            color: e.target.querySelector('input[placeholder="Color/marcas"]').value,
+            gender: e.target.querySelectorAll('select')[1].value,
+            location_details: document.getElementById('locationInput').value,
+            description: document.getElementById('descInput').value,
+            subscribe: document.getElementById('lfOptIn').checked,
+            turnstile_token: turnstile ? turnstile.value : ''
+          };
+          if (isLost) { body.collar_details = e.target.querySelector('#lostFields input') ? e.target.querySelector('#lostFields input').value : ''; }
+          else {
+            var foundSelects = document.querySelectorAll('#foundFields select');
+            body.temperament = foundSelects[0] ? foundSelects[0].value : '';
+            body.current_location = document.querySelector('#foundFields input') ? document.querySelector('#foundFields input').value : '';
+            body.collar_status = foundSelects[1] ? foundSelects[1].value : '';
+          }
+          try {
+            // Upload photos first if any
+            if (_selectedPhotos.length > 0) {
+              btn.textContent = 'Subiendo fotos...';
+              var formData = new FormData();
+              formData.append('turnstile_token', body.turnstile_token);
+              _selectedPhotos.forEach(function(f) { formData.append('photos', f); });
+              var upRes = await fetch('/api/upload', { method: 'POST', body: formData });
+              var upData = await upRes.json();
+              if (upData.ok && upData.urls) { body.photo_url = upData.urls[0]; body.photo_urls = upData.urls; }
+              else if (upData.error) {
+                status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (upData.error) + '</p></div>';
+                status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Enviar Reporte de Mascota Perdida' : 'Enviar Reporte de Mascota Encontrada';
+                return;
+              }
+              btn.textContent = 'Enviando reporte...';
+            }
+            var res = await fetch('/api/lost-found', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            var data = await res.json();
+            if (data.ok) {
+              status.innerHTML = '<div class="bg-sage-50 border-2 border-sage-200 rounded-xl p-6 text-center" style="background:#f6f7f4;border-color:#d2d8c8;"><img src="/images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">\u00a1Reporte Enviado!</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || 'Su reporte aparecer\u00e1 despu\u00e9s de ser revisado.') + '</p></div>';
+              status.classList.remove('hidden'); e.target.reset(); btn.style.display = 'none'; _selectedPhotos = []; renderPreviews();
+            } else {
+              status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (data.error || 'Algo sali\u00f3 mal') + '</p></div>';
+              status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Enviar Reporte de Mascota Perdida' : 'Enviar Reporte de Mascota Encontrada';
+            }
+          } catch(err) {
+            status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">No se pudo enviar. Por favor int\u00e9ntelo de nuevo.</p></div>';
+            status.classList.remove('hidden'); btn.disabled = false; btn.textContent = isLost ? 'Enviar Reporte de Mascota Perdida' : 'Enviar Reporte de Mascota Encontrada';
+          }
+        });
+      </script>
+    </div>
+  </section>
+
+  <!-- Lost Pet Tips -->
+  <section class="max-w-4xl mx-auto px-4 py-16">
+    <h2 class="font-display text-2xl font-bold text-gray-900 mb-3 text-center">Mi Mascota Est&aacute; Perdida</h2>
+    <p class="text-gray-500 text-center mb-10">El tiempo importa. Esto es lo que debe hacer ahora mismo.</p>
+
+    <div class="space-y-4 mb-8">
+      <div class="bg-white rounded-xl p-6 shadow-sm border-l-4 border-red-400">
+        <h3 class="font-bold text-gray-900 mb-2">Primeros 30 Minutos</h3>
+        <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+          <li>&bull; Busque en toda su casa &mdash; armarios, debajo de muebles, garajes, cobertizos, ventanas del s&oacute;tano</li>
+          <li>&bull; Camine por su vecindario llamando a su mascota por su nombre, especialmente al amanecer o atardecer cuando hay silencio</li>
+          <li>&bull; Coloque su cama, una camiseta usada, comida y agua afuera donde fue vista por &uacute;ltima vez</li>
+          <li>&bull; Los gatos suelen esconderse cerca de casa &mdash; revise debajo de porches, arbustos y espacios angostos</li>
+          <li>&bull; Intente conducir lentamente por el vecindario &mdash; los perros a veces reconocen el sonido de su auto</li>
+          <li>&bull; Lleve otra mascota si tiene una &mdash; un compa&ntilde;ero familiar puede atraerlos</li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 shadow-sm border-l-4 border-amber-400">
+        <h3 class="font-bold text-gray-900 mb-2">Primeras Horas</h3>
+        <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+          <li>&bull; <strong>Reporte aqu&iacute;</strong> y comparta en nuestra <a href="https://facebook.com/WasecaCAHS/" class="text-sage-600 underline" target="_blank">p&aacute;gina de Facebook</a></li>
+          <li>&bull; Llame a la compa&ntilde;&iacute;a de microchip para reportar la p&eacute;rdida y verificar que su informaci&oacute;n de contacto est&eacute; actualizada</li>
+          <li>&bull; Contacte veterinarios locales &mdash; no solo llame, <strong>lleve un volante con foto en persona</strong></li>
+          <li>&bull; Notifique al control de animales de Waseca y a la polic&iacute;a local</li>
+          <li>&bull; Publique en <a href="https://lostdogsmn.com/" class="text-sage-600 underline" target="_blank">Lost Dogs MN</a> y en el grupo de Facebook <a href="https://www.facebook.com/groups/307003906074963" class="text-sage-600 underline" target="_blank">SE-MN Lost/Found Pets</a></li>
+          <li>&bull; Publique en Craigslist, Nextdoor y grupos locales de Facebook del vecindario</li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 shadow-sm border-l-4 border-sage-500">
+        <h3 class="font-bold text-gray-900 mb-2">B&uacute;squeda Continua</h3>
+        <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+          <li>&bull; Imprima volantes con una <strong>foto clara, n&uacute;mero de tel&eacute;fono y lugar donde fue vista por &uacute;ltima vez</strong> &mdash; cu&eacute;lguelos en intersecciones a la altura de los ojos del conductor</li>
+          <li>&bull; Busque en un radio de al menos 5 kil&oacute;metros desde donde desapareci&oacute; su mascota</li>
+          <li>&bull; Visite refugios locales en persona &mdash; no solo llame. Pida ver todas las &aacute;reas incluyendo la de ingreso</li>
+          <li>&bull; Alerte a carteros, repartidores y vecinos &mdash; ellos recorren m&aacute;s terreno a diario</li>
+          <li>&bull; <strong>No persiga a su mascota</strong> si la ve &mdash; si&eacute;ntese, evite el contacto visual y atra&iacute;gala con premios. Perseguirla puede asustarla m&aacute;s</li>
+          <li>&bull; Registre todos los avistamientos con fecha, hora y ubicaci&oacute;n exacta en un mapa</li>
+          <li>&bull; <strong>No se rinda</strong> &mdash; muchas mascotas son encontradas semanas o incluso meses despu&eacute;s</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Found Pet Tips -->
+  <section class="bg-white py-16">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="font-display text-2xl font-bold text-gray-900 mb-3 text-center">Encontr&eacute; un Animal Callejero</h2>
+      <p class="text-gray-500 text-center mb-10">Gracias por ayudar. As&iacute; puede ayudar a que regrese a casa.</p>
+
+      <div class="space-y-4">
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Verifique la Identificaci&oacute;n</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; Busque una placa en el collar con un n&uacute;mero de tel&eacute;fono y llame de inmediato</li>
+            <li>&bull; Lleve al animal a cualquier veterinario o refugio para un <strong>escaneo de microchip gratuito</strong> &mdash; si no se encuentra chip, intente en otro lugar ya que los chips pueden migrar</li>
+            <li>&bull; Revise el interior de las orejas y la cara interna de los muslos en busca de tatuajes (com&uacute;n en animales de raza pura)</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Corra la Voz</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; <strong>Reporte aqu&iacute;</strong> y revise nuestros listados de mascotas perdidas para ver si hay coincidencia</li>
+            <li>&bull; Publique en <a href="https://lostdogsmn.com/" class="text-sage-600 underline" target="_blank">Lost Dogs MN</a> y <a href="https://www.facebook.com/groups/307003906074963" class="text-sage-600 underline" target="_blank">SE-MN Lost/Found Pets</a></li>
+            <li>&bull; Ponga volantes en el vecindario donde se encontr&oacute; al animal</li>
+            <li>&bull; Busque carteles de "mascota perdida" existentes en la zona</li>
+            <li>&bull; <strong>Reserve un detalle identificativo</strong> (una marca, color de collar) para que el verdadero due&ntilde;o pueda demostrar que es suyo</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Reuni&oacute;n Segura</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; Pida a la persona que <strong>describa a la mascota</strong> &mdash; no le d&eacute; la descripci&oacute;n primero</li>
+            <li>&bull; Solicite prueba de propiedad: registros veterinarios, fotos con fecha junto a la mascota o papeles de adopci&oacute;n</li>
+            <li>&bull; Re&uacute;nase en un lugar p&uacute;blico durante el d&iacute;a &mdash; un estacionamiento de la polic&iacute;a o una cl&iacute;nica veterinaria es ideal</li>
+            <li>&bull; No se preocupe si la mascota parece indecisa al principio &mdash; los animales perdidos por mucho tiempo pueden necesitar un momento para reconocer a su due&ntilde;o</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Sepa Qu&eacute; Est&aacute; Viendo</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; <strong>Gatos con la punta de la oreja cortada</strong> (corte recto en una oreja) son gatos comunitarios esterilizados &mdash; no est&aacute;n perdidos y deben dejarse donde est&aacute;n</li>
+            <li>&bull; <strong>Gatos ferales</strong> que no se dejan acercar probablemente son gatos comunitarios que viven al aire libre intencionalmente &mdash; atraparlos y retirarlos puede alterar la colonia</li>
+            <li>&bull; Un gato amigable al aire libre cerca de casas probablemente es la mascota de alguien que sale y entra &mdash; observe y pregunte a los vecinos antes de asumir que est&aacute; perdido</li>
+            <li>&bull; <strong>Gatitos encontrados solos</strong> generalmente no son hu&eacute;rfanos &mdash; su madre probablemente est&aacute; buscando comida. Espere al menos 8 horas antes de intervenir. La madre es su mejor oportunidad de supervivencia</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-sage-500">
+          <h3 class="font-bold text-gray-900 mb-2">Seguridad y Casos Especiales</h3>
+          <ul class="text-gray-600 text-sm leading-relaxed space-y-1">
+            <li>&bull; Si el animal es <strong>agresivo o se comporta de forma err&aacute;tica</strong>, no se acerque &mdash; llame al departamento de polic&iacute;a local</li>
+            <li>&bull; Si el animal est&aacute; <strong>herido</strong>, llame directamente a una cl&iacute;nica veterinaria. Fuera de horario, llame a un veterinario de emergencia. WCAHS no est&aacute; equipado para atenci&oacute;n m&eacute;dica de emergencia</li>
+            <li>&bull; <strong>Vida silvestre</strong> (mapaches, zarig&uuml;eyas, venados, aves) &mdash; contacte al <a href="https://www.wrcmn.org/" class="text-sage-600 underline" target="_blank">Wildlife Rehabilitation Center of Minnesota</a>. WCAHS solo maneja gatos y perros</li>
+            <li>&bull; Si encuentra <strong>una gata madre con gatitos</strong>, intente mantenerlos juntos. Su madre es su mejor oportunidad &mdash; cont&aacute;ctenos y le ayudaremos a coordinar</li>
+          </ul>
+        </div>
+
+        <div class="bg-sage-50 rounded-xl p-6 border-l-4 border-amber-400">
+          <h3 class="font-bold text-gray-900 mb-2">Si No Se Encuentra al Due&ntilde;o</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">Cont&aacute;ctenos al <a href="tel:5072017287" class="text-sage-600 underline">(507) 201-7287</a>. Podemos ayudar a coordinar los siguientes pasos, conectar al animal con un hogar temporal y brindarle la atenci&oacute;n que necesita.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Resources -->
+  <section class="max-w-4xl mx-auto px-4 py-12 pb-16">
+    <h3 class="font-bold text-gray-900 text-center mb-6">Recursos &Uacute;tiles</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <a href="https://lostdogsmn.com/" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">Lost Dogs MN</p>
+        <p class="text-gray-400 text-xs mt-1">Red estatal</p>
+      </a>
+      <a href="https://www.facebook.com/groups/307003906074963" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">SE-MN Lost/Found Pets</p>
+        <p class="text-gray-400 text-xs mt-1">Grupo regional de Facebook</p>
+      </a>
+      <a href="https://www.petmicrochiplookup.org/" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">B&uacute;squeda de Microchip</p>
+        <p class="text-gray-400 text-xs mt-1">Encontrar compa&ntilde;&iacute;a del chip</p>
+      </a>
+      <a href="https://facebook.com/WasecaCAHS/" target="_blank" class="bg-white rounded-xl p-4 shadow-sm text-center hover:shadow-md transition">
+        <p class="font-semibold text-sage-800 text-sm">WCAHS Facebook</p>
+        <p class="text-gray-400 text-xs mt-1">Comparta su reporte</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-sage-900 text-sage-200 py-16">
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div>
+        <img src="/images/logo.png" alt="WCAHS" class="h-10 mb-4" style="filter: invert(1) brightness(2);">
+        <p class="text-sm leading-relaxed text-sage-300">Una organizaci&oacute;n sin fines de lucro 501(c)(3) No-Kill que sirve al sur de Minnesota.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Enlaces R&aacute;pidos</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/es/pets" class="hover:text-white transition">Mascotas Adoptables</a></li>
+          <li><a href="/es/about" class="hover:text-white transition">Sobre Nosotros</a></li>
+          <li><a href="/es/faq" class="hover:text-white transition">Preguntas Frecuentes</a></li>
+          <li><a href="/es/events" class="hover:text-white transition">Eventos</a></li>
+          <li><a href="/es/lost-found" class="hover:text-white transition">Perdidos y Encontrados</a></li>
+          <li><a href="/es/contact" class="hover:text-white transition">Contacto</a></li>
+          <li><a href="/es/faq#resources" class="hover:text-white transition">Recursos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Contacto</h4>
+        <ul class="space-y-2 text-sm">
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
+      &copy; 2026 Waseca County Animal Humane Society. Todos los derechos reservados.
+      <span style="display:block; margin-top:6px; opacity:0.6;">Sitio web dise&ntilde;ado por Riley Poe</span>
+    </div>
+  </footer>
+
+  <script>
+    function selectReportType(type) {
+      var radio = document.querySelector('input[name="type"][value="' + type + '"]');
+      if (radio) { radio.checked = true; updateFormType(); }
+    }
+
+    function updateFormType() {
+      var isLost = document.querySelector('input[name="type"][value="lost"]').checked;
+      // Toggle field sections
+      document.getElementById('lostFields').classList.toggle('hidden', !isLost);
+      document.getElementById('foundFields').classList.toggle('hidden', isLost);
+      // Swap labels
+      document.getElementById('nameLabel').textContent = isLost ? 'Nombre de la Mascota' : 'Nombre de la Mascota (si se conoce)';
+      document.getElementById('nameInput').placeholder = isLost ? 'Nombre de la mascota' : 'Nombre de la mascota, si se conoce';
+      document.getElementById('locationLabel').textContent = isLost ? 'Fecha y Lugar Donde se Vio por \u00daltima Vez' : 'Fecha y Lugar Donde se Encontr\u00f3';
+      document.getElementById('locationInput').placeholder = isLost
+        ? 'Ej. 15 de junio cerca de 3rd Ave NE, Waseca'
+        : 'Ej. 18 de junio detr\u00e1s de Walmart en State St, Waseca';
+      document.getElementById('descLabel').textContent = isLost ? 'Descripci\u00f3n' : 'Detalles Adicionales';
+      document.getElementById('descInput').placeholder = isLost
+        ? 'Cualquier detalle identificativo \u2014 tama\u00f1o, marcas distintivas, hacia d\u00f3nde pudo haberse ido...'
+        : 'Condici\u00f3n del animal, lesiones, comportamiento al acercarse...';
+      document.getElementById('submitBtn').textContent = isLost ? 'Enviar Reporte de Mascota Perdida' : 'Enviar Reporte de Mascota Encontrada';
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      if (tab === 'lost') {
+        document.getElementById('lostGrid').classList.remove('hidden');
+        document.getElementById('foundGrid').classList.add('hidden');
+      } else {
+        document.getElementById('lostGrid').classList.add('hidden');
+        document.getElementById('foundGrid').classList.remove('hidden');
+      }
+    }
+  </script>
+
+<script src="/site-data.js"></script>
+<script src="/loader.js"></script>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "49aeb2c8df994092ac9a59c6756acb0e"}'></script><!-- End Cloudflare Web Analytics -->
+</div></body>
+</html>

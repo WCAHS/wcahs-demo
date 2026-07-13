@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Waseca County Animal Humane Society — un refugio de animales sin sacrificio, basado en hogares de acogida en Waseca, MN. Adopta una mascota, conviértete en hogar de acogida o dona para apoyar a los animales rescatados en el sur de Minnesota.">
+  <link rel="canonical" href="https://wcahs.org/">
+  <meta property="og:title" content="Waseca County Animal Humane Society">
+  <meta property="og:description" content="Un refugio de animales sin sacrificio, basado en hogares de acogida en Waseca, MN. Adopta una mascota, conviértete en hogar de acogida o dona para apoyar a los animales rescatados.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wcahs.org/">
+  <meta property="og:image" content="https://wcahs.org/images/logo.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Waseca County Animal Humane Society">
+  <meta name="twitter:description" content="Un refugio de animales sin sacrificio, basado en hogares de acogida en Waseca, MN. Adopta una mascota, conviértete en hogar de acogida o dona para apoyar a los animales rescatados.">
+  <meta name="twitter:image" content="https://wcahs.org/images/logo.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon-180.png">
+  <title>Waseca County Animal Humane Society</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: { 50: '#f6f7f4', 100: '#e8ebe3', 200: '#d2d8c8', 300: '#b3bea3', 400: '#93a27e', 500: '#758762', 600: '#5c6b4e', 700: '#48543e', 800: '#3b4434', 900: '#33392e' },
+            amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+            warm: { 50: '#fdf8f3', 100: '#f9ede0', 200: '#f2d9bf', 300: '#e8bf95', 400: '#dca06a' }
+          },
+          fontFamily: {
+            display: ['Playfair Display', 'serif'],
+            body: ['Nunito', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #fdf8f3; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .hero-gradient { background: linear-gradient(135deg, #3b4434 0%, #5c6b4e 40%, #758762 100%); }
+    .paw-pattern { background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 30px 30px; }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+    /* Hardcoded sage/warm colors as fallback */
+    .bg-sage-50 { background-color: #f6f7f4 !important; }
+    .bg-sage-100 { background-color: #e8ebe3 !important; }
+    .bg-sage-200 { background-color: #d2d8c8 !important; }
+    .bg-sage-500 { background-color: #758762 !important; }
+    .bg-sage-600 { background-color: #5c6b4e !important; }
+    .bg-sage-700 { background-color: #48543e !important; }
+    .bg-sage-800 { background-color: #3b4434 !important; }
+    .bg-sage-900 { background-color: #33392e !important; }
+    .text-sage-100 { color: #e8ebe3 !important; }
+    .text-sage-200 { color: #d2d8c8 !important; }
+    .text-sage-300 { color: #b3bea3 !important; }
+    .text-sage-400 { color: #93a27e !important; }
+    .text-sage-500 { color: #758762 !important; }
+    .text-sage-600 { color: #5c6b4e !important; }
+    .text-sage-700 { color: #48543e !important; }
+    .text-sage-800 { color: #3b4434 !important; }
+    .border-sage-500 { border-color: #758762 !important; }
+    .border-sage-700 { border-color: #48543e !important; }
+    .from-sage-600 { --tw-gradient-from: #5c6b4e; }
+    .to-sage-800 { --tw-gradient-to: #3b4434; }
+    .bg-warm-50 { background-color: #fdf8f3 !important; }
+    .hover\:bg-sage-700:hover { background-color: #48543e !important; }
+    .hover\:text-sage-700:hover { color: #48543e !important; }
+    .hover\:text-sage-800:hover { color: #3b4434 !important; }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Waseca County Animal Humane Society",
+    "alternateName": "WCAHS",
+    "url": "https://wcahs.org",
+    "logo": "https://wcahs.org/images/logo.png",
+    "image": "https://wcahs.org/images/logo.png",
+    "description": "A no-kill, foster-based animal rescue nonprofit serving Waseca County, Minnesota.",
+    "telephone": "(507) 201-7287",
+    "email": "info@wcahs.org",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Waseca",
+      "addressRegion": "MN",
+      "postalCode": "56093",
+      "addressCountry": "US"
+    },
+    "sameAs": [
+      "https://www.facebook.com/WasecaCAHS"
+    ],
+    "nonprofitStatus": "Nonprofit501c3"
+  }
+  </script>
+</head>
+<body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
+
+  <!-- Nav -->
+  <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/es/" class="flex items-center gap-3">
+        <img src="/images/logo.png" alt="Logo de WCAHS" class="h-12">
+      </a>
+      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+        <a href="/es/" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">Inicio</a>
+        <a href="/es/pets" class="text-gray-600 hover:text-sage-700 transition">Adoptar</a>
+        <a href="/es/events" class="text-gray-600 hover:text-sage-700 transition">Eventos</a>
+        <a href="/es/lost-found" class="text-gray-600 hover:text-sage-700 transition">Perdidos y Encontrados</a>
+        <a href="/es/happy-tails" class="text-gray-600 hover:text-sage-700 transition">Finales Felices</a>
+        <a href="/es/about" class="text-gray-600 hover:text-sage-700 transition">Nosotros</a>
+        <a href="/es/contact" class="text-gray-600 hover:text-sage-700 transition">Contacto</a>
+        <a href="/es/contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donar</a>
+        <a href="/" class="text-gray-400 hover:text-sage-700 transition text-xs font-semibold">EN</a>
+      </div>
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2" aria-label="Abrir menú">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+      <a href="/es/" class="block py-2 font-semibold text-sage-700">Inicio</a>
+      <a href="/es/pets" class="block py-2 text-gray-600">Adoptar</a>
+      <a href="/es/events" class="block py-2 text-gray-600">Eventos</a>
+      <a href="/es/lost-found" class="block py-2 text-gray-600">Perdidos y Encontrados</a>
+      <a href="/es/happy-tails" class="block py-2 text-gray-600">Finales Felices</a>
+      <a href="/es/about" class="block py-2 text-gray-600">Nosotros</a>
+      <a href="/es/contact" class="block py-2 text-gray-600">Contacto</a>
+      <a href="/es/contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donar</a>
+      <div class="text-right mt-2 pt-2 border-t border-gray-100"><a href="/" class="text-gray-400 text-xs hover:text-sage-600 transition">English</a></div>
+    </div>
+  </nav>
+
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="hidden bg-amber-500 text-white text-center py-3 px-4 text-sm font-semibold">
+    <span class="announcement-text"></span>
+  </div>
+
+  <!-- Hero -->
+  <section class="text-white relative overflow-hidden" style="background: linear-gradient(135deg, #2d331f 0%, #3b4434 30%, #5c6b4e 70%, #48543e 100%);">
+    <!-- Paw pattern overlay -->
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 30px 30px;"></div>
+    <div class="max-w-6xl mx-auto px-4 py-24 md:py-32 relative z-10">
+      <div class="max-w-2xl">
+        <p style="color: #fef3c7;" class="font-semibold text-sm uppercase tracking-widest mb-4">Organización sin fines de lucro 501(c)(3)</p>
+        <h1 class="font-display text-4xl md:text-6xl font-bold leading-tight mb-6" style="color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+          Cada Animal Merece un <span style="color: #fde68a;">Hogar Lleno de Amor</span>
+        </h1>
+        <p class="text-lg md:text-xl mb-10 leading-relaxed" style="color: #e8ebe3; text-shadow: 0 1px 4px rgba(0,0,0,0.2);">
+          Somos un refugio basado en hogares de acogida en Waseca, MN &mdash; dando segundas oportunidades a los animales del sur de Minnesota a través de la compasión comunitaria.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="/es/pets" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-4 rounded-full text-lg transition shadow-lg hover:shadow-xl">
+            Conoce a Nuestras Mascotas
+          </a>
+          <a href="/es/about" class="border-2 border-white/40 hover:border-white/70 text-white font-semibold px-8 py-4 rounded-full text-lg transition">
+            Nuestra Misión
+          </a>
+        </div>
+      </div>
+    </div>
+    <!-- Animal silhouette art (inverted to white) -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+      <img src="/images/dogs/dog_01.png" alt="" style="position:absolute; bottom:0; right:40px; height:260px; opacity:0.1; filter:invert(1);">
+      <img src="/images/cats/cat_05.png" alt="" style="position:absolute; bottom:0; right:280px; height:200px; opacity:0.08; filter:invert(1);">
+      <img src="/images/paws/paw_01.png" alt="" style="position:absolute; top:30px; right:60px; height:55px; opacity:0.08; filter:invert(1); transform:rotate(-15deg);">
+      <img src="/images/paws/paw_02.png" alt="" style="position:absolute; top:100px; right:220px; height:40px; opacity:0.06; filter:invert(1); transform:rotate(20deg);">
+      <img src="/images/paws/paw_03.png" alt="" style="position:absolute; bottom:40px; right:500px; height:35px; opacity:0.05; filter:invert(1); transform:rotate(-30deg);">
+    </div>
+  </section>
+
+  <!-- Quick Stats -->
+  <section class="bg-white shadow-sm relative -mt-8 z-20 max-w-5xl mx-4 md:mx-auto rounded-2xl">
+    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+      <div class="text-center py-8 px-6">
+        <div class="text-3xl font-bold text-sage-700">100%</div>
+        <div class="text-gray-500 mt-1">Cuidado en Hogares de Acogida</div>
+      </div>
+      <div class="text-center py-8 px-6">
+        <div class="text-3xl font-bold text-sage-700">Sin Sacrificio</div>
+        <div class="text-gray-500 mt-1">Cada Vida Importa</div>
+      </div>
+      <div class="text-center py-8 px-6">
+        <div class="text-3xl font-bold text-sage-700">Comunidad</div>
+        <div class="text-gray-500 mt-1">Financiado y Operado por la Comunidad</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Pets -->
+  <section class="max-w-6xl mx-auto px-4 py-20 relative">
+    <img src="/images/paws/paw_05.png" alt="" style="position:absolute; top:40px; left:-20px; height:80px; opacity:0.04; transform:rotate(-25deg);">
+    <img src="/images/cats/cat_12.png" alt="" style="position:absolute; bottom:20px; right:-10px; height:100px; opacity:0.03;">
+    <div class="text-center mb-12">
+      <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-3">Listos para Su Hogar para Siempre</h2>
+      <p class="text-gray-500 text-lg">Algunos de nuestros amigos que buscan familia actualmente</p>
+    </div>
+    <div id="featuredPets" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Populated by JS from animals.json -->
+    </div>
+    <div class="text-center mt-10">
+      <a href="/es/pets" class="inline-block bg-sage-600 hover:bg-sage-700 text-white font-bold px-8 py-4 rounded-full transition shadow-md">
+        Ver Todas las Mascotas Adoptables &rarr;
+      </a>
+    </div>
+  </section>
+
+  <!-- How Adoption Works -->
+  <section class="bg-white py-20 relative overflow-hidden">
+    <img src="/images/dogs/dog_05.png" alt="" style="position:absolute; bottom:-10px; right:-10px; height:120px; opacity:0.04;">
+    <img src="/images/paws/paw_02.png" alt="" style="position:absolute; top:20px; left:30px; height:50px; opacity:0.03; transform:rotate(15deg);">
+    <div class="max-w-6xl mx-auto px-4 relative z-10">
+      <div class="text-center mb-14">
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-3">Cómo Funciona la Adopción</h2>
+        <p class="text-gray-500 text-lg">Nuestro modelo de acogida significa que cada animal recibe atención personalizada</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-bold text-amber-600">1</span>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Explora las Mascotas</h3>
+          <p class="text-gray-500 text-sm">Mira nuestros animales disponibles y encuentra uno que te robe el corazón.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-sage-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-bold text-sage-600">2</span>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Solicita</h3>
+          <p class="text-gray-500 text-sm">Completa una solicitud de adopción. Nuestra junta revisa cada una con cuidado.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-bold text-amber-600">3</span>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Visita y Conoce</h3>
+          <p class="text-gray-500 text-sm">Una vez aprobado, conoce a tu compañero en su hogar de acogida para asegurar que sea una buena conexión.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-sage-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-bold text-sage-600">4</span>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Bienvenido a Casa</h3>
+          <p class="text-gray-500 text-sm">Finaliza la adopción y dale a tu nuevo miembro de la familia la vida que merece.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Programs -->
+  <section class="max-w-6xl mx-auto px-4 py-20">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="bg-gradient-to-br from-sage-600 to-sage-800 rounded-2xl text-white relative overflow-hidden flex flex-col sm:flex-row">
+        <img src="/images/photos/IMG_1589.JPEG" alt="Gatito negro de WCAHS" class="w-full aspect-[4/3] sm:aspect-auto sm:h-full sm:w-36 md:w-44 object-cover">
+        <div class="p-10 relative flex-1">
+          <img src="/images/cats/cat_01.png" alt="" style="position:absolute; bottom:-10px; right:-5px; height:140px; opacity:0.08; filter:invert(1);">
+          <h3 class="font-display text-2xl font-bold mb-3 relative z-10">Mascotas para Adultos Mayores</h3>
+          <p class="text-sage-100 leading-relaxed mb-6">Los adoptantes mayores que califiquen reciben un 50% de descuento en las tarifas de adopción. Porque la compañía no debería tener barreras económicas.</p>
+          <a href="/es/about" class="inline-block border-2 border-white/50 hover:border-white text-white font-semibold px-6 py-3 rounded-full transition">Más Información</a>
+        </div>
+      </div>
+      <div class="bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl text-white relative overflow-hidden flex flex-col sm:flex-row">
+        <img src="/images/photos/IMG_1593.JPEG" alt="Gato de WCAHS en catio al aire libre" class="w-full aspect-[4/3] sm:aspect-auto sm:h-full sm:w-36 md:w-44 object-cover" style="object-position: center 25%;">
+        <div class="p-10 relative flex-1">
+          <img src="/images/cats/cat_09.png" alt="" style="position:absolute; bottom:-10px; right:5px; height:130px; opacity:0.12; filter:invert(1);">
+          <h3 class="font-display text-2xl font-bold mb-3 relative z-10">Programa de Gatos de Granero</h3>
+          <p class="text-amber-100 leading-relaxed mb-6">Gatos comunitarios ubicados como cazadores de ratones &mdash; esterilizados y vacunados. Control natural de plagas para tu granja, establo o propiedad.</p>
+          <a href="/es/about" class="inline-block border-2 border-white/50 hover:border-white text-white font-semibold px-6 py-3 rounded-full transition">Más Información</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-sage-800 py-20 relative overflow-hidden">
+    <img src="/images/dogs/dog_08.png" alt="" style="position:absolute; bottom:0; left:30px; height:120px; opacity:0.07; filter:invert(1);">
+    <img src="/images/cats/cat_07.png" alt="" style="position:absolute; bottom:0; right:30px; height:110px; opacity:0.06; filter:invert(1);">
+    <img src="/images/paws/paw_04.png" alt="" style="position:absolute; top:20px; left:50%; height:40px; opacity:0.05; filter:invert(1); transform:translateX(120px) rotate(15deg);">
+    <div class="max-w-3xl mx-auto px-4 text-center relative z-10">
+      <h2 class="font-display text-3xl md:text-4xl font-bold text-white mb-4">Ayúdanos a Salvar Más Vidas</h2>
+      <p class="text-sage-200 text-lg mb-10 leading-relaxed">Somos 100% financiados por la comunidad. Cada dólar va directamente a comida, atención veterinaria y refugio para animales necesitados.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="/es/contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-4 rounded-full text-lg transition shadow-lg">Donar Ahora</a>
+        <a href="/es/contact.html#foster" class="border-2 border-white/40 hover:border-white/70 text-white font-semibold px-8 py-4 rounded-full text-lg transition">Ser Hogar de Acogida</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Partners -->
+  <section class="bg-white py-12">
+    <div class="max-w-4xl mx-auto px-4">
+      <p class="text-center text-gray-400 text-sm uppercase tracking-widest mb-6">Nuestros Socios</p>
+      <div id="partners-list" class="flex justify-center items-center gap-12 text-gray-300">
+        <span class="text-lg font-bold text-gray-400">Tractor Supply Co.</span>
+        <span class="text-lg font-bold text-gray-400">Pet Expo Mankato</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-sage-900 text-sage-200 py-16">
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div>
+        <img src="/images/logo.png" alt="WCAHS" class="h-10 mb-4" style="filter: invert(1) brightness(2);">
+        <p class="text-sm leading-relaxed text-sage-300">Una organización sin fines de lucro 501(c)(3) sin sacrificio que sirve al sur de Minnesota. Todos los animales son cuidados en hogares de acogida llenos de amor hasta que encuentran su familia para siempre.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Enlaces Rápidos</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/es/pets" class="hover:text-white transition">Mascotas Adoptables</a></li>
+          <li><a href="/es/about" class="hover:text-white transition">Sobre Nosotros</a></li>
+          <li><a href="/es/faq" class="hover:text-white transition">Preguntas Frecuentes</a></li>
+          <li><a href="/es/contact" class="hover:text-white transition">Contacto</a></li>
+          <li><a href="/es/faq#resources" class="hover:text-white transition">Recursos</a></li>
+          <li><a href="/es/contact.html#donate" class="hover:text-white transition">Donar</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white mb-4">Contacto</h4>
+        <ul class="space-y-2 text-sm">
+          <li data-setting="address">Waseca, MN 56093</li>
+          <li><a href="tel:5072017287" class="hover:text-white transition"><span data-setting="phone">(507) 201-7287</span></a></li>
+          <li><a href="https://facebook.com/WasecaCAHS/" data-setting="facebook_url" class="hover:text-white transition">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
+      &copy; 2026 Waseca County Animal Humane Society. Todos los derechos reservados.
+      <span style="display:block; margin-top:6px; opacity:0.6;">Sitio web diseñado por Riley Poe</span>
+    </div>
+  </footer>
+
+<script>
+  // Load featured pets from animals.json
+  fetch('/api/pets')
+    .then(r => r.json())
+    .then(data => {
+      let animals = data.animals || [];
+      const grid = document.getElementById('featuredPets');
+      // Shuffle and pick up to 3
+      for (let i = animals.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [animals[i], animals[j]] = [animals[j], animals[i]];
+      }
+      animals = animals.slice(0, 3);
+      if (animals.length === 0) {
+        grid.innerHTML = '<p class="text-gray-400 text-center col-span-3">¡Vuelve pronto para ver mascotas adoptables!</p>';
+        return;
+      }
+      grid.innerHTML = animals.map(a => {
+        const desc = a.description ? a.description.substring(0, 120) + (a.description.length > 120 ? '...' : '') : '';
+        return `
+          <div class="bg-white rounded-2xl overflow-hidden shadow-md card-hover">
+            <div class="h-64 overflow-hidden">
+              <img src="${a.cover_photo}" alt="${a.name}" class="w-full h-full object-cover" loading="lazy">
+            </div>
+            <div class="p-6">
+              <h3 class="font-bold text-xl text-gray-900">${a.name}</h3>
+              <p class="text-gray-500 text-sm mt-1">${a.age_display} &bull; ${a.sex} &bull; ${a.breed}</p>
+              ${desc ? `<p class="text-gray-600 mt-3 text-sm leading-relaxed">${desc}</p>` : ''}
+              <a href="/es/pet.html?id=${a.id}" class="mt-4 inline-block text-sage-600 font-semibold text-sm hover:text-sage-800 transition">Conoce a ${a.name} &rarr;</a>
+            </div>
+          </div>`;
+      }).join('');
+    });
+</script>
+<script src="/site-data.js"></script>
+<script src="/loader.js"></script>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "49aeb2c8df994092ac9a59c6756acb0e"}'></script><!-- End Cloudflare Web Analytics -->
+</div></body>
+</html>

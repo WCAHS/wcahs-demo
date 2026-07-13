@@ -89,3 +89,89 @@ CREATE TABLE IF NOT EXISTS gallery_photos (
   page TEXT NOT NULL DEFAULT 'about',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS animals (
+  id TEXT PRIMARY KEY,
+  shelterluv_id TEXT,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  breed TEXT,
+  sex TEXT,
+  age INTEGER DEFAULT 0,
+  age_display TEXT,
+  size TEXT,
+  weight TEXT,
+  color TEXT,
+  pattern TEXT,
+  altered TEXT,
+  microchipped INTEGER DEFAULT 0,
+  description TEXT,
+  cover_photo TEXT,
+  photos TEXT,
+  videos TEXT,
+  attributes TEXT,
+  adoption_fee REAL,
+  adoption_fee_name TEXT,
+  in_foster INTEGER DEFAULT 0,
+  foster_name TEXT,
+  status TEXT,
+  dob TEXT,
+  campus TEXT,
+  location TEXT,
+  location_tier2 TEXT,
+  litter_group_id TEXT,
+  intake_date TEXT,
+  last_sl_update TEXT,
+  last_updated TEXT NOT NULL DEFAULT (datetime('now')),
+  hidden INTEGER DEFAULT 0,
+  is_manual INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS animal_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  animal_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  event_subtype TEXT,
+  event_time TEXT,
+  user TEXT,
+  associated_records TEXT,
+  jurisdiction TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sync_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  synced_at TEXT NOT NULL DEFAULT (datetime('now')),
+  animal_count INTEGER NOT NULL,
+  status TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS happy_tails (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pet_name TEXT NOT NULL,
+  pet_type TEXT,
+  breed TEXT,
+  photo_url TEXT,
+  family_photo_url TEXT,
+  adoption_date TEXT,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS foster_assignments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  animal_id TEXT NOT NULL,
+  assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, animal_id)
+);
+
+CREATE TABLE IF NOT EXISTS foster_updates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  animal_id TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  update_type TEXT DEFAULT 'note',
+  content TEXT,
+  photo_url TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
