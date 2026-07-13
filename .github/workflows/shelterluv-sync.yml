@@ -146,12 +146,24 @@ jobs:
               "$SL_URL/animals/$AID/events?limit=100" 2>/dev/null || echo '{"events":[]}')
             EVT_COUNT=$(echo "$EVENTS" | jq '.events // [] | length')
             if [ "$EVT_COUNT" -gt 0 ]; then
-              EVT_SQL=$(echo "$EVENTS" | jq -r --arg aid "$AID" '
-                .events[] |
-                "INSERT INTO animal_events (animal_id,event_type,event_subtype,event_time,user,associated_records,jurisdiction) VALUES (\x27" + $aid + "\x27,\x27" + (.Type // "") + "\x27,\x27" + (.Subtype // "") + "\x27,\x27" + (if .Time then (.Time | tonumber | strftime("%Y-%m-%dT%H:%M:%SZ")) else "" end) + "\x27,\x27" + (.User // "") + "\x27,\x27" + (.AssociatedRecords // [] | tojson | gsub("\x27"; "\x27\x27")) + "\x27,\x27" + (if .Jurisdiction then (.Jurisdiction | tojson | gsub("\x27"; "\x27\x27")) else "" end) + "\x27);"
-              ')
-              d1_query "$EVT_SQL" | jq '.success'
-              echo "  $AID: $EVT_COUNT events"
+              EVT_SQL=""
+              while IFS=$'\t' read -r ETYPE ESUBTYPE ETIME EUSER EASSOC EJURIS; do
+                ETYPE=$(echo "$ETYPE" | sed "s/'/''/g")
+                ESUBTYPE=$(echo "$ESUBTYPE" | sed "s/'/''/g")
+                EUSER=$(echo "$EUSER" | sed "s/'/''/g")
+                EASSOC=$(echo "$EASSOC" | sed "s/'/''/g")
+                EJURIS=$(echo "$EJURIS" | sed "s/'/''/g")
+                # Convert unix timestamp to ISO
+                ETIME_ISO=""
+                if [ -n "$ETIME" ] && [ "$ETIME" != "null" ]; then
+                  ETIME_ISO=$(date -u -d "@$ETIME" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
+                fi
+                EVT_SQL+="INSERT INTO animal_events (animal_id,event_type,event_subtype,event_time,user,associated_records,jurisdiction) VALUES ('$AID','$ETYPE','$ESUBTYPE','$ETIME_ISO','$EUSER','$EASSOC','$EJURIS');"
+              done < <(echo "$EVENTS" | jq -r '.events[] | [.Type // "", .Subtype // "", (.Time // "" | tostring), .User // "", (.AssociatedRecords // [] | tojson), (if .Jurisdiction then (.Jurisdiction | tojson) else "" end)] | @tsv')
+              if [ -n "$EVT_SQL" ]; then
+                d1_query "$EVT_SQL" | jq '.success'
+                echo "  $AID: $EVT_COUNT events"
+              fi
             fi
           done
 
