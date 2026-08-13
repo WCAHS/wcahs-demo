@@ -38,7 +38,7 @@ export async function onRequestGet(context) {
     // at home, not just in a kennel. Both are live the moment the foster saves.
     try {
       const { results: fu } = await context.env.DB.prepare(
-        `SELECT fu.id, fu.update_type, fu.content, fu.photo_url, fu.created_at, u.name AS foster_name
+        `SELECT fu.id, fu.update_type, fu.content, fu.photo_url, fu.created_at, u.username AS foster_name
            FROM foster_updates fu
            LEFT JOIN users u ON u.id = fu.user_id
           WHERE fu.animal_id = ?
@@ -64,6 +64,9 @@ export async function onRequestGet(context) {
         parsed.foster_photos = [];
       }
     } catch (e) {
+      // Log it — an earlier silent catch here hid a bad column name for hours,
+      // so testimonials existed in D1 but the page showed nothing.
+      console.error('foster content query failed:', e && e.message);
       parsed.foster_testimonials = []; parsed.foster_photos = [];
       parsed.foster_note = null; parsed.foster_note_by = null;
     }
@@ -77,7 +80,7 @@ export async function onRequestGet(context) {
           WHERE bp.animal_id = ?`
       ).bind(id).first();
       parsed.bonded_partner = (bp && bp.hidden !== 1 && !INACTIVE_STATUSES.includes(bp.status)) ? bp : null;
-    } catch (e) { parsed.bonded_partner = null; }
+    } catch (e) { console.error('bonded partner query failed:', e && e.message); parsed.bonded_partner = null; }
 
     // Include litter siblings if part of a litter group
     if (animal.litter_group_id) {
