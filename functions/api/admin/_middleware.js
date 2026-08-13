@@ -6,6 +6,7 @@ const STAFF_ALLOWED = [
   '/api/admin/lost-found',
   '/api/admin/events',
   '/api/admin/pets',
+  '/api/admin/bonded',
   '/api/admin/change-password',
 ];
 

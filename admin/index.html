@@ -175,9 +175,9 @@
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
           Resend
         </a>
-        <a href="https://www.zeffy.com/en-US/login" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white admin-only">
+        <a href="https://www.shelterluv.com/login" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white admin-only">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-          Zeffy
+          ShelterLuv
         </a>
         <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mt-3 mb-1 admin-only">Dev Links</p>
         <a href="https://github.com/WCAHS/wcahs-demo" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white admin-only">
@@ -260,13 +260,22 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
       errEl.textContent = loginRes.error || 'Login failed';
       errEl.style.color = '#dc2626';
       errEl.classList.remove('hidden');
+      resetTurnstile();
     }
   } catch(loginErr) {
     errEl.textContent = 'Login error: ' + loginErr.message;
     errEl.style.color = '#dc2626';
     errEl.classList.remove('hidden');
+    resetTurnstile();
   }
 });
+
+// Turnstile tokens are single-use. Without this, a second attempt after a wrong
+// password re-submits the spent token and fails as "CAPTCHA verification failed"
+// no matter how correct the password is.
+function resetTurnstile() {
+  try { if (window.turnstile && typeof window.turnstile.reset === 'function') window.turnstile.reset(); } catch (e) {}
+}
 
 let currentRole = 'staff';
 let currentUsername = '';
@@ -297,7 +306,14 @@ function showDashboard(user) {
       `;
       nav.prepend(fosterNav);
     }
-    const validPages = ['submissions','pets','lost-found','events','faq','settings','about','users','my-account','analytics','foster-pets'];
+    // Pages a role may land on. The saved page has to be checked against this too —
+    // restoring it blindly dropped fosters on the Inbox, which they can't read.
+    const PAGES_BY_ROLE = {
+      admin:  ['submissions','pets','lost-found','events','faq','settings','about','users','my-account','analytics','foster-pets'],
+      staff:  ['submissions','pets','lost-found','events','my-account'],
+      foster: ['foster-pets','my-account']
+    };
+    const validPages = PAGES_BY_ROLE[user.role] || PAGES_BY_ROLE.staff;
     const savedPage = sessionStorage.getItem('wcahs_admin_page');
     const defaultPage = user.role === 'foster' ? 'foster-pets' : 'submissions';
     navigate(validPages.includes(savedPage) ? savedPage : defaultPage);
@@ -1417,8 +1433,22 @@ async function renderSettings(el) {
   <div class="card p-6 mb-5">
     <h2 class="font-bold text-gray-900 mb-4">Integrations</h2>
     <div class="grid grid-cols-1 gap-4 mb-4">
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Zeffy Donation Form URL</label><input id="setZeffy" value="${h(data.zeffy_url||'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://www.zeffy.com/embed/donation-form/...">
-        <p class="text-xs text-gray-400 mt-1">Used for donate buttons and sponsor links across the site</p></div>
+      <div class="border border-sage-100 rounded-xl p-4 bg-sage-50/40">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Donation Provider</label>
+        <select id="setDonationProvider" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sage-400">
+          <option value="shelterluv" ${(data.donation_provider||'shelterluv')==='shelterluv'?'selected':''}>ShelterLuv Donation Boost (active)</option>
+          <option value="zeffy" ${data.donation_provider==='zeffy'?'selected':''}>Zeffy</option>
+        </select>
+        <p class="text-xs text-gray-400 mt-1">Switches every donate button and sponsor link across the site. Takes effect immediately — no redeploy.</p>
+
+        <div class="mt-4"><label class="block text-xs font-semibold text-gray-600 mb-1">ShelterLuv Donation Boost URL</label>
+          <input id="setDonate" value="${h(data.donate_url||'https://checkout.shelterluv.com/donate/WCAH')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://checkout.shelterluv.com/donate/WCAH">
+          <p class="text-xs text-gray-400 mt-1">Donations create ShelterLuv person records and auto-code to your Funds / GL. Processing fees apply unless the donor covers them.</p></div>
+
+        <div class="mt-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Zeffy Donation Form URL <span class="font-normal text-gray-400">(kept as a fallback)</span></label>
+          <input id="setZeffy" value="${h(data.zeffy_url||'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://www.zeffy.com/embed/donation-form/...">
+          <p class="text-xs text-gray-400 mt-1">0% platform fee. Donations stay outside ShelterLuv — no person records, manual reconciliation.</p></div>
+      </div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Amazon Wish List URL <span class="font-normal text-gray-400">(optional)</span></label><input id="setWishlist" value="${h(data.wishlist_url||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="https://www.amazon.com/hz/wishlist/ls/...">
         <p class="text-xs text-gray-400 mt-1">Shows on the donate page when set. Leave blank to hide.</p></div>
     </div>
@@ -1792,6 +1822,8 @@ window.updatePopupPreview = function() {
 window.saveSettings = async function() {
   try {
   const body = {
+    donation_provider: document.getElementById('setDonationProvider').value,
+    donate_url: document.getElementById('setDonate').value,
     zeffy_url: document.getElementById('setZeffy').value,
     wishlist_url: document.getElementById('setWishlist').value,
     partners: _partners,
@@ -2048,6 +2080,8 @@ async function renderAnalytics(el) {
 let _petsTab = 'active';
 
 async function renderPets(el) {
+  // Bonded pairings drive the button label on each card, so load them first.
+  if (!window._bondedPairs) { try { await loadBondedPairs(); } catch (e) { window._bondedPairs = {}; } }
   const tabBtn = (key, label) => {
     const isActive = _petsTab === key;
     return `<button onclick="_petsTab='${key}';renderPets(document.getElementById('content'))" class="filter-tab ${isActive ? 'active' : ''}">${label}</button>`;
@@ -2120,6 +2154,14 @@ function petCard(pet, showActions) {
     }
     if (pet.is_manual) {
       actions += `<button onclick="if(confirm('Delete this pet?')) deleteManualPet('${h(pet.id)}')" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>`;
+    }
+    // Only offered when ShelterLuv flags the pet as Bonded — that attribute says a
+    // pair exists but never who with, which is the gap this fills.
+    const petAttrs = Array.isArray(pet.attributes) ? pet.attributes
+                   : (() => { try { return JSON.parse(pet.attributes || '[]'); } catch (e) { return []; } })();
+    if (petAttrs.indexOf('Bonded') !== -1) {
+      const partner = (window._bondedPairs || {})[String(pet.id)];
+      actions += `<button onclick="showBondedPicker('${h(pet.id)}','${h(pet.name)}')" class="text-xs ${partner ? 'bg-amber-200 text-amber-900' : 'bg-amber-100 text-amber-700'} px-3 py-1.5 rounded-lg hover:bg-amber-200 transition font-semibold">${partner ? 'Bonded with ' + h(partner.partner_name || '?') : 'Set bonded pair'}</button>`;
     }
     if (currentRole === 'admin') {
       const fosterNames = pet.foster_names || [];
@@ -2298,7 +2340,11 @@ window.togglePetDetail = async function(id) {
           if (updates.length > 0) {
             updatesEl.innerHTML = '<p class="text-gray-400 text-[10px] uppercase tracking-wider font-bold mt-3 mb-1">Foster Updates</p>' +
               updates.slice(0, 5).map(u => `<div class="py-1.5 border-b border-gray-50">
-                <div class="flex justify-between"><span class="font-semibold text-gray-600">${u.update_type === 'testimonial' ? '⭐ ' : ''}${h(u.content || '').substring(0, 100)}</span></div>
+                <div class="flex justify-between gap-2">
+                  <span class="font-semibold text-gray-600">${u.update_type === 'testimonial' ? '⭐ ' : ''}${h(u.content || '').substring(0, 100)}</span>
+                  <button onclick="event.stopPropagation();deleteFosterUpdate(${u.id})" title="Remove from the public page" class="text-[10px] text-red-400 hover:text-red-600 hover:underline shrink-0">Remove</button>
+                </div>
+                ${u.photo_url ? '<img src="' + h(u.photo_url) + '" class="w-20 h-20 object-cover rounded-lg mt-1 border border-sage-100">' : ''}
                 <span class="text-[10px] text-gray-300">${localTime(u.created_at)}</span>
               </div>`).join('');
           }
@@ -2603,6 +2649,54 @@ window.deleteManualPet = async function(id) {
 // Sync status is now shown as a header indicator in renderPets()
 
 // ── Foster Assignment (Admin) ──
+window.showBondedPicker = async function(animalId, petName) {
+  const data = await api('/pets');
+  const all = ((data && data.animals) || []).filter(p => String(p.id) !== String(animalId));
+  const pairs = await api('/admin/bonded');
+  const current = ((pairs && pairs.pairs) || []).find(p => String(p.animal_id) === String(animalId));
+
+  const overlay = document.createElement('div');
+  overlay.id = 'bondedOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  const opts = all.map(p => `<option value="${h(p.id)}" ${current && String(current.partner_id) === String(p.id) ? 'selected' : ''}>${h(p.name || 'Unnamed')}${p.breed ? ' \u2014 ' + h(p.breed) : ''}</option>`).join('');
+
+  overlay.innerHTML = `<div class="bg-white rounded-2xl shadow-lg border border-sage-100 w-full max-w-sm overflow-hidden">
+    <div class="p-5 border-b border-sage-100">
+      <h3 class="font-bold text-gray-900">Bonded pair for ${h(petName)}</h3>
+      <p class="text-xs text-gray-500 mt-1">ShelterLuv marks ${h(petName)} as bonded but never says with whom. Pick the partner so adopters can see who they come with.</p>
+    </div>
+    <div class="p-5">
+      <select id="bondedPartnerSel" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm bg-white mb-4">
+        <option value="">\u2014 No partner set \u2014</option>${opts}
+      </select>
+      <div class="flex gap-2">
+        <button onclick="saveBondedPair('${h(animalId)}')" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2 rounded-xl flex-1">Save</button>
+        <button onclick="document.getElementById('bondedOverlay').remove()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm px-4 py-2 rounded-xl">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+};
+
+window.saveBondedPair = async function(animalId) {
+  const sel = document.getElementById('bondedPartnerSel');
+  const res = await api('/admin/bonded', { method: 'POST', body: { animal_id: animalId, partner_id: sel.value || null } });
+  if (res && res.error) { alert(res.error); return; }
+  const ov = document.getElementById('bondedOverlay');
+  if (ov) ov.remove();
+  await loadBondedPairs();
+  navigate('pets');
+};
+
+window.loadBondedPairs = async function() {
+  const res = await api('/admin/bonded');
+  const map = {};
+  ((res && res.pairs) || []).forEach(p => { map[String(p.animal_id)] = p; });
+  window._bondedPairs = map;
+};
+
 window.showAssignFoster = async function(animalId, petName) {
   // Fetch foster users
   const users = await api('/admin/users');
@@ -2693,7 +2787,7 @@ async function renderFosterPets(el) {
 
   pets.forEach((pet, idx) => {
     const photoHtml = pet.cover_photo
-      ? `<img src="${h(pet.cover_photo)}" class="w-full h-52 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
+      ? `<img src="${h(pet.cover_photo)}" class="w-full h-40 sm:h-44 object-cover rounded-t-2xl" onerror="this.style.display='none'">`
       : `<div class="w-full h-40 bg-sage-50 rounded-t-2xl flex items-center justify-center"><svg class="w-12 h-12 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`;
 
     const statusColor = pet.status === 'Available' ? 'bg-sage-100 text-sage-700' : 'bg-amber-50 text-amber-700';
@@ -2718,7 +2812,10 @@ async function renderFosterPets(el) {
         timelineHtml += `<div class="p-3 rounded-xl border ${bgColor}">
           <div class="flex items-center justify-between mb-1">
             ${typeIcon}
-            <span class="text-[11px] text-gray-400">${localTime(u.created_at)}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] text-gray-400">${localTime(u.created_at)}</span>
+              <button onclick="deleteFosterUpdate(${u.id})" title="Remove — this is public" class="text-[11px] text-red-400 hover:text-red-600 hover:underline">Remove</button>
+            </div>
           </div>
           ${u.content ? '<p class="text-sm text-gray-700">' + h(u.content) + '</p>' : ''}
           ${photoBlock}
@@ -2727,7 +2824,7 @@ async function renderFosterPets(el) {
       timelineHtml += '</div>';
     }
 
-    html += `<div class="card overflow-hidden mb-5">
+    html += `<div class="card overflow-hidden mb-5 max-w-xl">
       ${photoHtml}
       <div class="p-5">
         <div class="flex items-start justify-between mb-2">
@@ -2741,8 +2838,7 @@ async function renderFosterPets(el) {
         ${pet.description ? '<p class="text-sm text-gray-600 mt-2 mb-3">' + h(pet.description) + '</p>' : ''}
 
         <div class="flex flex-wrap gap-2 mt-4">
-          <button onclick="showFosterNoteForm('${h(pet.animal_id)}','note')" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">Add Note</button>
-          <button onclick="showFosterPhotoUpload('${h(pet.animal_id)}')" class="bg-sage-100 hover:bg-sage-200 text-sage-800 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Add Photo</button>
+          <button onclick="showFosterPhotoUpload('${h(pet.animal_id)}')" class="bg-sage-100 hover:bg-sage-200 text-sage-800 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Add Photo (public)</button>
           <button onclick="showFosterNoteForm('${h(pet.animal_id)}','testimonial')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Write Testimonial</button>
         </div>
         <div id="fosterForm_${idx}"></div>
@@ -2757,6 +2853,16 @@ async function renderFosterPets(el) {
 
   el.innerHTML = html;
 }
+
+/* Testimonials and photos are live on the public pet page the moment they're
+ * saved, so both fosters and admins need to be able to pull one back down.
+ * The API enforces who may delete what. */
+window.deleteFosterUpdate = async function(id) {
+  if (!confirm('Remove this? It will disappear from the public pet page immediately.')) return;
+  const res = await api('/admin/foster-pets?id=' + encodeURIComponent(id), { method: 'DELETE' });
+  if (res && res.error) { alert(res.error); return; }
+  navigate(currentRole === 'foster' ? 'foster-pets' : 'pets');
+};
 
 window.showFosterNoteForm = function(animalId, updateType) {
   // Find the form container for this pet

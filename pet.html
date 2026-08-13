@@ -115,65 +115,77 @@
 
   <!-- Pet Detail (hidden until loaded) -->
   <section id="petDetail" class="max-w-6xl mx-auto px-4 pb-20 hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+    <!-- Two independent columns on desktop so neither dead-ends into whitespace.
+         The wrappers go display:contents below lg, dropping their children into the
+         single-column grid directly so the order-* classes control mobile stacking. -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
 
-      <!-- Photo Gallery -->
-      <div>
-        <div class="rounded-2xl overflow-hidden shadow-lg mb-4">
-          <img id="mainPhoto" src="" alt="" class="w-full aspect-[4/3] md:aspect-auto md:h-[440px] object-cover">
+      <!-- Left column: photos, then About -->
+      <div class="contents lg:block lg:space-y-8">
+
+        <!-- Photo Gallery -->
+        <div class="order-1">
+          <div class="rounded-2xl overflow-hidden shadow-lg mb-4">
+            <img id="mainPhoto" src="" alt="" title="Click to view full photo" onclick="openLightbox()" class="w-full aspect-[4/3] md:aspect-auto md:h-[440px] object-cover cursor-zoom-in">
+          </div>
+          <div id="thumbStrip" class="grid gap-3"></div>
         </div>
-        <div id="thumbStrip" class="grid gap-3"></div>
-      </div>
 
-      <!-- Pet Info -->
-      <div>
-        <div class="flex items-start justify-between mb-2">
-          <h1 id="petName" class="font-display text-4xl font-bold text-gray-900"></h1>
+        <!-- Foster note — always rendered, with an empty state, so the section
+             doesn't pop in and out between pets. -->
+        <div id="fosterNoteSection" class="order-3 bg-white rounded-2xl p-8 shadow-sm">
+          <h2 class="font-display text-2xl font-bold text-gray-900 mb-4"><span id="fosterNoteHeading"></span></h2>
+          <div id="fosterNoteBody" class="text-gray-600 leading-relaxed"></div>
         </div>
-        <p id="petSummary" class="text-gray-500 text-lg mb-6"></p>
 
-        <!-- Stats -->
-        <div id="statsSection" class="mb-8 space-y-4"></div>
-
-        <!-- Apply Button -->
-        <a id="applyBtn" href="contact.html" target="_blank" class="block text-center bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg mb-4"></a>
-        <a id="sponsorBtn" href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581" target="_blank" class="block text-center border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold py-3 rounded-xl transition text-sm"></a>
-      </div>
-
-    </div>
-
-    <!-- Description + Sidebar -->
-    <div class="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-      <div class="lg:col-span-2 space-y-8">
-        <!-- About -->
-        <div id="aboutSection" class="bg-white rounded-2xl p-8 shadow-sm">
+        <!-- About (Videos/Siblings get injected after this) -->
+        <div id="aboutSection" class="order-3 bg-white rounded-2xl p-8 shadow-sm">
           <h2 class="font-display text-2xl font-bold text-gray-900 mb-4">About <span class="about-name"></span></h2>
           <div id="aboutText" class="text-gray-600 leading-relaxed space-y-4"></div>
         </div>
 
       </div>
 
-      <!-- Sidebar -->
-      <div class="space-y-6">
+      <!-- Right column: info, then adoption details + share -->
+      <div class="contents lg:block lg:space-y-8">
 
-        <!-- Adoption Details -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 class="font-bold text-gray-900 mb-4">Adoption Details</h3>
-          <ul id="adoptionDetails" class="text-sm text-gray-600 space-y-3"></ul>
+        <!-- Pet Info -->
+        <div class="order-2">
+          <div class="flex items-start justify-between mb-2">
+            <h1 id="petName" class="font-display text-4xl font-bold text-gray-900"></h1>
+          </div>
+          <p id="petSummary" class="text-gray-500 text-lg mb-6"></p>
+
+          <!-- Stats -->
+          <div id="statsSection" class="mb-8 space-y-4"></div>
+
+          <!-- Apply Button -->
+          <a id="applyBtn" href="contact.html" target="_blank" class="block text-center bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md text-lg mb-4"></a>
+          <a id="sponsorBtn" data-donate href="https://checkout.shelterluv.com/donate/WCAH" target="_blank" class="block text-center border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold py-3 rounded-xl transition text-sm"></a>
         </div>
 
-        <!-- Share -->
-        <div class="bg-sage-50 rounded-2xl p-6 text-center">
-          <h3 class="font-bold text-gray-900 mb-2">Help <span class="share-name"></span> Find a Home</h3>
-          <p class="text-gray-500 text-sm mb-4">Share this profile with someone who might be a match</p>
-          <div class="flex justify-center gap-3">
-            <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!')" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-full transition">Copy Link</button>
-            <a href="https://facebook.com/WasecaCAHS/" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-full transition">Facebook</a>
+        <div class="order-4 space-y-6">
+
+          <!-- Adoption Details -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <h3 class="font-bold text-gray-900 mb-4">Adoption Details</h3>
+            <ul id="adoptionDetails" class="text-sm text-gray-600 space-y-3"></ul>
           </div>
+
+          <!-- Share -->
+          <div class="bg-sage-50 rounded-2xl p-6 text-center">
+            <h3 class="font-bold text-gray-900 mb-2">Help <span class="share-name"></span> Find a Home</h3>
+            <p class="text-gray-500 text-sm mb-4">Share this profile with someone who might be a match</p>
+            <div class="flex justify-center gap-3">
+              <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!')" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-full transition">Copy Link</button>
+              <a href="https://facebook.com/WasecaCAHS/" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-2 rounded-full transition">Facebook</a>
+            </div>
+          </div>
+
         </div>
 
       </div>
+
     </div>
   </section>
 
@@ -200,6 +212,7 @@
           <li><a href="faq.html" class="hover:text-white transition">FAQ</a></li>
           <li><a href="events.html" class="hover:text-white transition">Events</a></li>
           <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
+          <li><a href="forms.html" class="hover:text-white transition">Forms</a></li>
           <li><a href="faq.html#resources" class="hover:text-white transition">Resources</a></li>
         </ul>
       </div>
@@ -215,6 +228,7 @@
     <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
       &copy; 2026 Waseca County Animal Humane Society. All rights reserved.
       <span style="display:block; margin-top:6px; opacity:0.6;">Website designed by Riley Poe</span>
+      <span style="display:block; margin-top:10px; opacity:0.45; font-size:11px; font-style:italic; line-height:1.7;">In loving memory of Alice, our &ldquo;Pretty Kitty.&rdquo;<br>May heaven be filled with lots of pets and catnip. Miss you dearly, sweet kitty &hearts;</span>
     </div>
   </footer>
 
@@ -226,8 +240,54 @@
       window.location.href = 'pets.html';
     }
 
+    // Photo lightbox — the card image is object-cover and crops, so clicking opens
+    // the full uncropped photo (object-contain) with keyboard + arrow navigation.
+    var _lbPhotos = [], _lbIndex = 0;
+
+    function openLightbox() {
+      if (!_lbPhotos.length) return;
+      var ov = document.createElement('div');
+      ov.id = 'lightbox';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;';
+      ov.innerHTML =
+        '<button aria-label="Close" onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;z-index:2;background:rgba(255,255,255,0.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;">&#10005;</button>' +
+        '<button aria-label="Previous photo" onclick="lbStep(-1)" class="lb-nav" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:2;background:rgba(255,255,255,0.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;">&#8249;</button>' +
+        '<button aria-label="Next photo" onclick="lbStep(1)" class="lb-nav" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:2;background:rgba(255,255,255,0.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;">&#8250;</button>' +
+        '<img id="lbImg" src="" alt="" style="max-width:94vw;max-height:88vh;object-fit:contain;border-radius:8px;">' +
+        '<div id="lbCount" style="position:absolute;bottom:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.75);font-size:13px;"></div>';
+      ov.addEventListener('click', function(e) { if (e.target === ov) closeLightbox(); });
+      document.body.appendChild(ov);
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', _lbKeys);
+      lbRender();
+    }
+    function lbRender() {
+      var img = document.getElementById('lbImg');
+      if (!img) return;
+      img.src = _lbPhotos[_lbIndex];
+      document.getElementById('lbCount').textContent = _lbPhotos.length > 1 ? (_lbIndex + 1) + ' of ' + _lbPhotos.length : '';
+      var navs = document.querySelectorAll('#lightbox .lb-nav');
+      for (var i = 0; i < navs.length; i++) navs[i].style.display = _lbPhotos.length > 1 ? 'block' : 'none';
+    }
+    function lbStep(d) {
+      _lbIndex = (_lbIndex + d + _lbPhotos.length) % _lbPhotos.length;
+      lbRender();
+    }
+    function closeLightbox() {
+      var ov = document.getElementById('lightbox');
+      if (ov) ov.remove();
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', _lbKeys);
+    }
+    function _lbKeys(e) {
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') lbStep(-1);
+      else if (e.key === 'ArrowRight') lbStep(1);
+    }
+
     function setPhoto(btn, url) {
       document.getElementById('mainPhoto').src = url;
+      _lbIndex = Math.max(0, _lbPhotos.indexOf(url));
       document.querySelectorAll('.thumb-btn').forEach(b => {
         b.classList.remove('active');
         b.classList.add('opacity-60');
@@ -275,6 +335,9 @@
       // Main photo
       document.getElementById('mainPhoto').src = animal.cover_photo || 'images/placeholder.svg';
       document.getElementById('mainPhoto').alt = animal.name;
+      _lbPhotos = (animal.photos && animal.photos.length) ? animal.photos.slice()
+                : (animal.cover_photo ? [animal.cover_photo] : []);
+      _lbIndex = 0;
 
       // Thumbnail strip — photos + video thumbnails
       const strip = document.getElementById('thumbStrip');
@@ -404,6 +467,62 @@
         aboutText.innerHTML = '<p class="text-gray-400 italic">More details about ' + animal.name + ' coming soon. Contact us to learn more!</p>';
       }
 
+
+      // Foster note
+      (function() {
+        var head = document.getElementById('fosterNoteHeading');
+        var body = document.getElementById('fosterNoteBody');
+        if (!head || !body) return;
+        var tst  = animal.foster_testimonials || [];
+        var note = (animal.foster_note || '').trim();
+        var who  = (animal.foster_note_by || animal.foster_name || '').trim();
+        head.innerHTML = who ? 'A Note from ' + (animal.name || '') + '&rsquo;s Foster' : 'A Note from Their Foster';
+        if (note) {
+          var html = '<p class="italic">&ldquo;' + note.replace(/[<>]/g, '') + '&rdquo;</p>' +
+                     (who ? '<p class="text-sm text-gray-400 mt-3">&mdash; ' + who + ', foster</p>' : '');
+          // Any further testimonials stack underneath the most recent one.
+          if (tst.length > 1) {
+            html += '<div class="mt-5 pt-5 border-t border-gray-100 space-y-4">';
+            for (var ti = 1; ti < tst.length; ti++) {
+              html += '<div><p class="italic">&ldquo;' + String(tst[ti].content || '').replace(/[<>]/g, '') + '&rdquo;</p>' +
+                      (tst[ti].by ? '<p class="text-sm text-gray-400 mt-2">&mdash; ' + tst[ti].by + '</p>' : '') + '</div>';
+            }
+            html += '</div>';
+          }
+          body.innerHTML = html;
+        } else {
+          body.innerHTML = '<p class="text-gray-400 italic">' + (who ? '<p class="text-sm text-gray-400 mt-3">&mdash; ' + who + ', foster</p>' : '');
+        } else {
+          body.innerHTML = '<p class="text-gray-400 italic">' + (who ? 'Their foster hasn&rsquo;t written a note yet &mdash; check back soon, or get in touch and we&rsquo;ll tell you all about them.' : 'This pet isn&rsquo;t in a foster home right now, so there&rsquo;s no foster note yet. Our staff can tell you more &mdash; just get in touch.') + '</p>';
+        }
+      })();
+
+
+      // Bonded partner card, injected right after the foster note so it sits with
+      // the story about the pet rather than down in the stats.
+      if (animal.bonded_partner) {
+        var bp = animal.bonded_partner;
+        var host = document.getElementById('fosterNoteSection');
+        if (host) {
+          host.insertAdjacentHTML('afterend',
+            '<div class="order-3 bg-amber-50 border-2 border-amber-200 rounded-2xl p-6">' +
+              '<div class="flex items-center gap-2 mb-3">' +
+                '<svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-amber-600"><path d="M12 21C12 21 4 14.5 4 9.5 4 6.5 6.5 4 9 4c1.74 0 2.73.72 3 1.28C12.27 4.72 13.26 4 15 4c2.5 0 5 2.5 5 5.5C20 14.5 12 21 12 21z"/></svg>' +
+                '<h2 class="font-display text-xl font-bold text-gray-900">Bonded Pair</h2>' +
+              '</div>' +
+              '<p class="text-gray-600 text-sm mb-4">' + (animal.name || '') + ' and ' + (bp.name || '') + ' must be adopted together.</p>' +
+              '<a href="pet.html?id=' + bp.id + '" class="flex items-center gap-4 bg-white rounded-xl p-3 hover:shadow-md transition">' +
+                '<img src="' + (bp.cover_photo || 'images/placeholder.svg') + '" alt="' + (bp.name || '') + '" class="w-16 h-16 rounded-lg object-cover">' +
+                '<div class="min-w-0">' +
+                  '<p class="font-bold text-gray-900">' + (bp.name || '') + '</p>' +
+                  '<p class="text-gray-500 text-xs">' + [bp.age_display, bp.sex, bp.breed].filter(Boolean).join(' &bull; ') + '</p>' +
+                  '<p class="text-amber-700 text-xs font-semibold mt-1">Meet ' + (bp.name || '') + ' &rarr;</p>' +
+                '</div>' +
+              '</a>' +
+            '</div>');
+        }
+      }
+
       // Videos section (embedded)
       if (videos.length > 0) {
         const videoHtml = videos.map(v => {
@@ -414,7 +533,7 @@
         }).join('');
         if (videoHtml) {
           const aboutSection = document.getElementById('aboutSection');
-          aboutSection.insertAdjacentHTML('afterend', `<div class="bg-white rounded-2xl p-8 shadow-sm">
+          aboutSection.insertAdjacentHTML('afterend', `<div class="order-3 bg-white rounded-2xl p-8 shadow-sm">
             <h2 class="font-display text-2xl font-bold text-gray-900 mb-4">Videos</h2>
             <div class="space-y-4">${videoHtml}</div>
           </div>`);
@@ -432,7 +551,7 @@
               <p class="text-gray-500 text-xs">${s.age_display || ''} ${s.sex || ''} ${s.breed || ''}</p>
             </div>
           </a>`).join('');
-        aboutSection.insertAdjacentHTML('afterend', `<div class="bg-white rounded-2xl p-8 shadow-sm">
+        aboutSection.insertAdjacentHTML('afterend', `<div class="order-3 bg-white rounded-2xl p-8 shadow-sm">
           <h2 class="font-display text-xl font-bold text-gray-900 mb-4">Siblings</h2>
           <div class="space-y-2">${sibHtml}</div>
         </div>`);

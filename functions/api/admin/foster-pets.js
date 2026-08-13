@@ -8,6 +8,9 @@ async function runMigrations(db) {
     assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, animal_id)
   )`).run();
+  // public_note: one short note per foster/pet shown on the public pet page.
+  // Separate from foster_updates, which is the internal running timeline.
+  try { await db.prepare('ALTER TABLE foster_assignments ADD COLUMN public_note TEXT').run(); } catch (e) {}
   await db.prepare(`CREATE TABLE IF NOT EXISTS foster_updates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     assignment_id INTEGER NOT NULL,
@@ -27,7 +30,7 @@ export async function onRequestGet(context) {
 
   // Get pets assigned to this foster user
   const { results: assignments } = await db.prepare(
-    `SELECT fa.id as assignment_id, fa.animal_id, fa.assigned_at,
+    `SELECT fa.id as assignment_id, fa.animal_id, fa.assigned_at, fa.public_note,
             a.name, a.type, a.breed, a.sex, a.age_display, a.cover_photo, a.status, a.description
      FROM foster_assignments fa
      LEFT JOIN animals a ON fa.animal_id = a.id
@@ -73,6 +76,14 @@ export async function onRequestPost(context) {
 
   if (!assignment) return error('This pet is not assigned to you', 403);
 
+  // Saving the public note replaces the single note rather than appending to the
+  // timeline, so it's handled before the normal update path.
+  if (body.public_note !== undefined) {
+    await db.prepare('UPDATE foster_assignments SET public_note = ? WHERE id = ?')
+      .bind(String(body.public_note).slice(0, 600), assignment.id).run();
+    return json({ ok: true, public_note: String(body.public_note).slice(0, 600) });
+  }
+
   const updateType = body.update_type || 'note';
   const content = body.content || '';
   const photoUrl = body.photo_url || '';
@@ -85,4 +96,27 @@ export async function onRequestPost(context) {
   ).bind(assignment.id, user.user_id, body.animal_id, updateType, content, photoUrl).run();
 
   return json({ ok: true });
+}
+
+/* Delete a foster update. Fosters may remove their own; admins may remove any.
+ * Testimonials and photos are publicly visible, so staff need a way to take
+ * something down without asking the foster to do it. */
+export async function onRequestDelete(context) {
+  const db = context.env.DB;
+  const user = context.data.user;
+  await runMigrations(db);
+
+  const url = new URL(context.request.url);
+  const id = url.searchParams.get('id');
+  if (!id) return error('id is required');
+
+  const row = await db.prepare('SELECT id, user_id FROM foster_updates WHERE id = ?').bind(id).first();
+  if (!row) return error('Update not found', 404);
+
+  if (user.role !== 'admin' && row.user_id !== user.user_id) {
+    return error('You can only remove your own updates', 403);
+  }
+
+  await db.prepare('DELETE FROM foster_updates WHERE id = ?').bind(id).run();
+  return json({ ok: true, deleted: Number(id) });
 }

@@ -284,54 +284,11 @@
         Somos 100% financiados por la comunidad. Tu donación va directamente a atención veterinaria, alimento, suministros y a darles a los animales la segunda oportunidad que merecen.
       </p>
 
-      <!-- Tabs: One-time / Monthly -->
-      <div class="flex justify-center gap-2 mb-6">
-        <button onclick="document.getElementById('oneTime').classList.remove('hidden');document.getElementById('monthly').classList.add('hidden');this.classList.add('bg-white/30','border-white/50');this.nextElementSibling.classList.remove('bg-white/30','border-white/50')" class="text-white font-semibold text-sm px-5 py-2 rounded-full border border-white/30 transition bg-white/30 border-white/50">Única Vez</button>
-        <button onclick="document.getElementById('monthly').classList.remove('hidden');document.getElementById('oneTime').classList.add('hidden');this.classList.add('bg-white/30','border-white/50');this.previousElementSibling.classList.remove('bg-white/30','border-white/50')" class="text-white font-semibold text-sm px-5 py-2 rounded-full border border-white/30 transition">Mensual</button>
-      </div>
 
-      <div id="oneTime" class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-xl mx-auto mb-10">
-        <button onclick="selectAmount(this, 10)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$10</button>
-        <button onclick="selectAmount(this, 25)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$25</button>
-        <button onclick="selectAmount(this, 50)" class="donate-amt bg-white/30 hover:bg-white/40 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border-2 border-white/50 ring-2 ring-white/20 amt-selected">$50</button>
-        <button onclick="selectAmount(this, null)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">Otro</button>
-      </div>
-
-      <div id="monthly" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 max-w-xl mx-auto mb-10">
-        <button onclick="selectAmount(this, 10)" class="donate-amt bg-white/30 hover:bg-white/40 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border-2 border-white/50 ring-2 ring-white/20 amt-selected">$10<span class="block text-xs font-normal opacity-80">/mes</span></button>
-        <button onclick="selectAmount(this, 25)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$25<span class="block text-xs font-normal opacity-80">/mes</span></button>
-        <button onclick="selectAmount(this, 50)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">$50<span class="block text-xs font-normal opacity-80">/mes</span></button>
-        <button onclick="selectAmount(this, null)" class="donate-amt bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-xl transition text-lg border border-white/20">Otro<span class="block text-xs font-normal opacity-80">/mes</span></button>
-      </div>
-
-      <button onclick="openZeffy()" class="inline-block bg-white text-amber-700 font-bold px-10 py-4 rounded-full text-lg transition shadow-lg hover:shadow-xl hover:bg-amber-50 cursor-pointer">
+      <button onclick="openDonate()" class="inline-block bg-white text-amber-700 font-bold px-10 py-4 rounded-full text-lg transition shadow-lg hover:shadow-xl hover:bg-amber-50 cursor-pointer">
         Donar Ahora
       </button>
-      <script>
-        var _selectedAmount = 50;
-        function selectAmount(btn, amount) {
-          _selectedAmount = amount;
-          btn.closest('.grid').querySelectorAll('.donate-amt').forEach(function(b) {
-            b.classList.remove('amt-selected', 'border-2', 'border-white/50', 'ring-2', 'ring-white/20');
-            b.classList.add('border', 'border-white/20');
-          });
-          btn.classList.remove('border', 'border-white/20');
-          btn.classList.add('amt-selected', 'border-2', 'border-white/50', 'ring-2', 'ring-white/20');
-        }
-        function openZeffy() {
-          var zeffyUrl = (window._wcahsSettings && window._wcahsSettings.zeffy_url) || 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581';
-          var base = zeffyUrl + '?modal=true';
-          if (_selectedAmount) base += '&amount=' + _selectedAmount;
-          var overlay = document.createElement('div');
-          overlay.id = 'zeffyOverlay';
-          overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;';
-          overlay.innerHTML = '<div style="position:relative;width:100%;max-width:500px;height:90vh;max-height:700px;background:#fff;border-radius:16px;overflow:hidden;">' +
-            '<button onclick="document.getElementById(\'zeffyOverlay\').remove()" style="position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,0.5);color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#10005;</button>' +
-            '<iframe src="' + base + '" style="width:100%;height:100%;border:none;" allowpaymentrequest></iframe></div>';
-          overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-          document.body.appendChild(overlay);
-        }
-      </script>
+
 
       <!-- More Ways to Give -->
       <div class="mt-16 pt-10 border-t border-white/20">
@@ -350,14 +307,14 @@
             <div class="text-3xl mb-3">🐾</div>
             <h4 class="font-bold text-white text-sm mb-2">Apadrina el Cuidado de una Mascota</h4>
             <p class="text-amber-100 text-xs leading-relaxed mb-3">¿No estás listo para adoptar? Ayuda a cubrir alimento, atención veterinaria y suministros para una mascota que espera su hogar definitivo.</p>
-            <a onclick="openZeffy()" class="text-xs font-bold text-white underline underline-offset-2 cursor-pointer">Apadrinar Ahora &rarr;</a>
+            <a onclick="openDonate()" class="text-xs font-bold text-white underline underline-offset-2 cursor-pointer">Apadrinar Ahora &rarr;</a>
           </div>
 
           <div class="bg-white/15 backdrop-blur rounded-xl p-6 border border-white/20">
             <div class="text-3xl mb-3">🕊️</div>
             <h4 class="font-bold text-white text-sm mb-2">Donaciones en Memoria u Honor</h4>
             <p class="text-amber-100 text-xs leading-relaxed mb-3">Honra a un ser querido o a una mascota amada con una donación en su nombre. Cada aporte ayuda a salvar una vida.</p>
-            <a onclick="openZeffy()" class="text-xs font-bold text-white underline underline-offset-2 cursor-pointer">Donar en Su Nombre &rarr;</a>
+            <a onclick="openDonate()" class="text-xs font-bold text-white underline underline-offset-2 cursor-pointer">Donar en Su Nombre &rarr;</a>
           </div>
 
           <div class="bg-white/15 backdrop-blur rounded-xl p-6 border border-white/20">
@@ -387,6 +344,7 @@
           <li><a href="/es/about" class="hover:text-white transition">Sobre Nosotros</a></li>
           <li><a href="/es/faq" class="hover:text-white transition">Preguntas Frecuentes</a></li>
           <li><a href="/es/contact" class="hover:text-white transition">Contacto</a></li>
+          <li><a href="/es/forms" class="hover:text-white transition">Formularios</a></li>
           <li><a href="/es/faq#resources" class="hover:text-white transition">Recursos</a></li>
           <li><a href="#donate" class="hover:text-white transition">Donar</a></li>
         </ul>
@@ -403,10 +361,10 @@
     <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
       &copy; 2026 Waseca County Animal Humane Society. Todos los derechos reservados.
       <span style="display:block; margin-top:6px; opacity:0.6;">Sitio web diseñado por Riley Poe</span>
+      <span style="display:block; margin-top:10px; opacity:0.45; font-size:11px; font-style:italic; line-height:1.7;">En memoria de Alice, nuestra &laquo;Gatita Bonita&raquo;.<br>Que el cielo est&eacute; lleno de caricias y hierba gatera. Te extra&ntilde;amos mucho, dulce gatita &hearts;</span>
     </div>
   </footer>
 
-<script src="https://zeffy-scripts.s3.ca-central-1.amazonaws.com/embed-form-script.min.js"></script>
 <script src="/site-data.js"></script>
 <script src="/loader.js"></script>
 <script>

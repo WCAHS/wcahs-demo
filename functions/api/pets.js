@@ -33,6 +33,52 @@ export async function onRequestGet(context) {
       parsed.events = events || [];
     } catch(e) { parsed.events = []; }
 
+    // Foster-contributed content. Testimonials are the public voice of the foster;
+    // their photos are appended to the ShelterLuv gallery so adopters see the pet
+    // at home, not just in a kennel. Both are live the moment the foster saves.
+    try {
+      const { results: fu } = await context.env.DB.prepare(
+        `SELECT fu.id, fu.update_type, fu.content, fu.photo_url, fu.created_at, u.name AS foster_name
+           FROM foster_updates fu
+           LEFT JOIN users u ON u.id = fu.user_id
+          WHERE fu.animal_id = ?
+          ORDER BY fu.created_at DESC`
+      ).bind(id).all();
+
+      const rows = fu || [];
+      const testimonials = rows.filter(r => r.update_type === 'testimonial' && (r.content || '').trim());
+
+      parsed.foster_testimonials = testimonials.map(r => ({
+        id: r.id, content: r.content, by: r.foster_name || null, created_at: r.created_at
+      }));
+      // Back-compat with the note section on the pet page.
+      parsed.foster_note = testimonials.length ? testimonials[0].content : null;
+      parsed.foster_note_by = testimonials.length ? (testimonials[0].foster_name || null) : null;
+
+      const fosterPhotos = rows.map(r => r.photo_url).filter(Boolean);
+      if (fosterPhotos.length) {
+        const seen = new Set(parsed.photos || []);
+        parsed.foster_photos = fosterPhotos.filter(u => !seen.has(u));
+        parsed.photos = (parsed.photos || []).concat(parsed.foster_photos);
+      } else {
+        parsed.foster_photos = [];
+      }
+    } catch (e) {
+      parsed.foster_testimonials = []; parsed.foster_photos = [];
+      parsed.foster_note = null; parsed.foster_note_by = null;
+    }
+
+
+    // Bonded partner — ShelterLuv only says THAT a pet is bonded, staff record who with.
+    try {
+      const bp = await context.env.DB.prepare(
+        `SELECT a.id, a.name, a.cover_photo, a.age_display, a.sex, a.breed, a.status, a.hidden
+           FROM bonded_pairs bp JOIN animals a ON a.id = bp.partner_id
+          WHERE bp.animal_id = ?`
+      ).bind(id).first();
+      parsed.bonded_partner = (bp && bp.hidden !== 1 && !INACTIVE_STATUSES.includes(bp.status)) ? bp : null;
+    } catch (e) { parsed.bonded_partner = null; }
+
     // Include litter siblings if part of a litter group
     if (animal.litter_group_id) {
       try {

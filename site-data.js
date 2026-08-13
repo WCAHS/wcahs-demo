@@ -69,7 +69,47 @@ function displayPhone(phone) {
 
     // Store globally for page-specific use
     window._wcahsSettings = s;
+
+    // Donations: ShelterLuv Donation Boost by default, Zeffy kept as a switchable
+    // alternative. Admin > Site Settings > Integrations picks the provider, so
+    // switching back is a settings change and not a redeploy.
+    wcahsApplyDonateLinks();
   }
+
+  // Resolve the active donation URL from settings.
+  window.wcahsDonateUrl = function() {
+    var s = window._wcahsSettings || {};
+    if (s.donation_provider === 'zeffy') {
+      var z = s.zeffy_url || 'https://www.zeffy.com/embed/donation-form/donate-to-change-lives-16581';
+      return z + (z.indexOf('?') === -1 ? '?' : '&') + 'modal=true';
+    }
+    return s.donate_url || 'https://checkout.shelterluv.com/donate/WCAH';
+  };
+
+  // Any <a data-donate> on the page points at whichever provider is active.
+  function wcahsApplyDonateLinks() {
+    var url = window.wcahsDonateUrl();
+    var links = document.querySelectorAll('a[data-donate]');
+    for (var i = 0; i < links.length; i++) links[i].href = url;
+  }
+  window.wcahsApplyDonateLinks = wcahsApplyDonateLinks;
+
+  // Shared donate modal — both providers allow framing, so donors stay on wcahs.org.
+  window.openDonate = function() {
+    var existing = document.getElementById('donateOverlay');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'donateOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;';
+    overlay.innerHTML = '<div style="position:relative;width:100%;max-width:560px;height:92vh;max-height:820px;background:#fff;border-radius:16px;overflow:hidden;">' +
+      '<button aria-label="Close" onclick="document.getElementById(\'donateOverlay\').remove()" style="position:absolute;top:10px;right:10px;z-index:10;background:rgba(0,0,0,0.5);color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#10005;</button>' +
+      '<iframe src="' + window.wcahsDonateUrl() + '" style="width:100%;height:100%;border:none;" allow="payment"></iframe></div>';
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    document.addEventListener('keydown', function esc(e) {
+      if (e.key === 'Escape') { var o = document.getElementById('donateOverlay'); if (o) o.remove(); document.removeEventListener('keydown', esc); }
+    });
+    document.body.appendChild(overlay);
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadSettings);

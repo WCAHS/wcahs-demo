@@ -24,10 +24,18 @@ jobs:
           SL_URL="https://new.shelterluv.com/api/v1"
 
           d1_query() {
-            curl -sf -X POST "$D1_URL" \
+            local response http_code body
+            response=$(curl -s -w "\n%{http_code}" -X POST "$D1_URL" \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"sql\": $(echo "$1" | jq -Rs .)}"
+              -d "{\"sql\": $(echo "$1" | jq -Rs .)}")
+            http_code=$(echo "$response" | tail -1)
+            body=$(echo "$response" | sed '$d')
+            if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+              echo "D1 API error (HTTP $http_code): $body" >&2
+              return 1
+            fi
+            echo "$body"
           }
 
           # Run migrations (idempotent)
@@ -41,8 +49,13 @@ jobs:
           ALL_ANIMALS="[]"
           OFFSET=0
           while true; do
-            RESPONSE=$(curl -sf -H "Authorization: Bearer $SHELTERLUV_API_KEY" \
-              "$SL_URL/animals?limit=100&offset=$OFFSET")
+            RESPONSE=""
+            for ATTEMPT in 1 2 3; do
+              RESPONSE=$(curl -sf -H "Authorization: Bearer $SHELTERLUV_API_KEY" \
+                "$SL_URL/animals?limit=100&offset=$OFFSET") && break
+              echo "  Retry $ATTEMPT..." >&2
+              sleep 2
+            done
             PAGE=$(echo "$RESPONSE" | jq '.animals // []')
             PAGE_COUNT=$(echo "$PAGE" | jq 'length')
             ALL_ANIMALS=$(echo "$ALL_ANIMALS $PAGE" | jq -s '.[0] + .[1]')
@@ -60,11 +73,17 @@ jobs:
             | jq -r '.result[0].results[]?.id // empty' | sed "s/.*/'&'/" | tr '\n' ',' | sed 's/,$//')
           echo "Hidden IDs to preserve: $HIDDEN_IDS"
 
-          # Build SQL statements
-          SQL="DELETE FROM animals WHERE is_manual = 0 OR is_manual IS NULL;"
+          # Delete non-manual animals
+          echo "Deleting non-manual animals..."
+          d1_query "DELETE FROM animals WHERE is_manual = 0 OR is_manual IS NULL" | jq '.success' || { echo "DELETE failed" >&2; exit 1; }
 
+          # Insert animals in batches of 50
           if [ "$ANIMAL_COUNT" -gt 0 ]; then
-            SQL+=$(echo "$ALL_ANIMALS" | jq -r '.[] | @json' | while IFS= read -r animal; do
+            BATCH_SQL=""
+            BATCH_N=0
+            INSERTED=0
+
+            while IFS= read -r animal; do
               ID=$(echo "$animal" | jq -r '.["Internal-ID"]')
               SLID=$(echo "$animal" | jq -r '.ID // ""')
               NAME=$(echo "$animal" | jq -r '.Name // ""' | sed "s/'/''/g")
@@ -123,16 +142,26 @@ jobs:
                 fi
               fi
 
-              echo "INSERT INTO animals (id,shelterluv_id,name,type,breed,sex,age,age_display,size,weight,color,pattern,altered,microchipped,description,cover_photo,photos,videos,attributes,adoption_fee,adoption_fee_name,in_foster,foster_name,status,dob,campus,location,location_tier2,litter_group_id,intake_date,last_sl_update,last_updated) VALUES ('$ID','$SLID','$NAME','$TYPE','$BREED','$SEX',$AGE,'$AGE_DISPLAY','$SIZE','$WEIGHT','$COLOR','$PATTERN','$ALTERED',$MICRO,'$DESC','$COVER','$PHOTOS','$VIDEOS','$ATTRS',$FEE,'$FEE_NAME',$IN_FOSTER,'$FOSTER_NAME','$STATUS','$DOB','$CAMPUS','$LOC1','$LOC2','$LITTER','$INTAKE','$SL_UPDATED',datetime('now'));"
-            done)
+              BATCH_SQL+="INSERT INTO animals (id,shelterluv_id,name,type,breed,sex,age,age_display,size,weight,color,pattern,altered,microchipped,description,cover_photo,photos,videos,attributes,adoption_fee,adoption_fee_name,in_foster,foster_name,status,dob,campus,location,location_tier2,litter_group_id,intake_date,last_sl_update,last_updated) VALUES ('$ID','$SLID','$NAME','$TYPE','$BREED','$SEX',$AGE,'$AGE_DISPLAY','$SIZE','$WEIGHT','$COLOR','$PATTERN','$ALTERED',$MICRO,'$DESC','$COVER','$PHOTOS','$VIDEOS','$ATTRS',$FEE,'$FEE_NAME',$IN_FOSTER,'$FOSTER_NAME','$STATUS','$DOB','$CAMPUS','$LOC1','$LOC2','$LITTER','$INTAKE','$SL_UPDATED',datetime('now'));"
+              BATCH_N=$((BATCH_N + 1))
+              INSERTED=$((INSERTED + 1))
+
+              if [ "$BATCH_N" -ge 50 ]; then
+                d1_query "$BATCH_SQL" | jq '.success' || echo "Warning: batch at $INSERTED failed" >&2
+                BATCH_SQL=""
+                BATCH_N=0
+              fi
+            done < <(echo "$ALL_ANIMALS" | jq -r '.[] | @json')
+
+            # Final partial batch
+            if [ -n "$BATCH_SQL" ]; then
+              d1_query "$BATCH_SQL" | jq '.success' || echo "Warning: final batch failed" >&2
+            fi
+            echo "Inserted $INSERTED animals"
           fi
 
-          # Execute main sync (delete + inserts)
-          echo "Executing sync SQL against D1..."
-          d1_query "$SQL" | jq '.success'
-
           # Restore hidden flags
-          if [ -n "$HIDDEN_IDS" ]; then
+          if [ -n "$HIDDEN_IDS" ] && echo "$HIDDEN_IDS" | grep -qE "^'[^']+'(,'[^']+')*$"; then
             echo "Restoring hidden flags for: $HIDDEN_IDS"
             d1_query "UPDATE animals SET hidden = 1 WHERE id IN ($HIDDEN_IDS)" | jq '.success'
           fi
@@ -141,9 +170,16 @@ jobs:
           echo "Syncing events..."
           d1_query "DELETE FROM animal_events" | jq '.success'
 
-          echo "$ALL_ANIMALS" | jq -r '.[]["Internal-ID"]' | while IFS= read -r AID; do
-            EVENTS=$(curl -sf -H "Authorization: Bearer $SHELTERLUV_API_KEY" \
-              "$SL_URL/animals/$AID/events?limit=100" 2>/dev/null || echo '{"events":[]}')
+          while IFS= read -r AID; do
+            sleep 0.5
+            EVENTS=""
+            for ATTEMPT in 1 2 3; do
+              EVENTS=$(curl -sf -H "Authorization: Bearer $SHELTERLUV_API_KEY" \
+                "$SL_URL/animals/$AID/events?limit=100" 2>/dev/null) && break
+              echo "  Event fetch retry $ATTEMPT for $AID..." >&2
+              sleep 2
+            done
+            [ -z "$EVENTS" ] && EVENTS='{"events":[]}'
             EVT_COUNT=$(echo "$EVENTS" | jq '.events // [] | length')
             if [ "$EVT_COUNT" -gt 0 ]; then
               EVT_SQL=""
@@ -165,7 +201,7 @@ jobs:
                 echo "  $AID: $EVT_COUNT events"
               fi
             fi
-          done
+          done < <(echo "$ALL_ANIMALS" | jq -r '.[]["Internal-ID"]')
 
           # Log the sync
           d1_query "INSERT INTO sync_log (animal_count, status) VALUES ($ANIMAL_COUNT, 'success')" | jq '.success'

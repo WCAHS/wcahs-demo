@@ -4,12 +4,12 @@
   loader.id = 'pageLoader';
   loader.innerHTML = `
     <div class="ldr-trail">
-      <div class="ldr-paw p0"><img src="images/paws/paw_01.png" alt=""></div>
-      <div class="ldr-paw p1"><img src="images/paws/paw_01.png" alt=""></div>
-      <div class="ldr-paw p2"><img src="images/paws/paw_01.png" alt=""></div>
-      <div class="ldr-paw p3"><img src="images/paws/paw_01.png" alt=""></div>
-      <div class="ldr-paw p4"><img src="images/paws/paw_01.png" alt=""></div>
-      <div class="ldr-paw p5"><img src="images/paws/paw_01.png" alt=""></div>
+      <div class="ldr-paw p0"><img src="/images/paws/paw_01.png" alt=""></div>
+      <div class="ldr-paw p1"><img src="/images/paws/paw_01.png" alt=""></div>
+      <div class="ldr-paw p2"><img src="/images/paws/paw_01.png" alt=""></div>
+      <div class="ldr-paw p3"><img src="/images/paws/paw_01.png" alt=""></div>
+      <div class="ldr-paw p4"><img src="/images/paws/paw_01.png" alt=""></div>
+      <div class="ldr-paw p5"><img src="/images/paws/paw_01.png" alt=""></div>
     </div>
     <p class="ldr-text">Loading...</p>
   `;
@@ -97,6 +97,22 @@
       setTimeout(function() { loader.remove(); }, 500);
     }, 800);
 
+    // Auto-detect Spanish browser — redirect to /es/ on first visit (only on English pages)
+    if (!location.pathname.startsWith('/es/') && !location.pathname.includes('/admin') && !sessionStorage.getItem('wcahs_lang_offered')) {
+      var lang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+      if (lang.startsWith('es')) {
+        sessionStorage.setItem('wcahs_lang_offered', '1');
+        var page = location.pathname.replace(/.*\//, '') || 'index.html';
+        if (!page.endsWith('.html')) page = 'index.html';
+        var esUrl = '/es/' + page + location.search + location.hash;
+        // Show a small banner instead of hard redirect
+        var bar = document.createElement('div');
+        bar.id = 'langBar';
+        bar.innerHTML = '<div style="background:#48543e;color:#fff;text-align:center;padding:10px 16px;font-family:Nunito,sans-serif;font-size:14px;position:fixed;bottom:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;"><span>Esta página está disponible en español</span><a href="'+esUrl+'" style="background:#fff;color:#48543e;padding:6px 18px;border-radius:50px;font-weight:700;font-size:13px;text-decoration:none;">Ver en Español</a><button onclick="document.getElementById(\'langBar\').remove()" style="background:none;border:none;color:#fff;opacity:0.6;cursor:pointer;font-size:18px;margin-left:8px;">&times;</button></div>';
+        document.body.appendChild(bar);
+      }
+    }
+
     // Popups — construction overrides custom popup, both dismiss per-session
     fetch('/api/settings').then(function(r){return r.json();}).then(function(s) {
       var ucOn = s.under_construction === true || s.under_construction === 'true';
@@ -111,20 +127,28 @@
         return; // don't show custom popup
       }
 
-      // Custom popup (only if construction is off)
-      if (popupOn && !ucOn && !sessionStorage.getItem('wcahs_popup_dismissed') && s.popup_message) {
-        var styles = {
-          sage:  { btn:'#5c6b4e', bg:'#fff', text:'#3b4434', btnText:'#fff' },
-          amber: { btn:'#d97706', bg:'#fffbeb', text:'#78350f', btnText:'#fff' },
-          sky:   { btn:'#0284c7', bg:'#f0f9ff', text:'#0c4a6e', btnText:'#fff' },
-          rose:  { btn:'#e11d48', bg:'#fff1f2', text:'#881337', btnText:'#fff' },
-          dark:  { btn:'#a8a29e', bg:'#1c1917', text:'#fafaf9', btnText:'#1c1917' }
-        };
-        var st = styles[s.popup_style] || styles.sage;
+      // Custom popup (only if construction is off) — dismiss key tied to message so new popups show
+      var popupKey = 'wcahs_popup_' + s.popup_message.substring(0, 30).replace(/\W/g, '');
+      if (popupOn && !ucOn && !sessionStorage.getItem(popupKey) && s.popup_message) {
+        // Read custom colors (fall back to sage defaults)
+        var stBg = s.popup_color_bg || '#ffffff';
+        var stBtn = s.popup_color_btn || '#5c6b4e';
+        var stText = s.popup_color_text || '#3b4434';
+        // Auto-compute button text color for contrast
+        var cr = parseInt(stBtn.slice(1,3),16), cg = parseInt(stBtn.slice(3,5),16), cb = parseInt(stBtn.slice(5,7),16);
+        var stBtnText = (cr*0.299 + cg*0.587 + cb*0.114) > 150 ? '#1c1917' : '#ffffff';
+        var st = { btn: stBtn, bg: stBg, text: stText, btnText: stBtnText };
+        // Font
+        var popupFonts = { nunito: 'Nunito,sans-serif', playfair: 'Playfair Display,serif', georgia: 'Georgia,serif', system: '-apple-system,BlinkMacSystemFont,sans-serif' };
+        var popupFontCss = popupFonts[s.popup_font] || popupFonts.nunito;
+
         var icon = s.popup_icon || '';
         var msg = (s.popup_message || '').substring(0, 200);
         var btnText = (s.popup_button_text || '').substring(0, 40);
         var btnLink = s.popup_button_link || '';
+        var btnShape = s.popup_button_shape || 'pill';
+        var btnVariant = s.popup_button_variant || 'filled';
+        var radius = btnShape === 'pill' ? '50px' : '12px';
 
         // Escape HTML in message
         var esc = document.createElement('span');
@@ -133,19 +157,28 @@
         esc.textContent = btnText;
         var safeBtnText = esc.innerHTML;
 
-        var dismissFn = "document.getElementById('sitePopup').remove();sessionStorage.setItem('wcahs_popup_dismissed','1');";
+        var dismissFn = "document.getElementById('sitePopup').remove();sessionStorage.setItem('"+popupKey+"','1');";
         var iconHtml = icon ? '<div style="font-size:40px;margin-bottom:12px;">'+icon+'</div>' : '';
         var btnHtml = '';
+        var btnStyleBase = 'padding:10px 28px;border-radius:'+radius+';font-family:'+popupFontCss+';font-size:0.9rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;';
+        var btnStyleFill = btnVariant === 'outline'
+          ? btnStyleBase+'background:transparent;color:'+st.btn+';border:2px solid '+st.btn+';'
+          : btnStyleBase+'background:'+st.btn+';color:'+st.btnText+';border:2px solid '+st.btn+';';
         if (btnText && btnLink) {
-          btnHtml = '<div style="display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;"><a href="'+btnLink.replace(/"/g,'&quot;')+'" style="display:inline-block;background:'+st.btn+';color:'+st.btnText+';border:none;padding:10px 28px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.9rem;font-weight:700;text-decoration:none;cursor:pointer;">'+safeBtnText+'</a><button onclick="'+dismissFn+'" style="background:none;border:none;color:'+st.text+';opacity:0.5;font-size:0.8rem;cursor:pointer;font-family:Nunito,sans-serif;">Dismiss</button></div>';
+          btnHtml = '<div style="display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;"><a href="'+btnLink.replace(/"/g,'&quot;')+'" style="'+btnStyleFill+'">'+safeBtnText+'</a><button onclick="'+dismissFn+'" style="background:none;border:none;color:'+st.text+';opacity:0.5;font-size:0.8rem;cursor:pointer;font-family:'+popupFontCss+';">Dismiss</button></div>';
         } else if (btnText) {
-          btnHtml = '<button onclick="'+dismissFn+'" style="background:'+st.btn+';color:'+st.btnText+';border:none;padding:10px 28px;border-radius:50px;font-family:Nunito,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;">'+safeBtnText+'</button>';
+          btnHtml = '<button onclick="'+dismissFn+'" style="'+btnStyleFill+'">'+safeBtnText+'</button>';
+        } else {
+          var dismissBtnStyle = btnVariant === 'outline'
+            ? 'background:transparent;color:'+st.btn+';border:2px solid '+st.btn+';'
+            : 'background:'+st.btn+';color:'+st.btnText+';border:2px solid '+st.btn+';';
+          btnHtml = '<button onclick="'+dismissFn+'" style="'+dismissBtnStyle+'padding:8px 24px;border-radius:'+radius+';font-family:'+popupFontCss+';font-size:0.85rem;font-weight:600;cursor:pointer;">Dismiss</button>';
         }
         var closeX = '<button onclick="'+dismissFn+'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:20px;color:'+st.text+';opacity:0.4;cursor:pointer;line-height:1;" aria-label="Close">&times;</button>';
 
         var popup = document.createElement('div');
         popup.id = 'sitePopup';
-        popup.innerHTML = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="background:'+st.bg+';border-radius:20px;padding:36px 32px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;">'+closeX+iconHtml+'<p style="color:'+st.text+';font-size:0.95rem;line-height:1.6;margin-bottom:'+(btnHtml?'24':'0')+'px;font-family:Nunito,sans-serif;">'+safeMsg+'</p>'+btnHtml+'</div></div>';
+        popup.innerHTML = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="background:'+st.bg+';border-radius:20px;padding:36px 32px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;">'+closeX+iconHtml+'<p style="color:'+st.text+';font-size:0.95rem;line-height:1.6;margin-bottom:24px;font-family:'+popupFontCss+';">'+safeMsg+'</p>'+btnHtml+'</div></div>';
         document.body.appendChild(popup);
       }
     }).catch(function(){});
@@ -167,4 +200,5 @@
       }
     }
   });
+
 })();

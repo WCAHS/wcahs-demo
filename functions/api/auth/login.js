@@ -28,7 +28,7 @@ export async function onRequestPost(context) {
   return new Response(JSON.stringify({ ok: true, username: user.username, role: user.role }), {
     headers: {
       'Content-Type': 'application/json',
-      'Set-Cookie': `wcahs_session=${sessionId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${7 * 24 * 60 * 60}`,
+      'Set-Cookie': `wcahs_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`,
     },
   });
 }

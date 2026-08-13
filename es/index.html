@@ -95,6 +95,7 @@
     "nonprofitStatus": "Nonprofit501c3"
   }
   </script>
+  <script src="/pet-icons.js"></script>
 </head>
 <body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
 
@@ -312,6 +313,7 @@
           <li><a href="/es/about" class="hover:text-white transition">Sobre Nosotros</a></li>
           <li><a href="/es/faq" class="hover:text-white transition">Preguntas Frecuentes</a></li>
           <li><a href="/es/contact" class="hover:text-white transition">Contacto</a></li>
+          <li><a href="/es/forms" class="hover:text-white transition">Formularios</a></li>
           <li><a href="/es/faq#resources" class="hover:text-white transition">Recursos</a></li>
           <li><a href="/es/contact.html#donate" class="hover:text-white transition">Donar</a></li>
         </ul>
@@ -328,6 +330,7 @@
     <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
       &copy; 2026 Waseca County Animal Humane Society. Todos los derechos reservados.
       <span style="display:block; margin-top:6px; opacity:0.6;">Sitio web diseñado por Riley Poe</span>
+      <span style="display:block; margin-top:10px; opacity:0.45; font-size:11px; font-style:italic; line-height:1.7;">En memoria de Alice, nuestra &laquo;Gatita Bonita&raquo;.<br>Que el cielo est&eacute; lleno de caricias y hierba gatera. Te extra&ntilde;amos mucho, dulce gatita &hearts;</span>
     </div>
   </footer>
 
@@ -356,7 +359,10 @@
               <img src="${a.cover_photo}" alt="${a.name}" class="w-full h-full object-cover" loading="lazy">
             </div>
             <div class="p-6">
-              <h3 class="font-bold text-xl text-gray-900">${a.name}</h3>
+              <div class="flex items-center justify-between gap-3 mb-1">
+                <h3 class="font-bold text-xl text-gray-900">${a.name}</h3>
+                <div class="flex items-center gap-2 shrink-0">${wcahsPetIcons.build(a.attributes || [], {knownOnly:true})}</div>
+              </div>
               <p class="text-gray-500 text-sm mt-1">${a.age_display} &bull; ${a.sex} &bull; ${a.breed}</p>
               ${desc ? `<p class="text-gray-600 mt-3 text-sm leading-relaxed">${desc}</p>` : ''}
               <a href="/es/pet.html?id=${a.id}" class="mt-4 inline-block text-sage-600 font-semibold text-sm hover:text-sage-800 transition">Conoce a ${a.name} &rarr;</a>

@@ -1,0 +1,4 @@
+# Block access to hidden/sensitive files
+/.*
+  X-Robots-Tag: noindex
+  ! Access-Control-Allow-Origin

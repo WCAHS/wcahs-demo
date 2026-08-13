@@ -64,12 +64,8 @@
     .hover\:text-sage-700:hover { color: #48543e !important; }
     .hover\:text-sage-800:hover { color: #3b4434 !important; }
     .hover\:border-sage-600:hover { border-color: #5c6b4e !important; }
-    .attr-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; }
-    .attr-yes { background: #e8ebe3; color: #48543e; }
-    .attr-no { background: #fee2e2; color: #dc2626; }
-    .attr-unknown { background: #f3f4f6; color: #d1d5db; }
-    .attr-special { background: #fef3c7; color: #b45309; }
   </style>
+  <script src="/pet-icons.js"></script>
 </head>
 <body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
 
@@ -140,14 +136,10 @@
     </div>
   </section>
 
-  <!-- Icon Legend -->
+  <!-- Icon Legend — rendered from the same svgIcons source the cards use, so the two
+       can never drift apart again. See renderLegend(). -->
   <div class="max-w-6xl mx-auto px-4 pb-10">
-    <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
-      <div class="flex items-center gap-2"><img src="images/icons/dog-friendly.png" class="h-5 w-auto opacity-50" alt="">Dog-Friendly</div>
-      <div class="flex items-center gap-2"><img src="images/icons/cat-friendly.png" class="h-5 w-auto opacity-50" alt="">Cat-Friendly</div>
-      <div class="flex items-center gap-2"><img src="images/icons/kid-friendly.png" class="h-5 w-auto opacity-50" alt="">Kid-Friendly</div>
-      <div class="flex items-center gap-2"><img src="images/icons/litter-trained.png" class="h-5 w-auto opacity-50" alt="">Housetrained</div>
-    </div>
+    <div id="iconLegend" class="max-w-3xl mx-auto bg-white/70 rounded-2xl px-6 py-5"></div>
   </div>
 
   <!-- Why Adopt From Us -->
@@ -305,12 +297,7 @@
         <div class="p-10 md:p-14 flex-1 flex flex-col items-center justify-center text-center">
           <h2 class="font-display text-3xl font-bold mb-3">Sponsor an Animal</h2>
           <p class="text-amber-100 leading-relaxed mb-6">Not ready to adopt? You can still make a difference. Sponsor an animal's care — help cover food, vet bills, and supplies while they wait for their forever home.</p>
-          <div class="grid grid-cols-2 gap-3 max-w-xs">
-            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581?amount=10" target="_blank" class="bg-white text-amber-700 font-bold px-6 py-3 rounded-full transition hover:bg-amber-50 text-center">$10/month</a>
-            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581?amount=25" target="_blank" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30 text-center">$25/month</a>
-            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581?amount=50" target="_blank" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30 text-center">$50/month</a>
-            <a href="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-16581" target="_blank" class="bg-white/20 border-2 border-white/50 text-white font-bold px-6 py-3 rounded-full transition hover:bg-white/30 text-center">Custom</a>
-          </div>
+          <a data-donate href="https://checkout.shelterluv.com/donate/WCAH" target="_blank" rel="noopener" class="bg-white text-amber-700 font-bold px-10 py-4 rounded-full transition hover:bg-amber-50 text-center shadow-lg">Sponsor an Animal</a>
         </div>
       </div>
     </div>
@@ -371,6 +358,7 @@
           <li><a href="about.html" class="hover:text-white transition">About Us</a></li>
           <li><a href="faq.html" class="hover:text-white transition">FAQ</a></li>
           <li><a href="contact.html" class="hover:text-white transition">Contact</a></li>
+          <li><a href="forms.html" class="hover:text-white transition">Forms</a></li>
           <li><a href="faq.html#resources" class="hover:text-white transition">Resources</a></li>
           <li><a href="contact.html#donate" class="hover:text-white transition">Donate</a></li>
         </ul>
@@ -387,63 +375,19 @@
     <div class="max-w-6xl mx-auto px-4 mt-12 pt-8 border-t border-sage-700 text-center text-sm text-sage-400">
       &copy; 2026 Waseca County Animal Humane Society. All rights reserved.
       <span style="display:block; margin-top:6px; opacity:0.6;">Website designed by Riley Poe</span>
+      <span style="display:block; margin-top:10px; opacity:0.45; font-size:11px; font-style:italic; line-height:1.7;">In loving memory of Alice, our &ldquo;Pretty Kitty.&rdquo;<br>May heaven be filled with lots of pets and catnip. Miss you dearly, sweet kitty &hearts;</span>
     </div>
   </footer>
 
   <script>
     let allAnimals = [];
 
-    const svgIcons = {
-      dog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4"><path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .137 1.217 1.2 2 2.5 2 1.098 0 2-.9 2-2 0-.988.262-1.706.5-2m2.5-2.828c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.137 1.217-1.2 2-2.5 2-1.098 0-2-.9-2-2 0-.988-.262-1.706-.5-2M12 16v4m-2 0h4m-7-4c-1.333-.667-2-2-2-4l2-3h10l2 3c0 2-.667 3.333-2 4H7z"/></svg>',
-      cat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4"><path d="M12 20c-4 0-7-2.5-7-6 0-2 .5-3.5 2-5l-1-6 4 2.5c.6-.3 1.3-.5 2-.5s1.4.2 2 .5L18 3l-1 6c1.5 1.5 2 3 2 5 0 3.5-3 6-7 6zm-2-5a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2z"/></svg>',
-      kid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4"><circle cx="12" cy="5" r="2.5"/><path d="M12 9v4m-3 0l3 6 3-6m-6 0h6"/></svg>',
-      house: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4"><path d="M3 12l9-8 9 8M5 10v9a1 1 0 001 1h3v-5h6v5h3a1 1 0 001-1v-9"/></svg>',
-      bonded: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4"><path d="M12 21C12 21 4 14.5 4 9.5 4 6.5 6.5 4 9 4c1.74 0 2.73.72 3 1.28C12.27 4.72 13.26 4 15 4c2.5 0 5 2.5 5 5.5C20 14.5 12 21 12 21z"/></svg>',
-      diet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4"><path d="M12 9v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>',
-    };
-
-    function attrState(attrs, yesKey, noKey) {
-      if (attrs.includes(noKey)) return 'no';
-      if (attrs.includes(yesKey)) return 'yes';
-      return 'unknown';
-    }
-
+    // Icons + legend now live in the shared module so pets/index and their es
+    // mirrors all render from one definition.
     function buildIcons(animal) {
-      const attrs = animal.attributes || [];
-      let html = '';
-
-      // Dogs/Cats/Kids — three state
-      const checks = [
-        { yes: 'Good with Dogs', no: 'Not Good with Dogs', override: 'Single Dog Home', icon: svgIcons.dog, labels: { yes: 'Dog-Friendly', no: 'Not Good with Dogs', unknown: 'Unknown with Dogs' }},
-        { yes: 'Good with Cats', no: 'Not Good with Cats', icon: svgIcons.cat, labels: { yes: 'Cat-Friendly', no: 'Not Good with Cats', unknown: 'Unknown with Cats' }},
-        { yes: 'Good with Kids', no: 'Adult-Only Home Preferred', icon: svgIcons.kid, labels: { yes: 'Kid-Friendly', no: 'Adult-Only Home', unknown: 'Unknown with Kids' }},
-      ];
-      checks.forEach(c => {
-        let state = attrState(attrs, c.yes, c.no);
-        if (c.override && attrs.includes(c.override)) state = 'no';
-        const cls = state === 'yes' ? 'attr-yes' : state === 'no' ? 'attr-no' : 'attr-unknown';
-        html += `<span class="attr-icon ${cls}" title="${c.labels[state]}">${c.icon}</span>`;
-      });
-
-      // Housetrained / Litter Box
-      if (attrs.includes('Housetrained') || attrs.includes('Litter Box Trained')) {
-        html += `<span class="attr-icon attr-yes" title="${attrs.includes('Housetrained') ? 'Housetrained' : 'Litter Box Trained'}">${svgIcons.house}</span>`;
-      } else if (attrs.includes('Not Housetrained')) {
-        html += `<span class="attr-icon attr-no" title="Not Housetrained">${svgIcons.house}</span>`;
-      }
-
-      // Bonded
-      if (attrs.includes('Bonded')) {
-        html += `<span class="attr-icon attr-special" title="Bonded Pair">${svgIcons.bonded}</span>`;
-      }
-
-      // Special dietary
-      if (attrs.includes('Special Dietary needs')) {
-        html += `<span class="attr-icon attr-special" title="Special Dietary Needs">${svgIcons.diet}</span>`;
-      }
-
-      return html;
+      return wcahsPetIcons.build(animal.attributes || []);
     }
+    wcahsPetIcons.renderLegend(document.getElementById('iconLegend'));
 
     function buildCard(animal) {
       const iconsHtml = buildIcons(animal);
@@ -527,7 +471,7 @@
       });
   </script>
 
-<script src="site-data.js"></script>
+  <script src="site-data.js"></script>
 <script src="loader.js"></script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "49aeb2c8df994092ac9a59c6756acb0e"}'></script><!-- End Cloudflare Web Analytics -->
 </div></body>
