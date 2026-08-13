@@ -491,8 +491,6 @@
           }
           body.innerHTML = html;
         } else {
-          body.innerHTML = '<p class="text-gray-400 italic">' + (who ? '<p class="text-sm text-gray-400 mt-3">&mdash; ' + who + ', foster</p>' : '');
-        } else {
           body.innerHTML = '<p class="text-gray-400 italic">' + (who ? 'Their foster hasn&rsquo;t written a note yet &mdash; check back soon, or get in touch and we&rsquo;ll tell you all about them.' : 'This pet isn&rsquo;t in a foster home right now, so there&rsquo;s no foster note yet. Our staff can tell you more &mdash; just get in touch.') + '</p>';
         }
       })();
