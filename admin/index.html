@@ -3011,7 +3011,7 @@ async function renderUsers(el) {
       </div>
       <div class="flex gap-3">
         <button onclick="resetUserPassword(${u.id}, '${h(u.username)}')" class="text-xs text-sage-700 hover:underline font-semibold">Reset password</button>
-        <button onclick="if(confirm('Delete user ${h(u.username)}?')) deleteUser(${u.id})" class="text-xs text-red-400 hover:underline">Delete</button>
+        <button onclick="if(confirm(${u.role === 'foster' ? '`Delete foster ${h(u.username)}?\\n\\nThis also removes their pet assignments and any testimonials or photos they posted, including from the public pet pages. This cannot be undone.`' : '`Delete user ${h(u.username)}?`'})) deleteUser(${u.id})" class="text-xs text-red-400 hover:underline">Delete</button>
       </div>
     </div>`;
   });

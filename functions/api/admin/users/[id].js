@@ -23,7 +23,38 @@ export async function onRequestDelete(context) {
   const id = context.params.id;
   // Don't let them delete themselves
   if (parseInt(id) === context.data.user.user_id) return error("Can't delete your own account");
-  await context.env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
-  await context.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
-  return json({ ok: true });
+  const db = context.env.DB;
+
+  // Remove the foster's content along with the account. Previously only the user
+  // row went, leaving their assignments orphaned and their testimonials/photos
+  // still public with no owner and no way to remove them from the UI.
+  let photosDeleted = 0, updatesDeleted = 0, assignmentsDeleted = 0;
+  try {
+    const { results: updates } = await db.prepare(
+      'SELECT id, photo_url FROM foster_updates WHERE user_id = ?'
+    ).bind(id).all();
+
+    for (const u of (updates || [])) {
+      const stored = u.photo_url || '';
+      if (stored.startsWith('/api/images/')) {
+        const key = stored.replace(/^\/api\/images\//, '').split('?')[0];
+        if (key) {
+          try { await context.env.UPLOADS.delete(key); photosDeleted++; }
+          catch (e) { console.error('R2 delete failed for', key, e && e.message); }
+        }
+      }
+    }
+
+    const delUpdates = await db.prepare('DELETE FROM foster_updates WHERE user_id = ?').bind(id).run();
+    updatesDeleted = delUpdates.meta ? delUpdates.meta.changes : 0;
+
+    const delAssign = await db.prepare('DELETE FROM foster_assignments WHERE user_id = ?').bind(id).run();
+    assignmentsDeleted = delAssign.meta ? delAssign.meta.changes : 0;
+  } catch (e) {
+    console.error('foster cleanup failed for user', id, e && e.message);
+  }
+
+  await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
+  await db.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+  return json({ ok: true, photosDeleted, updatesDeleted, assignmentsDeleted });
 }
