@@ -479,16 +479,7 @@
         head.innerHTML = who ? 'A Note from ' + (animal.name || '') + '&rsquo;s Foster' : 'A Note from Their Foster';
         if (note) {
           var html = '<p class="italic">&ldquo;' + note.replace(/[<>]/g, '') + '&rdquo;</p>' +
-                     (who ? '<p class="text-sm text-gray-400 mt-3">&mdash; ' + who + ', foster</p>' : '');
-          // Any further testimonials stack underneath the most recent one.
-          if (tst.length > 1) {
-            html += '<div class="mt-5 pt-5 border-t border-gray-100 space-y-4">';
-            for (var ti = 1; ti < tst.length; ti++) {
-              html += '<div><p class="italic">&ldquo;' + String(tst[ti].content || '').replace(/[<>]/g, '') + '&rdquo;</p>' +
-                      (tst[ti].by ? '<p class="text-sm text-gray-400 mt-2">&mdash; ' + tst[ti].by + '</p>' : '') + '</div>';
-            }
-            html += '</div>';
-          }
+                     '';
           body.innerHTML = html;
         } else {
           body.innerHTML = '<p class="text-gray-400 italic">' + (who ? 'Their foster hasn&rsquo;t written a note yet &mdash; check back soon, or get in touch and we&rsquo;ll tell you all about them.' : 'This pet isn&rsquo;t in a foster home right now, so there&rsquo;s no foster note yet. Our staff can tell you more &mdash; just get in touch.') + '</p>';

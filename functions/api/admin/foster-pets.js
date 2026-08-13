@@ -90,6 +90,14 @@ export async function onRequestPost(context) {
 
   if (!content && !photoUrl) return error('Content or photo is required');
 
+  // One testimonial per pet. It's the pet's public blurb, not a running feed, so
+  // saving a new one replaces whatever was there — including one written by a
+  // different foster, which is why this is not scoped to the current user.
+  if (updateType === 'testimonial') {
+    await db.prepare("DELETE FROM foster_updates WHERE animal_id = ? AND update_type = 'testimonial'")
+      .bind(body.animal_id).run();
+  }
+
   await db.prepare(
     `INSERT INTO foster_updates (assignment_id, user_id, animal_id, update_type, content, photo_url)
      VALUES (?, ?, ?, ?, ?, ?)`
