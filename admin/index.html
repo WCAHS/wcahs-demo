@@ -2122,7 +2122,7 @@ async function renderPets(el) {
   }
 }
 
-const INACTIVE_STATUSES = ['Deceased', 'On Hold In-Shelter', 'On Hold In-Foster', 'Adopted', 'Transferred', 'Reclaimed'];
+const INACTIVE_STATUSES = ['Deceased', 'On Hold In-Shelter', 'On Hold In-Foster', 'Unavailable In-Foster', 'Adopted', 'Transferred', 'Reclaimed'];
 
 function petCard(pet, showActions) {
   const isHidden = pet.hidden === 1;
@@ -2783,7 +2783,8 @@ async function renderFosterPets(el) {
   }
 
   let html = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-1">My Pets</h1>
-  <p class="text-sm text-gray-500 mb-6">You have <strong>${pets.length}</strong> pet${pets.length !== 1 ? 's' : ''} assigned to you</p>`;
+  <p class="text-sm text-gray-500 mb-6">You have <strong>${pets.length}</strong> pet${pets.length !== 1 ? 's' : ''} assigned to you</p>
+  <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-5 items-start">`;
 
   pets.forEach((pet, idx) => {
     const photoHtml = pet.cover_photo
@@ -2824,7 +2825,7 @@ async function renderFosterPets(el) {
       timelineHtml += '</div>';
     }
 
-    html += `<div class="card overflow-hidden mb-5 max-w-xl">
+    html += `<div class="card overflow-hidden">
       ${photoHtml}
       <div class="p-5">
         <div class="flex items-start justify-between mb-2">
@@ -2851,6 +2852,7 @@ async function renderFosterPets(el) {
     </div>`;
   });
 
+  html += '</div>';
   el.innerHTML = html;
 }
 

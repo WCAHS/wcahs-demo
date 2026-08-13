@@ -1,7 +1,7 @@
 import { json } from './_helpers.js';
 
 // Statuses that should NOT appear on the public site
-const INACTIVE_STATUSES = ['Deceased', 'On Hold In-Shelter', 'On Hold In-Foster', 'Adopted', 'Transferred', 'Reclaimed'];
+const INACTIVE_STATUSES = ['Deceased', 'On Hold In-Shelter', 'On Hold In-Foster', 'Unavailable In-Foster', 'Adopted', 'Transferred', 'Reclaimed'];
 
 function parseAnimal(a) {
   return {
