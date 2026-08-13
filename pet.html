@@ -131,13 +131,6 @@
           <div id="thumbStrip" class="grid gap-3"></div>
         </div>
 
-        <!-- Foster note — always rendered, with an empty state, so the section
-             doesn't pop in and out between pets. -->
-        <div id="fosterNoteSection" class="order-3 bg-white rounded-2xl p-8 shadow-sm">
-          <h2 class="font-display text-2xl font-bold text-gray-900 mb-4"><span id="fosterNoteHeading"></span></h2>
-          <div id="fosterNoteBody" class="text-gray-600 leading-relaxed"></div>
-        </div>
-
         <!-- About (Videos/Siblings get injected after this) -->
         <div id="aboutSection" class="order-3 bg-white rounded-2xl p-8 shadow-sm">
           <h2 class="font-display text-2xl font-bold text-gray-900 mb-4">About <span class="about-name"></span></h2>
@@ -164,7 +157,14 @@
           <a id="sponsorBtn" data-donate href="https://checkout.shelterluv.com/donate/WCAH" target="_blank" class="block text-center border-2 border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold py-3 rounded-xl transition text-sm"></a>
         </div>
 
-        <div class="order-4 space-y-6">
+        <!-- Foster note — always rendered, with an empty state, so the section
+             doesn't pop in and out between pets. -->
+        <div id="fosterNoteSection" class="order-4 bg-white rounded-2xl p-8 shadow-sm">
+          <h2 class="font-display text-2xl font-bold text-gray-900 mb-4"><span id="fosterNoteHeading"></span></h2>
+          <div id="fosterNoteBody" class="text-gray-600 leading-relaxed"></div>
+        </div>
+
+        <div class="order-5 space-y-6">
 
           <!-- Adoption Details -->
           <div class="bg-white rounded-2xl p-6 shadow-sm">

@@ -118,13 +118,27 @@ export async function onRequestDelete(context) {
   const id = url.searchParams.get('id');
   if (!id) return error('id is required');
 
-  const row = await db.prepare('SELECT id, user_id FROM foster_updates WHERE id = ?').bind(id).first();
+  const row = await db.prepare('SELECT id, user_id, photo_url FROM foster_updates WHERE id = ?').bind(id).first();
   if (!row) return error('Update not found', 404);
 
   if (user.role !== 'admin' && row.user_id !== user.user_id) {
     return error('You can only remove your own updates', 403);
   }
 
+  // Destroy the underlying R2 object too. Dropping only the DB row would leave the
+  // file reachable at its direct /api/images/... URL to anyone who saved the link.
+  // Only our own uploads are touched — ShelterLuv photos are absolute URLs on their
+  // S3 and are not ours to delete (and would come back on the next sync anyway).
+  let photoDeleted = false;
+  const storedPhoto = row.photo_url || '';
+  if (storedPhoto.startsWith('/api/images/')) {
+    const key = storedPhoto.replace(/^\/api\/images\//, '').split('?')[0];
+    if (key) {
+      try { await context.env.UPLOADS.delete(key); photoDeleted = true; }
+      catch (e) { console.error('R2 delete failed for', key, e && e.message); }
+    }
+  }
+
   await db.prepare('DELETE FROM foster_updates WHERE id = ?').bind(id).run();
-  return json({ ok: true, deleted: Number(id) });
+  return json({ ok: true, deleted: Number(id), photoDeleted });
 }
