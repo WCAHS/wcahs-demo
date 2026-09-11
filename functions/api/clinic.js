@@ -302,10 +302,10 @@ export async function onRequestPost(context) {
 
   await sendAutoReply(env, {
     to: body.email,
-    subject: 'We received your spay/neuter clinic registration',
+    subject: 'We received your spay/neuter clinic request',
     bodyHtml: `<h2 style="color:#3b4434;margin:0 0 12px;font-family:Georgia,serif">Thanks, ${esc(ownerFirst)}!</h2>
       <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 20px">
-        We've received your registration for the ${esc(CLINIC.name)} and have you down for
+        We've received your request for the ${esc(CLINIC.name)} and have you down for
         <strong>${pets.length} pet${pets.length === 1 ? '' : 's'}</strong>.
         ${waitNote} <strong>Your spot isn't confirmed until we reach out</strong>, so please
         watch your phone and email.
@@ -330,6 +330,6 @@ export async function onRequestPost(context) {
       ? "Application received. A WCAHS volunteer will review it personally and get back to you."
       : waitlisted
         ? "Application received. The clinic is full right now, so you're on our waiting list — we'll call you if a spot opens."
-        : "Registration received! We'll contact you to confirm your appointment time.",
+        : "Request received. We'll contact you to confirm your spot and appointment time.",
   });
 }

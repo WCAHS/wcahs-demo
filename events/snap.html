@@ -247,10 +247,10 @@
 
       <!-- Registration form -->
       <div id="register" class="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-sage-200">
-        <h2 class="font-display text-2xl font-bold text-gray-900 mb-2">Register for the Clinic</h2>
+        <h2 class="font-display text-2xl font-bold text-gray-900 mb-2">Request a Spot at the Clinic</h2>
         <p class="text-gray-500 text-sm mb-8">
           Fill this out once for your whole household &mdash; add as many pets as you need.
-          A WCAHS volunteer will contact you to confirm everything.
+          This is a request, not a booking: a WCAHS volunteer will contact you to confirm.
         </p>
 
         <form id="snapForm" class="space-y-8">
@@ -383,7 +383,7 @@
 
           <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
           <div id="snStatus" class="hidden"></div>
-          <button id="snSubmit" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Submit Application</button>
+          <button id="snSubmit" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Submit Request</button>
         </form>
       </div>
 
@@ -667,7 +667,7 @@
       });
       var data = await res.json();
       if (data.ok) {
-        var heading = data.status === 'applied' ? "You're registered!" : 'Application received';
+        var heading = 'Request received';
         status.innerHTML = '<div class="rounded-xl p-6 text-center" style="background:#f6f7f4;border:2px solid #d2d8c8;"><img src="/images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">' + heading + '</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || '') + '</p><p class="text-xs mt-3" style="color:#93a27e;">Check your email for a confirmation.</p></div>';
         status.classList.remove('hidden');
         document.getElementById('snapForm').reset();
@@ -676,13 +676,13 @@
       } else {
         status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (data.error || 'Something went wrong') + '</p><p class="text-sm mt-1" style="color:#b45309;">Please try again.</p></div>';
         status.classList.remove('hidden');
-        btn.disabled = false; btn.textContent = 'Submit Application';
+        btn.disabled = false; btn.textContent = 'Submit Request';
         if (window.turnstile) { try { window.turnstile.reset(); } catch(err) {} }
       }
     } catch(err) {
       status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Could not submit</p><p class="text-sm mt-1" style="color:#b45309;">Please check your connection and try again.</p></div>';
       status.classList.remove('hidden');
-      btn.disabled = false; btn.textContent = 'Submit Application';
+      btn.disabled = false; btn.textContent = 'Submit Request';
       if (window.turnstile) { try { window.turnstile.reset(); } catch(err2) {} }
     }
   });

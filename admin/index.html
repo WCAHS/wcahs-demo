@@ -3227,15 +3227,37 @@ async function renderClinic(el) {
 window.openFormEvent = function(id) { _formEventId = id; _clinicFilter = 'all'; renderClinic(document.getElementById('content')); };
 window.backToFormIndex = function() { _formEventId = null; renderClinic(document.getElementById('content')); };
 
-function siteFormCard(f) {
-  const saved = Array.isArray(_siteNotify[f.key]) && _siteNotify[f.key].length ? _siteNotify[f.key] : null;
+// Every form card shows who it notifies, in the same shape. Event forms and
+// site forms are the same kind of thing to whoever is looking at this screen.
+function notifyBlock(inputId, savedList, saveCall) {
+  const saved = Array.isArray(savedList) && savedList.length ? savedList : null;
   const recipients = saved || _defaultMailboxes;
-  // A saved list identical to the defaults isn't a choice anyone made — saying
-  // "set for this form" there implies a decision that wasn't taken.
   const custom = !!saved && (
     saved.length !== _defaultMailboxes.length ||
     saved.some(a => !_defaultMailboxes.includes(a))
   );
+  return `<div class="mt-4 pt-3 border-t border-gray-100">
+    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+      <p class="text-xs font-bold uppercase tracking-wider text-sage-400">Who gets notified</p>
+      <p class="text-xs text-gray-400">${custom ? 'set for this form' : 'using the shelter default'}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <input id="${inputId}" value="${h(custom ? saved.join(', ') : '')}" placeholder="${h(_defaultMailboxes.join(', '))}" class="flex-1 min-w-[240px] border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+      <button onclick="${saveCall}" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2 rounded-xl transition">Save</button>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">Currently: ${recipients.map(h).join(', ')}. Separate several with commas; blank uses the shelter's usual mailboxes.</p>
+  </div>`;
+}
+
+function eventNotifyList(ev) {
+  try {
+    const a = JSON.parse((ev && ev.notify_emails) || 'null');
+    return (Array.isArray(a) && a.length) ? a : null;
+  } catch (e) { return null; }
+}
+
+function siteFormCard(f) {
+  const saved = Array.isArray(_siteNotify[f.key]) && _siteNotify[f.key].length ? _siteNotify[f.key] : null;
   const total = _siteCounts[f.key];
   const unread = _siteCounts[f.key + '_unread'];
   return `<div class="card p-5">
@@ -3245,22 +3267,15 @@ function siteFormCard(f) {
         <span class="text-xs px-2 py-0.5 rounded-full bg-sage-100 text-sage-700 ml-2">site form</span>
         <p class="text-sm text-gray-500 mt-1">Always on &bull; wcahs.org/${h(f.where)}</p>
       </div>
-      <button onclick="navigate('${f.key === 'lost_found' ? 'lost-found' : 'submissions'}')" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition">
-        ${total === undefined ? 'Open' : (f.key === 'lost_found' ? 'Open Lost & Found' : 'Open Inbox')}${total ? ' (' + total + ')' : ''}
-      </button>
+      <div class="flex flex-wrap gap-2">
+        <a href="/${h(f.where)}" target="_blank" rel="noopener" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Preview form</a>
+        <button onclick="navigate('${f.key === 'lost_found' ? 'lost-found' : 'submissions'}')" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">
+          ${total === undefined ? 'Open' : (f.key === 'lost_found' ? 'Open Lost & Found' : 'Open Inbox')}${total ? ' (' + total + ')' : ''}
+        </button>
+      </div>
     </div>
     ${unread ? `<p class="text-xs mt-2 inline-block px-2.5 py-1 rounded-lg" style="background:#fef3c7;color:#92400e;">${unread} ${f.key === 'lost_found' ? 'awaiting review' : 'unread'}</p>` : ''}
-    <div class="mt-4 pt-3 border-t border-gray-100">
-      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-        <p class="text-xs font-bold uppercase tracking-wider text-sage-400">Who gets notified</p>
-        <p class="text-xs text-gray-400">${custom ? 'set for this form' : 'using the shelter default'}</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <input id="siteNotify_${f.key}" value="${h(custom ? _siteNotify[f.key].join(', ') : '')}" placeholder="${h(_defaultMailboxes.join(', '))}" class="flex-1 min-w-[240px] border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
-        <button onclick="saveSiteNotify('${f.key}', this)" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2 rounded-xl transition">Save</button>
-      </div>
-      <p class="text-xs text-gray-400 mt-2">Currently: ${recipients.map(h).join(', ')}</p>
-    </div>
+    ${notifyBlock('siteNotify_' + f.key, saved, `saveSiteNotify('${f.key}', this)`)}
   </div>`;
 }
 
@@ -3302,11 +3317,14 @@ function paintFormIndex(el) {
             <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${open ? 'bg-green-100 text-green-700' : evState === 'reviewing' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}">Applications ${open ? 'open' : evState === 'reviewing' ? 'being reviewed' : 'closed'}</span>
             ${!ev.published ? '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 ml-1">Draft</span>' : ''}
             ${past ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 ml-1">Past</span>' : ''}
-            <p class="text-sm text-gray-500 mt-1">${h(ev.title)} &bull; ${formatDate(ev.date)}</p>
+            <p class="text-sm text-gray-500 mt-1">${h(ev.title)} &bull; ${formatDate(ev.date)} &bull; wcahs.org/snap</p>
           </div>
-          <button onclick="openFormEvent(${ev.id})" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">
-            View applications${sum.total ? ' (' + sum.total + ')' : ''}
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <a href="/snap?preview=1" target="_blank" rel="noopener" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition">Preview form</a>
+            <button onclick="openFormEvent(${ev.id})" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">
+              View applications${sum.total ? ' (' + sum.total + ')' : ''}
+            </button>
+          </div>
         </div>
         <div class="flex flex-wrap gap-2 mt-3">
           ${CLINIC_STATUSES.filter(st => sum.by_status[st]).map(st =>
@@ -3314,11 +3332,12 @@ function paintFormIndex(el) {
             || '<span class="text-xs text-gray-400">No applications yet</span>'}
           ${sum.waitlisted ? `<span class="text-xs px-2 py-1 rounded-lg bg-blue-100 text-blue-700">waitlist ${sum.waitlisted}</span>` : ''}
         </div>
-        <p class="text-xs text-gray-400 mt-3">
+        <p class="text-xs text-gray-400 mt-2">
           Cats ${sum.used.cats}/${ev.cap_cats}${sum.used.cats >= ev.cap_cats ? ' (full)' : ''}
           &nbsp;&bull;&nbsp;
           Dogs ${sum.used.dogs}/${ev.cap_dogs}${sum.used.dogs >= ev.cap_dogs ? ' (full)' : ''}
         </p>
+        ${notifyBlock('notifyEvent_' + ev.id, eventNotifyList(ev), `saveEventNotify(${ev.id}, 'notifyEvent_${ev.id}', this)`)}
       </div>`;
     });
     html += '</div>';
@@ -3441,22 +3460,9 @@ function paintFormEvent(el) {
   const sum = _formSummary[ev.id] || {};
   const appr = sum.approved || { cats: 0, dogs: 0 };
   const pend = sum.pending || { cats: 0, dogs: 0 };
-  const notifyList = (() => {
-    try { const a = JSON.parse(ev.notify_emails || 'null'); return (Array.isArray(a) && a.length) ? a : null; } catch (e) { return null; }
-  })();
-  const notifyShown = notifyList || _defaultMailboxes;
-
   html += `<div class="card p-5 mb-3">
-    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-      <p class="text-xs font-bold uppercase tracking-wider text-sage-400">Who gets notified</p>
-      <p class="text-xs text-gray-400">${(notifyList && notifyList.length) ? 'set for this form' : 'using the shelter default'}</p>
-    </div>
-    <p class="text-sm text-gray-600 mb-3">Emailed whenever someone applies: <strong>${notifyShown.map(h).join(', ')}</strong></p>
-    <div class="flex flex-wrap gap-2">
-      <input id="notifyEmails" value="${h((notifyList || []).join(', '))}" placeholder="${h(_defaultMailboxes.join(', '))}" class="flex-1 min-w-[240px] border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
-      <button onclick="saveNotifyEmails(this)" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2 rounded-xl transition">Save</button>
-    </div>
-    <p class="text-xs text-gray-400 mt-2">Separate several addresses with commas. Leave blank to use the shelter's usual mailboxes.</p>
+    <p class="text-xs font-bold uppercase tracking-wider text-sage-400">Form settings</p>
+    ${notifyBlock('notifyEmails', eventNotifyList(ev), 'saveNotifyEmails(this)')}
   </div>`;
 
   html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
@@ -3578,13 +3584,20 @@ function currentNotifyList() {
   return _defaultMailboxes;
 }
 
-window.saveNotifyEmails = async function(btn) {
-  const raw = document.getElementById('notifyEmails').value;
+window.saveEventNotify = async function(eventId, inputId, btn) {
+  const raw = document.getElementById(inputId).value;
   const list = raw.split(',').map(a => a.trim()).filter(Boolean);
-  const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: _formEventId, notify_emails: list } });
+  const bad = list.find(a => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a));
+  if (bad) { alert(`"${bad}" doesn't look like an email address.`); return; }
+  const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: eventId, notify_emails: list } });
   if (res.error) { alert(res.error); return; }
   if (btn) btn.textContent = 'Saved';
   await renderClinic(document.getElementById('content'));
+};
+
+// The detail screen's copy of the same control.
+window.saveNotifyEmails = function(btn) {
+  return saveEventNotify(_formEventId, 'notifyEmails', btn);
 };
 
 window.setFormState = async function(state) {
@@ -3849,7 +3862,7 @@ function paintShortLinks(el) {
           <button onclick="copyLink('${h(l.slug)}', this)" class="text-xs text-sage-700 hover:underline font-semibold">Copy link</button>
           <button onclick='editLink(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
           <button onclick="toggleLink('${h(l.slug)}', ${l.active ? 0 : 1})" class="text-xs text-gray-500 hover:underline">${l.active ? 'Turn off' : 'Turn on'}</button>
-          <button onclick="if(confirm('Reset the click count for wcahs.org/${h(l.slug)} back to zero?\n\nThe link keeps working \u2014 only the count and its history are cleared. Useful when the same link goes on a new poster.')) resetLinkClicks('${h(l.slug)}')" class="text-xs text-gray-500 hover:underline">Reset count</button>
+          <button onclick="resetLinkClicks('${h(l.slug)}')" class="text-xs text-gray-500 hover:underline">Reset count</button>
           <button onclick="if(confirm('Delete this short link? Anyone who has it — including on printed posters — will get a Page Not Found.')) deleteLink('${h(l.slug)}')" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
         </div>
       </div>`;
@@ -3925,6 +3938,7 @@ window.toggleLink = async function(slug, active) {
 };
 
 window.resetLinkClicks = async function(slug) {
+  if (!confirm(`Reset the click count for wcahs.org/${slug} back to zero?\n\nThe link keeps working — only the count and its history are cleared. Useful when the same link goes onto a new poster.`)) return;
   const res = await api('/admin/short-links', { method: 'PUT', body: { slug, reset_clicks: true } });
   if (res.error) { alert(res.error); return; }
   const area = document.getElementById('linkFormArea');
