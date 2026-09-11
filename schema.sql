@@ -234,3 +234,22 @@ CREATE TABLE IF NOT EXISTS clinic_registrations (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Trackable short links: wcahs.org/<slug> redirects and counts the hit, so a
+-- printed poster or QR code can be measured.
+CREATE TABLE IF NOT EXISTS short_links (
+  slug TEXT PRIMARY KEY,
+  destination TEXT NOT NULL,
+  label TEXT,
+  clicks INTEGER NOT NULL DEFAULT 0,
+  last_clicked_at TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS short_link_hits (
+  slug TEXT NOT NULL,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (slug, day)
+);

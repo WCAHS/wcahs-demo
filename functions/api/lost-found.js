@@ -28,7 +28,7 @@ export async function onRequestPost(context) {
   // Store photo URLs as JSON array if multiple, or single string
   const photoUrl = body.photo_urls ? JSON.stringify(body.photo_urls) : (body.photo_url || null);
 
-  await env.DB.prepare(
+  const result = await env.DB.prepare(
     `INSERT INTO lost_found_reports (type, reporter_name, reporter_phone, reporter_email,
       pet_name, species, breed, color, gender, location_details, description, photo_url,
       collar_details, temperament, current_location, collar_status)
@@ -40,6 +40,8 @@ export async function onRequestPost(context) {
     photoUrl, body.collar_details || null, body.temperament || null,
     body.current_location || null, body.collar_status || null
   ).run();
+
+  const reportId = result.meta?.last_row_id || '';
 
   // Add to newsletter audience if opted in
   if (body.subscribe && body.reporter_email) {
@@ -64,7 +66,7 @@ export async function onRequestPost(context) {
         ${body.location_details ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Location</td><td style="padding:8px 12px">${body.location_details}</td></tr>` : ''}
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Reporter</td><td style="padding:8px 12px">${body.reporter_name}${body.reporter_email ? ' &lt;' + body.reporter_email + '&gt;' : ''}</td></tr>
       </table>
-      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-lf" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">Review in Admin &rarr;</a></div>`,
+      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-lf-${reportId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">Open this report &rarr;</a></div>`,
   });
 
   // Auto-reply to submitter disabled for now

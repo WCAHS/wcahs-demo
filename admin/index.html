@@ -162,6 +162,7 @@
         <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="lost-found">Lost & Found</a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
         <a onclick="navigate('clinic')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="clinic">Event Forms</a>
+        <a onclick="navigate('links')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="links">Short Links</a>
         <!-- Email management handled in Resend dashboard -->
         <!-- FAQ temporarily hidden — editor needs rework -->
         <!-- <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a> -->
@@ -312,7 +313,7 @@ function showDashboard(user) {
     // Pages a role may land on. The saved page has to be checked against this too —
     // restoring it blindly dropped fosters on the Inbox, which they can't read.
     const PAGES_BY_ROLE = {
-      admin:  ['submissions','pets','lost-found','events','clinic','faq','settings','about','users','my-account','analytics','foster-pets'],
+      admin:  ['submissions','pets','lost-found','events','clinic','links','faq','settings','about','users','my-account','analytics','foster-pets'],
       staff:  ['submissions','pets','lost-found','events','clinic','my-account'],
       foster: ['foster-pets','my-account']
     };
@@ -370,6 +371,7 @@ function navigate(page) {
     case 'lost-found': renderLostFoundManage(content); break;
     case 'events': renderEvents(content); break;
     case 'clinic': renderClinic(content); break;
+    case 'links': renderShortLinks(content); break;
     case 'email': renderEmail(content); break;
     case 'faq': renderFaq(content); break;
     case 'settings': renderSettings(content); break;
@@ -3666,6 +3668,173 @@ window.exportClinicXlsx = function() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Clinic Roster');
   XLSX.writeFile(wb, 'MNSNAP-clinic-roster-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+};
+
+
+// ── Short Links ──────────────────────────────────────────────────────────
+// wcahs.org/<name> redirects somewhere and counts the hit. The point is a
+// printed poster or a QR code: without this there's no way to tell whether
+// anyone actually used it.
+let _links = [];
+let _linkHits = [];
+
+async function renderShortLinks(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Short Links</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/short-links');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+  _links = data.links || [];
+  _linkHits = data.hits || [];
+  paintShortLinks(el);
+}
+
+// A 14-day sparkline is enough to see "the poster went up on Tuesday" without
+// pulling in a charting library.
+function linkSparkline(slug) {
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  const byDay = {};
+  _linkHits.filter(h => h.slug === slug).forEach(h => { byDay[h.day] = h.count; });
+  const max = Math.max(1, ...days.map(d => byDay[d] || 0));
+  const total = days.reduce((n, d) => n + (byDay[d] || 0), 0);
+  return `<div class="flex items-end gap-0.5 h-8" title="Last 14 days: ${total} click${total === 1 ? '' : 's'}">
+    ${days.map(d => {
+      const v = byDay[d] || 0;
+      const pct = Math.round((v / max) * 100);
+      return `<div style="width:6px;height:${Math.max(2, pct)}%;background:${v ? '#5c6b4e' : '#e8ebe3'};border-radius:1px" title="${d}: ${v}"></div>`;
+    }).join('')}
+  </div>`;
+}
+
+function paintShortLinks(el) {
+  let html = `<div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Short Links</h1>
+    <button onclick="showLinkForm()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">+ New short link</button>
+  </div>
+  <p class="text-gray-500 text-sm mb-6">Short addresses for posters and social posts. Each one counts how many times it was used.</p>
+  <div id="linkFormArea"></div>`;
+
+  if (_links.length === 0) {
+    html += '<div class="card p-8 text-center text-gray-400">No short links yet</div>';
+  } else {
+    html += '<div class="space-y-3">';
+    _links.forEach(l => {
+      html += `<div class="card p-5 ${l.active ? '' : 'opacity-60'}">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0">
+            <p class="font-bold text-gray-900 break-all">wcahs.org/${h(l.slug)}
+              ${!l.active ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 ml-2">off</span>' : ''}
+            </p>
+            <p class="text-sm text-gray-500 break-all">&rarr; ${h(l.destination)}</p>
+            ${l.label ? '<p class="text-xs text-gray-400 mt-1">' + h(l.label) + '</p>' : ''}
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-2xl font-bold text-sage-700 leading-none">${l.clicks}</p>
+            <p class="text-xs text-gray-400 mt-1">click${l.clicks === 1 ? '' : 's'}</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-end justify-between gap-3 mt-3">
+          ${linkSparkline(l.slug)}
+          <p class="text-xs text-gray-400">${l.last_clicked_at ? 'last used ' + timeAgo(l.last_clicked_at) : 'never used'}</p>
+        </div>
+        <div class="flex flex-wrap gap-4 mt-4 pt-3 border-t border-gray-100">
+          <button onclick="copyLink('${h(l.slug)}', this)" class="text-xs text-sage-700 hover:underline font-semibold">Copy link</button>
+          <button onclick='editLink(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
+          <button onclick="toggleLink('${h(l.slug)}', ${l.active ? 0 : 1})" class="text-xs text-gray-500 hover:underline">${l.active ? 'Turn off' : 'Turn on'}</button>
+          <button onclick="if(confirm('Delete this short link? Anyone who has it — including on printed posters — will get a Page Not Found.')) deleteLink('${h(l.slug)}')" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function linkFormHtml(l) {
+  const e = l || {};
+  const editing = !!l;
+  return `<div class="card-warm p-6 mb-6 border border-sage-200" style="background:#f6f7f4;">
+    <h3 class="font-bold text-gray-900 mb-4">${editing ? 'Edit short link' : 'New short link'}</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Short address</label>
+        <div class="flex items-center gap-1">
+          <span class="text-sm text-gray-400">wcahs.org/</span>
+          <input id="lkSlug" value="${h(e.slug || '')}" ${editing ? 'disabled' : ''} class="flex-1 border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 ${editing ? 'bg-gray-100 text-gray-500' : ''}" placeholder="fall-fest">
+        </div>
+        <p class="text-xs text-gray-400 mt-1">${editing ? "The address can't be changed — posters may already have it." : 'Lowercase letters, numbers and dashes.'}</p>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Goes to</label>
+        <input id="lkDest" value="${h(e.destination || '')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="/events/snap or https://...">
+        <p class="text-xs text-gray-400 mt-1">A page on this site, or a full address elsewhere.</p>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">What's it for <span class="font-normal text-gray-400">(optional)</span></label>
+        <input id="lkLabel" value="${h(e.label || '')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Clinic poster in the Waseca library">
+      </div>
+    </div>
+    <div id="lkError" class="hidden rounded-xl p-3 mb-4 text-sm" style="background:#fef3c7;border:1px solid #fde68a;color:#92400e;"></div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <button onclick="saveLink(${editing ? `'${h(e.slug)}'` : 'null'})" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Save</button>
+      <button onclick="document.getElementById('linkFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
+      ${editing && e.clicks ? `<button onclick="if(confirm('Reset the click count for this link back to zero?')) resetLinkClicks('${h(e.slug)}')" class="text-xs text-gray-400 hover:text-red-500 ml-auto">Reset click count</button>` : ''}
+    </div>
+  </div>`;
+}
+
+window.showLinkForm = function() { document.getElementById('linkFormArea').innerHTML = linkFormHtml(); window.scrollTo(0, 0); };
+window.editLink = function(l) { document.getElementById('linkFormArea').innerHTML = linkFormHtml(l); window.scrollTo(0, 0); };
+
+window.saveLink = async function(existingSlug) {
+  const errEl = document.getElementById('lkError');
+  const body = {
+    destination: document.getElementById('lkDest').value.trim(),
+    label: document.getElementById('lkLabel').value.trim(),
+  };
+  let res;
+  if (existingSlug) {
+    body.slug = existingSlug;
+    res = await api('/admin/short-links', { method: 'PUT', body });
+  } else {
+    body.slug = document.getElementById('lkSlug').value.trim();
+    res = await api('/admin/short-links', { method: 'POST', body });
+  }
+  if (res.error) {
+    errEl.textContent = res.error;
+    errEl.classList.remove('hidden');
+    return;
+  }
+  document.getElementById('linkFormArea').innerHTML = '';
+  await renderShortLinks(document.getElementById('content'));
+};
+
+window.toggleLink = async function(slug, active) {
+  const res = await api('/admin/short-links', { method: 'PUT', body: { slug, active: !!active } });
+  if (res.error) { alert(res.error); return; }
+  await renderShortLinks(document.getElementById('content'));
+};
+
+window.resetLinkClicks = async function(slug) {
+  const res = await api('/admin/short-links', { method: 'PUT', body: { slug, reset_clicks: true } });
+  if (res.error) { alert(res.error); return; }
+  document.getElementById('linkFormArea').innerHTML = '';
+  await renderShortLinks(document.getElementById('content'));
+};
+
+window.deleteLink = async function(slug) {
+  const res = await api('/admin/short-links?slug=' + encodeURIComponent(slug), { method: 'DELETE' });
+  if (res.error) { alert(res.error); return; }
+  await renderShortLinks(document.getElementById('content'));
+};
+
+window.copyLink = function(slug, btn) {
+  const text = 'https://wcahs.org/' + slug;
+  const done = () => { const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = t; }, 1500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(() => prompt('Copy this link:', text));
+  else prompt('Copy this link:', text);
 };
 
 function handleDeepLink() {
