@@ -265,7 +265,12 @@ export async function onRequestPost(context) {
         </tr>
         ${petRows}
       </table>
-      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#clinic-reg-${ev.id}-${regId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">View in Admin &rarr;</a></div>`,
+      <div style="margin-top:28px;text-align:center">
+        <p style="color:#888;font-size:12px;margin:0 0 10px">These open the admin panel with this application already in view. Nothing changes until you confirm there.</p>
+        <a href="https://wcahs.org/admin/#clinic-reg-${ev.id}-${regId}-approve" style="display:inline-block;background:#3f7a46;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin:0 4px 8px">Approve</a>
+        <a href="https://wcahs.org/admin/#clinic-reg-${ev.id}-${regId}-ineligible" style="display:inline-block;background:#8a8a8a;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin:0 4px 8px">Needs review</a>
+        <a href="https://wcahs.org/admin/#clinic-reg-${ev.id}-${regId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin:0 4px 8px">View</a>
+      </div>`,
   });
 
   // People are counting on a date, so they get proof it went through. The

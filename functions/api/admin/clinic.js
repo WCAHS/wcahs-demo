@@ -27,16 +27,27 @@ export async function onRequestGet(context) {
      FROM clinic_registrations GROUP BY event_id, status, waitlisted`
   ).all();
 
+  // Spots are split by how firm they are: approved is a confirmed surgery,
+  // applied-and-not-waitlisted is holding a place nobody has said yes to yet.
+  // Both count against the limit, but staff need to see the difference.
   const summary = {};
   for (const row of counts || []) {
     const key = row.event_id == null ? 'unassigned' : row.event_id;
-    if (!summary[key]) summary[key] = { total: 0, by_status: {}, used: { cats: 0, dogs: 0 } };
+    if (!summary[key]) summary[key] = {
+      total: 0, by_status: {},
+      used: { cats: 0, dogs: 0 },
+      approved: { cats: 0, dogs: 0 },
+      pending: { cats: 0, dogs: 0 },
+    };
     summary[key].total += row.n;
     summary[key].by_status[row.status] = (summary[key].by_status[row.status] || 0) + row.n;
     if (row.waitlisted) summary[key].waitlisted = (summary[key].waitlisted || 0) + row.n;
     if (HOLDS_SPOT(row)) {
       summary[key].used.cats += row.cats;
       summary[key].used.dogs += row.dogs;
+      const bucket = row.status === 'approved' ? 'approved' : 'pending';
+      summary[key][bucket].cats += row.cats;
+      summary[key][bucket].dogs += row.dogs;
     }
   }
 
