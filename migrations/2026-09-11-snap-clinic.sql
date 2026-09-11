@@ -2,6 +2,12 @@
 -- Apply with:
 --   npx wrangler d1 execute wcahs-db --remote --file=migrations/2026-09-11-snap-clinic.sql
 
+-- Registrations for the MNSNAP spay/neuter clinic (and any future clinic).
+-- Deliberately its own table, not form_submissions: this is a roster staff
+-- work through and hand to MNSNAP as a list, not a pile of messages.
+--
+-- cat_count/dog_count are stored rather than derived from the pets JSON so the
+-- capacity check is a single SUM() instead of parsing every row's JSON.
 CREATE TABLE IF NOT EXISTS clinic_registrations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   event_id INTEGER,
@@ -10,11 +16,17 @@ CREATE TABLE IF NOT EXISTS clinic_registrations (
   phone TEXT NOT NULL,
   address TEXT,
   city TEXT,
+  state TEXT DEFAULT 'MN',
   zip TEXT,
-  pets TEXT NOT NULL,
+  pets TEXT NOT NULL,          -- JSON: [{name,species,sex,color,age,weight,shots,services[]}]
   pet_count INTEGER NOT NULL DEFAULT 0,
+  cat_count INTEGER NOT NULL DEFAULT 0,
+  dog_count INTEGER NOT NULL DEFAULT 0,
+  hardship TEXT,               -- their case for a case-by-case exception
   notes TEXT,
-  status TEXT NOT NULL DEFAULT 'new',
+  -- applied | approved | overflow | ineligible | cancelled
+  status TEXT NOT NULL DEFAULT 'applied',
+  auto_reason TEXT,            -- why the form auto-sorted it this way
   staff_notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -23,3 +35,10 @@ CREATE TABLE IF NOT EXISTS clinic_registrations (
 -- Events gain an optional call-to-action button (used by every future event too).
 ALTER TABLE events ADD COLUMN cta_url TEXT;
 ALTER TABLE events ADD COLUMN cta_label TEXT;
+
+-- Per-animal capacity. Editable from Admin > Clinic, so staff change these
+-- without a deploy.
+INSERT INTO site_settings (key, value) VALUES ('clinic_cap_cats', '25')
+  ON CONFLICT(key) DO NOTHING;
+INSERT INTO site_settings (key, value) VALUES ('clinic_cap_dogs', '25')
+  ON CONFLICT(key) DO NOTHING;

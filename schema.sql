@@ -181,6 +181,9 @@ CREATE TABLE IF NOT EXISTS foster_updates (
 -- Registrations for the MNSNAP spay/neuter clinic (and any future clinic).
 -- Deliberately its own table, not form_submissions: this is a roster staff
 -- work through and hand to MNSNAP as a list, not a pile of messages.
+--
+-- cat_count/dog_count are stored rather than derived from the pets JSON so the
+-- capacity check is a single SUM() instead of parsing every row's JSON.
 CREATE TABLE IF NOT EXISTS clinic_registrations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   event_id INTEGER,
@@ -189,11 +192,17 @@ CREATE TABLE IF NOT EXISTS clinic_registrations (
   phone TEXT NOT NULL,
   address TEXT,
   city TEXT,
+  state TEXT DEFAULT 'MN',
   zip TEXT,
-  pets TEXT NOT NULL,          -- JSON array: [{name,species,sex,age,weight,breed}]
+  pets TEXT NOT NULL,          -- JSON: [{name,species,sex,color,age,weight,shots,services[]}]
   pet_count INTEGER NOT NULL DEFAULT 0,
+  cat_count INTEGER NOT NULL DEFAULT 0,
+  dog_count INTEGER NOT NULL DEFAULT 0,
+  hardship TEXT,               -- their case for a case-by-case exception
   notes TEXT,
-  status TEXT NOT NULL DEFAULT 'new',  -- new | contacted | scheduled | cancelled
+  -- applied | approved | overflow | ineligible | cancelled
+  status TEXT NOT NULL DEFAULT 'applied',
+  auto_reason TEXT,            -- why the form auto-sorted it this way
   staff_notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

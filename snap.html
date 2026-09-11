@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Register for the MNSNAP spay and neuter clinic sponsored by Waseca County Animal Humane Society. Sunday, October 4, 2026 in Waterville, MN for residents of Elysian, Janesville, Waseca and Waterville.">
+  <meta name="description" content="Register for the MNSNAP spay and neuter clinic sponsored by Waseca County Animal Humane Society. Sunday, October 4, 2026 in Waterville, MN for households with multiple cats and dogs in Elysian, Janesville, Waseca and Waterville.">
   <link rel="canonical" href="https://wcahs.org/snap">
   <meta property="og:title" content="Spay & Neuter Clinic Registration - WCAHS">
   <meta property="og:description" content="Low-cost spay and neuter clinic for multiple household cats and dogs. Sunday, October 4, 2026 in Waterville, MN.">
@@ -60,9 +60,12 @@
     .hover\:bg-sage-700:hover { background-color: #48543e !important; }
     .hover\:text-sage-700:hover { color: #48543e !important; }
     .hover\:text-sage-800:hover { color: #3b4434 !important; }
-    .field { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 0.75rem 1rem; transition: box-shadow .15s, border-color .15s; }
+    .field { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 0.75rem 1rem; transition: box-shadow .15s, border-color .15s; background: #fff; }
     .field:focus { outline: none; box-shadow: 0 0 0 2px #758762; border-color: transparent; }
+    .field-sm { padding: 0.6rem 0.85rem; font-size: 0.9rem; }
     .field-label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; }
+    .svc { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: #4b5563; background: #fff; border: 1px solid #e5e7eb; border-radius: 9999px; padding: 0.3rem 0.7rem; cursor: pointer; }
+    .svc input { margin: 0; }
   </style>
 </head>
 <body class="bg-warm-50 text-gray-800" style="overflow-x:hidden;"><div style="overflow-x:hidden;">
@@ -118,9 +121,19 @@
     </div>
   </section>
 
-  <!-- Clinic details -->
   <section class="py-12 md:py-16">
     <div class="max-w-4xl mx-auto px-4">
+
+      <!-- Capacity notice (filled in by JS when a species is full) -->
+      <div id="capacityNotice" class="hidden rounded-2xl p-6 mb-8" style="background:#fef3c7; border:2px solid #fde68a;">
+        <p class="font-bold mb-1" style="color:#92400e;">Applications are full &mdash; but please still apply</p>
+        <p class="text-sm leading-relaxed" style="color:#b45309;">
+          <span id="capacityDetail"></span>
+          People do cancel, and some applications turn out not to fit the clinic, so spots open up
+          regularly. Fill out the form below and we'll add you to the waiting list &mdash; or call us
+          at <a href="tel:5072017287" class="underline font-semibold">(507) 201-7287</a> to check.
+        </p>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-sage-200 text-center">
@@ -141,25 +154,66 @@
       </div>
 
       <div class="bg-sage-50 rounded-2xl p-6 md:p-8 border border-sage-200 mb-6">
-        <h2 class="font-display text-xl font-bold text-sage-800 mb-3">Who can register</h2>
+        <h2 class="font-display text-xl font-bold text-sage-800 mb-3">Who this clinic is for</h2>
         <p class="text-gray-600 leading-relaxed mb-4">
-          WCAHS wants to help families with multiple household cats and/or dogs. This clinic is open to
-          residents of:
+          WCAHS wants to help families with <strong>multiple household cats and/or dogs</strong>. This
+          clinic is sponsored for residents of:
         </p>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2 mb-5">
           <span class="bg-white border border-sage-200 text-sage-700 font-semibold text-sm px-4 py-2 rounded-full">Elysian</span>
           <span class="bg-white border border-sage-200 text-sage-700 font-semibold text-sm px-4 py-2 rounded-full">Janesville</span>
           <span class="bg-white border border-sage-200 text-sage-700 font-semibold text-sm px-4 py-2 rounded-full">Waseca</span>
           <span class="bg-white border border-sage-200 text-sage-700 font-semibold text-sm px-4 py-2 rounded-full">Waterville</span>
+        </div>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Outside those towns, or have just one pet? <strong>Apply anyway.</strong> WCAHS reviews every
+          application individually and makes exceptions &mdash; there's a place on the form to tell us
+          about your situation.
+        </p>
+      </div>
+
+      <!-- What's included -->
+      <div class="bg-white rounded-2xl p-6 md:p-8 border border-sage-200 mb-6">
+        <h2 class="font-display text-xl font-bold text-sage-800 mb-4">What's included</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-2">Covered by WCAHS</p>
+            <ul class="text-gray-600 text-sm space-y-1.5 leading-relaxed">
+              <li>&bull; Spay or neuter surgery</li>
+              <li>&bull; Rabies vaccination</li>
+              <li>&bull; Pre-surgery exam &amp; nail trim</li>
+              <li>&bull; Pain medication and recovery collar</li>
+            </ul>
+          </div>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-2">Available at extra cost</p>
+            <ul class="text-gray-600 text-sm space-y-1.5 leading-relaxed">
+              <li>&bull; Combo vaccine (FVRCP for cats, DAPPV for dogs)</li>
+              <li>&bull; Bordetella / kennel cough (dogs)</li>
+              <li>&bull; Microchip with registration</li>
+              <li>&bull; Flea, tick &amp; mite prevention</li>
+              <li>&bull; Dewormer</li>
+            </ul>
+            <p class="text-gray-400 text-xs mt-3 leading-relaxed">
+              These are MNSNAP services paid directly to MNSNAP on the day of surgery. Tell us below
+              what you're interested in and we'll go over costs when we call.
+            </p>
+          </div>
         </div>
       </div>
 
       <div class="rounded-2xl p-6 mb-10" style="background:#fef3c7; border:2px solid #fde68a;">
         <p class="font-bold mb-1" style="color:#92400e;">Please note</p>
         <p class="text-sm leading-relaxed" style="color:#b45309;">
-          This clinic is <strong>not</strong> for trapped (TNR) cats. If you're working with community or
-          feral cats, <a href="contact.html" class="underline font-semibold">contact us</a> and we'll point
-          you toward the right program.
+          This clinic is for pets that live in your home. It is <strong>not</strong> for trapped (TNR),
+          feral or community cats. If you're caring for community cats,
+          <a href="contact.html" class="underline font-semibold">contact us</a> and we'll point you toward
+          the right program.
+        </p>
+        <p class="text-sm leading-relaxed mt-3" style="color:#b45309;">
+          MNSNAP serves Minnesota pet owners who take part in a needs-based assistance program, or who
+          earn under roughly $45,180 as an individual or $93,600 as a household. If you're unsure whether
+          that's you, apply and we'll help you sort it out.
         </p>
       </div>
 
@@ -167,83 +221,112 @@
       <div id="register" class="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-sage-200">
         <h2 class="font-display text-2xl font-bold text-gray-900 mb-2">Register for the Clinic</h2>
         <p class="text-gray-500 text-sm mb-8">
-          Fill this out once for your whole household &mdash; you can add as many pets as you need.
-          A WCAHS volunteer will contact you to confirm your appointment time.
+          Fill this out once for your whole household &mdash; add as many pets as you need.
+          A WCAHS volunteer will contact you to confirm everything.
         </p>
 
-        <form id="snapForm" class="space-y-6">
+        <form id="snapForm" class="space-y-8">
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div class="md:col-span-2">
-              <label class="field-label" for="snName">Your Name</label>
-              <input id="snName" type="text" class="field" placeholder="First and last name" required>
+          <!-- Your information -->
+          <div>
+            <h3 class="font-display text-lg font-bold text-gray-900 mb-4">Your Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="md:col-span-2">
+                <label class="field-label" for="snName">Full Name</label>
+                <input id="snName" type="text" class="field" placeholder="First and last name" required>
+              </div>
+              <div>
+                <label class="field-label" for="snPhone">Phone</label>
+                <input id="snPhone" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-1234" required>
+              </div>
+              <div>
+                <label class="field-label" for="snEmail">Email</label>
+                <input id="snEmail" type="email" class="field" placeholder="your@email.com" required>
+              </div>
+              <div class="md:col-span-2">
+                <label class="field-label" for="snAddress">Street Address</label>
+                <input id="snAddress" type="text" class="field" placeholder="123 Main St" required>
+              </div>
+              <div>
+                <label class="field-label" for="snCity">City</label>
+                <select id="snCity" class="field" onchange="checkCity()" required>
+                  <option value="">Select your city</option>
+                  <option>Elysian</option>
+                  <option>Janesville</option>
+                  <option>Waseca</option>
+                  <option>Waterville</option>
+                  <option value="Other">Other (please specify)</option>
+                </select>
+                <input id="snCityOther" type="text" class="field mt-2 hidden" placeholder="Your city">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="field-label" for="snState">State</label>
+                  <input id="snState" type="text" class="field" value="MN" maxlength="2">
+                </div>
+                <div>
+                  <label class="field-label" for="snZip">ZIP</label>
+                  <input id="snZip" type="text" inputmode="numeric" maxlength="5" class="field" placeholder="56093">
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="field-label" for="snPhone">Phone</label>
-              <input id="snPhone" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-1234" required>
-            </div>
-            <div>
-              <label class="field-label" for="snEmail">Email</label>
-              <input id="snEmail" type="email" class="field" placeholder="your@email.com" required>
-            </div>
-            <div class="md:col-span-2">
-              <label class="field-label" for="snAddress">Street Address</label>
-              <input id="snAddress" type="text" class="field" placeholder="123 Main St">
-            </div>
-            <div>
-              <label class="field-label" for="snCity">City</label>
-              <select id="snCity" class="field bg-white" onchange="checkCity()" required>
-                <option value="">Select your city</option>
-                <option>Elysian</option>
-                <option>Janesville</option>
-                <option>Waseca</option>
-                <option>Waterville</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label class="field-label" for="snZip">ZIP Code</label>
-              <input id="snZip" type="text" inputmode="numeric" maxlength="5" class="field" placeholder="56093">
-            </div>
-          </div>
 
-          <div id="cityWarning" class="hidden rounded-xl p-4" style="background:#fef3c7; border:2px solid #fde68a;">
-            <p class="text-sm leading-relaxed" style="color:#b45309;">
-              This clinic is sponsored for residents of Elysian, Janesville, Waseca and Waterville. You're
-              welcome to submit anyway &mdash; we'll be in touch about whether we can fit you in or point you
-              to another clinic.
-            </p>
+            <div id="cityWarning" class="hidden rounded-xl p-4 mt-4" style="background:#fef3c7; border:2px solid #fde68a;">
+              <p class="text-sm leading-relaxed" style="color:#b45309;">
+                This clinic is sponsored for residents of Elysian, Janesville, Waseca and Waterville.
+                You're welcome to apply &mdash; WCAHS will review your application individually. Telling us
+                about your situation below will help.
+              </p>
+            </div>
           </div>
 
           <!-- Pets -->
-          <div class="pt-2">
-            <div class="flex items-end justify-between mb-3">
-              <div>
-                <h3 class="font-display text-lg font-bold text-gray-900">Your Pets</h3>
-                <p class="text-gray-400 text-xs">Add a row for each animal you'd like spayed or neutered.</p>
-              </div>
-            </div>
+          <div class="pt-2 border-t border-gray-100">
+            <h3 class="font-display text-lg font-bold text-gray-900 mt-6 mb-1">Your Pets</h3>
+            <p class="text-gray-400 text-xs mb-4">
+              Add every animal you'd like spayed or neutered. Spay/neuter and a rabies shot are covered
+              for each one.
+            </p>
             <div id="petRows" class="space-y-4"></div>
             <button type="button" onclick="addPet()" class="mt-4 text-sm font-semibold text-sage-700 hover:text-sage-800 transition">+ Add another pet</button>
+            <p id="petSummary" class="text-gray-400 text-xs mt-3"></p>
           </div>
 
+          <!-- Situation -->
+          <div class="pt-2 border-t border-gray-100">
+            <h3 class="font-display text-lg font-bold text-gray-900 mt-6 mb-1">Tell Us About Your Situation</h3>
+            <p class="text-gray-400 text-xs mb-4">
+              Optional, and it stays between you and WCAHS staff.
+            </p>
+            <label class="field-label" for="snHardship">
+              Is there anything you'd like us to know when we review your application?
+            </label>
+            <textarea id="snHardship" rows="4" class="field resize-none" placeholder="For example: you have one pet but money is tight right now, you live just outside the listed towns, you're caring for animals someone left behind, or you're on a fixed income. We read every one of these."></textarea>
+            <p class="text-gray-400 text-xs mt-2 leading-relaxed">
+              We ask because we'd rather make an exception than turn away someone who needs help. There's
+              no wrong answer, and leaving it blank won't count against you.
+            </p>
+          </div>
+
+          <!-- Anything else -->
           <div>
-            <label class="field-label" for="snNotes">Anything we should know? <span class="font-normal text-gray-400">(optional)</span></label>
-            <textarea id="snNotes" rows="3" class="field resize-none" placeholder="Health concerns, questions, scheduling needs..."></textarea>
+            <label class="field-label" for="snNotes">Anything we should know about your pets? <span class="font-normal text-gray-400">(optional)</span></label>
+            <textarea id="snNotes" rows="3" class="field resize-none" placeholder="Health concerns, a pet who's hard to handle, scheduling needs..."></textarea>
           </div>
 
-          <label class="flex items-start gap-3 text-sm text-gray-600 cursor-pointer">
-            <input id="snTnr" type="checkbox" class="mt-1" required>
-            <span>I understand this clinic is <strong>not</strong> for trapped (TNR) cats.</span>
-          </label>
-
-          <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-            <input id="snOptIn" type="checkbox" checked> Keep me updated on WCAHS news &amp; events
-          </label>
+          <div class="space-y-3 pt-2 border-t border-gray-100 mt-6">
+            <label class="flex items-start gap-3 text-sm text-gray-600 cursor-pointer pt-4">
+              <input id="snHousehold" type="checkbox" class="mt-1" required>
+              <span>These are <strong>my own pets living in my home</strong> &mdash; not trapped (TNR), feral or community cats.</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <input id="snOptIn" type="checkbox" checked> Keep me updated on WCAHS news &amp; events
+            </label>
+          </div>
 
           <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
           <div id="snStatus" class="hidden"></div>
-          <button id="snSubmit" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Submit Registration</button>
+          <button id="snSubmit" type="submit" class="w-full bg-sage-600 hover:bg-sage-700 text-white font-bold py-4 rounded-xl transition shadow-md">Submit Application</button>
         </form>
       </div>
 
@@ -292,6 +375,17 @@
 <script>
   var petIndex = 0;
 
+  // Services people can request per animal. Spay/neuter isn't listed because
+  // it's the reason they're here — it's covered for every pet.
+  var SERVICES = [
+    { id: 'rabies',    label: 'Rabies vaccine', covered: true },
+    { id: 'combo',     label: 'Combo vaccine' },
+    { id: 'bordetella',label: 'Bordetella (dogs)' },
+    { id: 'microchip', label: 'Microchip' },
+    { id: 'flea',      label: 'Flea/tick prevention' },
+    { id: 'dewormer',  label: 'Dewormer' }
+  ];
+
   function addPet() {
     petIndex++;
     var i = petIndex;
@@ -304,19 +398,34 @@
         '<button type="button" onclick="removePet(' + i + ')" class="removePet text-xs text-gray-400 hover:text-red-500 transition">Remove</button>' +
       '</div>' +
       '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">' +
-        '<input type="text" class="field petName" placeholder="Pet name">' +
-        '<select class="field bg-white petSpecies" required>' +
+        '<input type="text" class="field field-sm petName" placeholder="Pet name">' +
+        '<select class="field field-sm petSpecies" onchange="updatePetSummary()" required>' +
           '<option value="">Dog or cat?</option><option value="Dog">Dog</option><option value="Cat">Cat</option>' +
         '</select>' +
-        '<select class="field bg-white petSex">' +
+        '<select class="field field-sm petSex">' +
           '<option value="">Male or female?</option><option value="Male">Male</option><option value="Female">Female</option>' +
         '</select>' +
-        '<input type="text" class="field petAge" placeholder="Approx. age (e.g. 2 years)">' +
-        '<input type="text" class="field petWeight" placeholder="Approx. weight (lbs)">' +
-        '<input type="text" class="field petBreed" placeholder="Breed / color">' +
+        '<input type="text" class="field field-sm petColor" placeholder="Color / markings">' +
+        '<input type="text" class="field field-sm petAge" placeholder="Approx. age (e.g. 2 years)">' +
+        '<input type="text" class="field field-sm petWeight" placeholder="Approx. weight (lbs)">' +
+        '<select class="field field-sm petShots md:col-span-2">' +
+          '<option value="">Current on shots?</option>' +
+          '<option value="Yes">Yes, up to date on shots</option>' +
+          '<option value="No">No, not up to date</option>' +
+          '<option value="Not sure">Not sure</option>' +
+        '</select>' +
+      '</div>' +
+      '<p class="text-xs font-semibold text-gray-500 mt-3 mb-2">Services for this pet <span class="font-normal text-gray-400">(spay/neuter is already included)</span></p>' +
+      '<div class="flex flex-wrap gap-2">' +
+        SERVICES.map(function(s) {
+          return '<label class="svc"><input type="checkbox" class="petSvc" value="' + s.label + '">' +
+                 s.label + (s.covered ? ' <span style="color:#5c6b4e;font-weight:700">(covered)</span>' : '') +
+                 '</label>';
+        }).join('') +
       '</div>';
     document.getElementById('petRows').appendChild(row);
     renumberPets();
+    updatePetSummary();
   }
 
   function removePet(i) {
@@ -325,9 +434,10 @@
     var row = document.querySelector('.petRow[data-idx="' + i + '"]');
     if (row) row.remove();
     renumberPets();
+    updatePetSummary();
   }
 
-  // The first row can't be removed — a registration with no pets is meaningless.
+  // The first row can't be removed — an application with no pets is meaningless.
   function renumberPets() {
     var rows = document.querySelectorAll('.petRow');
     rows.forEach(function(row, n) {
@@ -337,10 +447,42 @@
     });
   }
 
+  function updatePetSummary() {
+    var cats = 0, dogs = 0;
+    document.querySelectorAll('.petRow').forEach(function(row) {
+      var s = row.querySelector('.petSpecies').value;
+      if (s === 'Cat') cats++;
+      if (s === 'Dog') dogs++;
+    });
+    var parts = [];
+    if (cats) parts.push(cats + ' cat' + (cats === 1 ? '' : 's'));
+    if (dogs) parts.push(dogs + ' dog' + (dogs === 1 ? '' : 's'));
+    document.getElementById('petSummary').textContent = parts.length ? 'You\'ve added ' + parts.join(' and ') + '.' : '';
+  }
+
   function checkCity() {
     var v = document.getElementById('snCity').value;
     document.getElementById('cityWarning').classList.toggle('hidden', v !== 'Other');
+    document.getElementById('snCityOther').classList.toggle('hidden', v !== 'Other');
   }
+
+  function cityValue() {
+    var v = document.getElementById('snCity').value;
+    if (v === 'Other') return document.getElementById('snCityOther').value.trim();
+    return v;
+  }
+
+  // Show the "full" notice when a species has no spots left. Applications stay
+  // open either way — the notice sets expectations, it doesn't block anyone.
+  fetch('/api/clinic').then(function(r) { return r.json(); }).then(function(cap) {
+    if (!cap || (!cap.cats.full && !cap.dogs.full)) return;
+    var msg;
+    if (cap.cats.full && cap.dogs.full) msg = 'All cat and dog spots for this clinic are currently spoken for.';
+    else if (cap.cats.full) msg = 'Cat spots for this clinic are currently spoken for. Dog spots may still be available.';
+    else msg = 'Dog spots for this clinic are currently spoken for. Cat spots may still be available.';
+    document.getElementById('capacityDetail').textContent = msg + ' ';
+    document.getElementById('capacityNotice').classList.remove('hidden');
+  }).catch(function(){});
 
   addPet();
 
@@ -354,19 +496,24 @@
     document.querySelectorAll('.petRow').forEach(function(row) {
       var species = row.querySelector('.petSpecies').value;
       if (!species) return;
+      var services = [];
+      row.querySelectorAll('.petSvc:checked').forEach(function(cb) { services.push(cb.value); });
       pets.push({
         name: row.querySelector('.petName').value,
         species: species,
         sex: row.querySelector('.petSex').value,
+        color: row.querySelector('.petColor').value,
         age: row.querySelector('.petAge').value,
         weight: row.querySelector('.petWeight').value,
-        breed: row.querySelector('.petBreed').value
+        shots: row.querySelector('.petShots').value,
+        services: services
       });
     });
 
     if (pets.length === 0) {
-      status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Please add at least one pet</p></div>';
+      status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Please add at least one pet</p><p class="text-sm mt-1" style="color:#b45309;">Each pet needs "Dog or cat?" selected.</p></div>';
       status.classList.remove('hidden');
+      status.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -381,18 +528,21 @@
           email: document.getElementById('snEmail').value,
           phone: document.getElementById('snPhone').value,
           address: document.getElementById('snAddress').value,
-          city: document.getElementById('snCity').value,
+          city: cityValue(),
+          state: document.getElementById('snState').value,
           zip: document.getElementById('snZip').value,
           pets: pets,
+          hardship: document.getElementById('snHardship').value,
           notes: document.getElementById('snNotes').value,
-          acknowledged_tnr: document.getElementById('snTnr').checked,
+          acknowledged_household: document.getElementById('snHousehold').checked,
           subscribe: document.getElementById('snOptIn').checked,
           turnstile_token: turnstile ? turnstile.value : ''
         })
       });
       var data = await res.json();
       if (data.ok) {
-        status.innerHTML = '<div class="rounded-xl p-6 text-center" style="background:#f6f7f4;border:2px solid #d2d8c8;"><img src="images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">You\'re registered!</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || "We'll contact you to confirm your appointment time.") + '</p><p class="text-xs mt-3" style="color:#93a27e;">Check your email for a confirmation.</p></div>';
+        var heading = data.status === 'applied' ? "You're registered!" : 'Application received';
+        status.innerHTML = '<div class="rounded-xl p-6 text-center" style="background:#f6f7f4;border:2px solid #d2d8c8;"><img src="images/paws/paw_01.png" alt="" style="height:36px;margin:0 auto 10px;opacity:0.5;"><p class="font-bold text-lg" style="color:#3b4434;">' + heading + '</p><p class="text-sm mt-1" style="color:#5c6b4e;">' + (data.message || '') + '</p><p class="text-xs mt-3" style="color:#93a27e;">Check your email for a confirmation.</p></div>';
         status.classList.remove('hidden');
         document.getElementById('snapForm').reset();
         btn.style.display = 'none';
@@ -400,13 +550,13 @@
       } else {
         status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">' + (data.error || 'Something went wrong') + '</p><p class="text-sm mt-1" style="color:#b45309;">Please try again.</p></div>';
         status.classList.remove('hidden');
-        btn.disabled = false; btn.textContent = 'Submit Registration';
+        btn.disabled = false; btn.textContent = 'Submit Application';
         if (window.turnstile) { try { window.turnstile.reset(); } catch(err) {} }
       }
     } catch(err) {
       status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#fef3c7;border:2px solid #fde68a;"><p class="font-bold" style="color:#92400e;">Could not submit</p><p class="text-sm mt-1" style="color:#b45309;">Please check your connection and try again.</p></div>';
       status.classList.remove('hidden');
-      btn.disabled = false; btn.textContent = 'Submit Registration';
+      btn.disabled = false; btn.textContent = 'Submit Application';
       if (window.turnstile) { try { window.turnstile.reset(); } catch(err2) {} }
     }
   });

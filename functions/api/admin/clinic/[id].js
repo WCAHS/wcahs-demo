@@ -1,6 +1,6 @@
 import { json, error } from '../../_helpers.js';
 
-const STATUSES = ['new', 'contacted', 'scheduled', 'cancelled'];
+const STATUSES = ['applied', 'approved', 'overflow', 'ineligible', 'cancelled'];
 
 export async function onRequestPut(context) {
   const id = context.params.id;
