@@ -1254,7 +1254,12 @@ function eventFormHtml(ev) {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <div class="md:col-span-2"><label class="block text-xs font-semibold text-gray-600 mb-1">Event Title *</label><input id="evTitle" value="${h(e.title||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Adoption Day at Tractor Supply"></div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Start Date *</label><input id="evDate" type="date" value="${e.date||''}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
-      <div><label class="block text-xs font-semibold text-gray-600 mb-1">End Date <span class="font-normal text-gray-400">(multi-day)</span></label><input id="evEndDate" type="date" value="${e.end_date||''}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"></div>
+      <div>
+        <label class="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-1 cursor-pointer">
+          <input id="evMultiDay" type="checkbox" ${e.end_date ? 'checked' : ''} onchange="toggleEndDate()"> Runs more than one day
+        </label>
+        <input id="evEndDate" type="date" value="${e.end_date||''}" ${e.end_date ? '' : 'disabled'} class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 ${e.end_date ? '' : 'bg-gray-50 text-gray-400'}" placeholder="End date">
+      </div>
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Event Type</label>
         <select id="evBadgeSelect" onchange="if(this.value==='custom'){document.getElementById('evBadgeCustom').classList.remove('hidden')}else{document.getElementById('evBadgeCustom').classList.add('hidden')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
           <option value="">None</option>
@@ -1294,6 +1299,18 @@ function eventFormHtml(ev) {
   </div>`;
 }
 
+// Most events are one day. The end date is greyed out until someone says
+// otherwise, so a stale value can't silently make an event span a week.
+window.toggleEndDate = function() {
+  const on = document.getElementById('evMultiDay').checked;
+  const el = document.getElementById('evEndDate');
+  el.disabled = !on;
+  el.classList.toggle('bg-gray-50', !on);
+  el.classList.toggle('text-gray-400', !on);
+  if (!on) el.value = '';
+  else el.focus();
+};
+
 window.showEventForm = function() { document.getElementById('eventFormArea').innerHTML = eventFormHtml(); };
 window.editEvent = function(ev) { document.getElementById('eventFormArea').innerHTML = eventFormHtml(ev); window.scrollTo(0,0); };
 
@@ -1314,7 +1331,8 @@ window.saveEvent = async function(id) {
   const badgeCustom = document.getElementById('evBadgeCustom').value.trim();
   const badge = badgeSelect === 'custom' ? badgeCustom : badgeSelect;
 
-  const endDate = document.getElementById('evEndDate').value;
+  const multiDay = document.getElementById('evMultiDay').checked;
+  const endDate = multiDay ? document.getElementById('evEndDate').value : '';
 
   const body = {
     title: document.getElementById('evTitle').value,
@@ -3164,6 +3182,15 @@ const CLINIC_STATUS_STYLE = {
   cancelled:  'bg-gray-100 text-gray-400'
 };
 
+// A coloured, bordered select reads as something you act on; the plain one
+// looked like a label. Staff were not clicking it.
+const STATUS_SELECT_STYLE = {
+  applied:    'border-amber-400 text-amber-700',
+  approved:   'border-green-500 text-green-700',
+  ineligible: 'border-gray-400 text-gray-600',
+  cancelled:  'border-gray-300 text-gray-400'
+};
+
 function petAge(p) {
   const parts = [];
   if (p.age_years !== '' && p.age_years != null) parts.push(p.age_years + 'y');
@@ -3392,6 +3419,8 @@ function clinicCard(r) {
   const counts = [];
   if (r.cat_count) counts.push(r.cat_count + ' cat' + (r.cat_count === 1 ? '' : 's'));
   if (r.dog_count) counts.push(r.dog_count + ' dog' + (r.dog_count === 1 ? '' : 's'));
+  // Applied and not waitlisted means nobody has said yes or no to this yet.
+  const needsDecision = r.status === 'applied' && !r.waitlisted;
 
   return `<div id="clinic-reg-${r.id}" class="card p-5 ${r.status === 'cancelled' ? 'opacity-60' : ''}">
     <div class="flex flex-wrap items-start justify-between gap-3 mb-1">
@@ -3432,15 +3461,23 @@ function clinicCard(r) {
         </tr>`).join('')}
       </table>
     </div>
-    <div class="flex flex-wrap items-center gap-3 mt-4">
-      <select onchange="setClinicStatus(${r.id}, this.value)" class="border border-sage-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sage-400">
-        ${CLINIC_STATUSES.map(st => `<option value="${st}"${r.status === st ? ' selected' : ''}>${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('')}
-      </select>
+    <div class="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+      <div class="flex items-center gap-2">
+        <label class="text-xs font-bold uppercase tracking-wider text-sage-400" for="clinicStatus${r.id}">Status</label>
+        <div class="relative">
+          <select id="clinicStatus${r.id}" onchange="setClinicStatus(${r.id}, this.value)"
+            class="appearance-none cursor-pointer font-semibold border-2 rounded-xl pl-3 pr-8 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sage-400 ${STATUS_SELECT_STYLE[r.status] || STATUS_SELECT_STYLE.applied}">
+            ${CLINIC_STATUSES.map(st => `<option value="${st}"${r.status === st ? ' selected' : ''}>${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('')}
+          </select>
+          <svg class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
+      ${needsDecision ? '<span class="text-xs font-semibold" style="color:#b45309;">&larr; Needs a decision</span>' : ''}
       <input id="clinicNote${r.id}" value="${h(r.staff_notes || '')}" placeholder="Staff notes (e.g. appointment time)" class="flex-1 min-w-[180px] border border-sage-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sage-400">
       <button onclick="saveClinicNote(${r.id}, this)" class="text-xs text-sage-700 hover:underline font-semibold">Save note</button>
       ${r.status !== 'cancelled' ? (r.waitlisted
         ? `<button onclick="setWaitlisted(${r.id}, false)" class="text-xs text-blue-600 hover:underline font-semibold">Move off waitlist</button>`
-        : `<button onclick="setWaitlisted(${r.id}, true)" class="text-xs text-gray-400 hover:text-blue-600">Move to waitlist</button>`) : ''}
+        : `<button onclick="setWaitlisted(${r.id}, true)" class="text-xs text-blue-600 hover:underline font-semibold">Move to waitlist</button>`) : ''}
       <button onclick="if(confirm('Delete this application? This cannot be undone.')) deleteClinicReg(${r.id})" class="text-xs text-red-400 hover:underline">Delete</button>
     </div>
   </div>`;
@@ -3540,8 +3577,27 @@ window.exportClinicXlsx = function() {
   // Approved only — this sheet goes to MNSNAP as the confirmed day roster.
   const approved = _clinicData.filter(r => r.status === 'approved');
   if (approved.length === 0) {
-    alert('No approved applications yet.\n\nApprove the applications you want on the clinic roster, then export.');
+    alert('No approved applications yet.\n\nSet applications to Approved using the Status dropdown on each one, then export.');
     return;
+  }
+
+  // Exporting with undecided applications still sitting there is how someone
+  // gets left off the roster by accident. Waitlisted ones are excluded from the
+  // count — those are deliberately waiting on a cancellation, not on staff.
+  const pending = _clinicData.filter(r => r.status === 'applied' && !r.waitlisted);
+  if (pending.length > 0) {
+    const sum = _formSummary[_clinicEvent ? _clinicEvent.id : _formEventId] || {};
+    const appr = sum.approved || { cats: 0, dogs: 0 };
+    const catsLeft = Math.max(0, (_clinicEvent ? _clinicEvent.cap_cats : 0) - appr.cats);
+    const dogsLeft = Math.max(0, (_clinicEvent ? _clinicEvent.cap_dogs : 0) - appr.dogs);
+    const names = pending.slice(0, 5).map(r => '  \u2022 ' + r.owner_name).join('\n')
+      + (pending.length > 5 ? `\n  \u2022 ...and ${pending.length - 5} more` : '');
+    const msg =
+      `${pending.length} application${pending.length === 1 ? ' is' : 's are'} still awaiting a decision and will NOT be in this file:\n\n${names}\n\n` +
+      `Confirmed so far: ${appr.cats} cat${appr.cats === 1 ? '' : 's'} and ${appr.dogs} dog${appr.dogs === 1 ? '' : 's'}` +
+      ` \u2014 ${catsLeft} cat and ${dogsLeft} dog spot${dogsLeft === 1 ? '' : 's'} still unfilled.\n\n` +
+      `Export the roster anyway?`;
+    if (!confirm(msg)) return;
   }
 
   const animals = [];
