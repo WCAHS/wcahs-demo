@@ -17,6 +17,14 @@ const CLINIC = {
   address: '20547 490th St, Waterville, MN 56096',
 };
 
+function ageLabel(p) {
+  const y = p.age_years, m = p.age_months;
+  const parts = [];
+  if (y !== '' && y != null) parts.push(`${y}y`);
+  if (m !== '' && m != null) parts.push(`${m}m`);
+  return parts.join(' ');
+}
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -67,28 +75,44 @@ export async function onRequestPost(context) {
   const valid = await verifyTurnstile(body.turnstile_token, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'));
   if (!valid) return error('CAPTCHA verification failed', 403);
 
-  if (!body.owner_name || !body.email || !body.phone) {
-    return error('Name, email, and phone are required');
+  if (!body.owner_first || !body.owner_last || !body.email || !body.phone_cell) {
+    return error('First name, last name, email, and cell phone are required');
   }
   if (!body.acknowledged_household) {
     return error('Please confirm these are your own household pets');
   }
 
+  const ownerFirst = String(body.owner_first).trim().slice(0, 60);
+  const ownerLast = String(body.owner_last).trim().slice(0, 60);
+  const ownerName = `${ownerFirst} ${ownerLast}`.trim();
+
   // Keep only pets with a species — blank rows from "add another pet" would
   // otherwise land in the roster MNSNAP receives.
+  const clean = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  // Ages and weights go onto MNSNAP's sheet as numbers, so coerce here rather
+  // than letting "about 2" through to a spreadsheet cell.
+  const num = (v, max) => {
+    const n = parseInt(String(v == null ? '' : v).replace(/[^0-9]/g, ''), 10);
+    return isNaN(n) || n < 0 || n > max ? '' : n;
+  };
+
   const pets = Array.isArray(body.pets)
     ? body.pets
         .filter(p => p && p.species)
         .map(p => ({
-          name: String(p.name || '').trim().slice(0, 60),
-          species: String(p.species || '').trim().slice(0, 10),
-          sex: String(p.sex || '').trim().slice(0, 10),
-          color: String(p.color || '').trim().slice(0, 60),
-          age: String(p.age || '').trim().slice(0, 30),
-          weight: String(p.weight || '').trim().slice(0, 30),
-          shots: String(p.shots || '').trim().slice(0, 20),
+          name: clean(p.name, 60),
+          species: clean(p.species, 10),
+          sex: clean(p.sex, 10),
+          breed: clean(p.breed, 80),
+          color1: clean(p.color1, 40),
+          color2: clean(p.color2, 40),
+          age_years: num(p.age_years, 40),
+          age_months: num(p.age_months, 11),
+          weight: num(p.weight, 300),
+          shots: clean(p.shots, 20),
+          health: clean(p.health, 500),
           services: Array.isArray(p.services)
-            ? p.services.slice(0, 12).map(s => String(s).trim().slice(0, 60))
+            ? p.services.slice(0, 12).map(x => clean(x, 60))
             : [],
         }))
     : [];
@@ -129,14 +153,18 @@ export async function onRequestPost(context) {
 
   const result = await env.DB.prepare(
     `INSERT INTO clinic_registrations
-       (event_id, owner_name, email, phone, address, city, state, zip,
+       (event_id, owner_first, owner_last, owner_name, email, phone_cell, phone_home,
+        address, city, state, zip,
         pets, pet_count, cat_count, dog_count, hardship, notes, status, auto_reason)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     body.event_id || null,
-    body.owner_name,
+    ownerFirst,
+    ownerLast,
+    ownerName,
     body.email,
-    body.phone,
+    body.phone_cell,
+    body.phone_home || null,
     body.address || null,
     city || null,
     body.state || 'MN',
@@ -154,20 +182,16 @@ export async function onRequestPost(context) {
   const regId = result.meta?.last_row_id || '';
 
   if (body.subscribe) {
-    const nameParts = String(body.owner_name).split(' ');
-    await addToAudience(env, {
-      email: body.email,
-      firstName: nameParts[0] || '',
-      lastName: nameParts.slice(1).join(' ') || '',
-    });
+    await addToAudience(env, { email: body.email, firstName: ownerFirst, lastName: ownerLast });
   }
 
   const petRows = pets.map(p => `<tr>
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.name) || '<em style="color:#aaa">unnamed</em>'}</td>
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.species)}</td>
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.sex)}</td>
-      <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.color)}</td>
-      <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.age)}</td>
+      <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.breed)}</td>
+      <td style="padding:6px 10px;border-top:1px solid #eee">${esc([p.color1, p.color2].filter(Boolean).join(' / '))}</td>
+      <td style="padding:6px 10px;border-top:1px solid #eee">${esc(ageLabel(p))}</td>
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.weight)}</td>
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc(p.shots)}</td>
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc((p.services || []).join(', '))}</td>
@@ -180,15 +204,15 @@ export async function onRequestPost(context) {
   }[status];
 
   await sendNotification(env, {
-    subject: `Clinic ${status === 'applied' ? 'Registration' : status === 'overflow' ? 'Registration (OVERFLOW)' : 'Registration (NEEDS REVIEW)'}: ${body.owner_name} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
+    subject: `Clinic ${status === 'applied' ? 'Registration' : status === 'overflow' ? 'Registration (OVERFLOW)' : 'Registration (NEEDS REVIEW)'}: ${ownerName} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Spay/Neuter Clinic Registration</h2>
       <p style="background:${statusBanner.bg};border:1px solid ${statusBanner.border};color:${statusBanner.fg};padding:10px 14px;border-radius:8px;font-size:13px;margin:0 0 16px">
         ${statusBanner.text}${autoReason ? `<br><span style="opacity:.85">${esc(autoReason)}</span>` : ''}
       </p>
       <table style="border-collapse:collapse;width:100%;max-width:620px">
-        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Name</td><td style="padding:8px 12px;font-weight:600">${esc(body.owner_name)}</td></tr>
+        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Name</td><td style="padding:8px 12px;font-weight:600">${esc(ownerName)}</td></tr>
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px">Email</td><td style="padding:8px 12px"><a href="mailto:${esc(body.email)}">${esc(body.email)}</a></td></tr>
-        <tr><td style="padding:8px 12px;color:#888;font-size:13px">Phone</td><td style="padding:8px 12px"><a href="tel:${esc(body.phone)}">${esc(body.phone)}</a></td></tr>
+        <tr><td style="padding:8px 12px;color:#888;font-size:13px">Phone</td><td style="padding:8px 12px"><a href="tel:${esc(body.phone_cell)}">${esc(body.phone_cell)}</a> (cell)${body.phone_home ? `<br><a href="tel:${esc(body.phone_home)}">${esc(body.phone_home)}</a> (home)` : ''}</td></tr>
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Address</td><td style="padding:8px 12px">${esc(body.address)}<br>${esc(city)}, ${esc(body.state || 'MN')} ${esc(body.zip)}</td></tr>
         <tr><td style="padding:8px 12px;color:#888;font-size:13px">Animals</td><td style="padding:8px 12px">${catCount} cat${catCount === 1 ? '' : 's'}, ${dogCount} dog${dogCount === 1 ? '' : 's'}</td></tr>
         ${body.hardship ? `<tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Their situation</td><td style="padding:8px 12px;white-space:pre-wrap">${esc(body.hardship)}</td></tr>` : ''}
@@ -198,7 +222,8 @@ export async function onRequestPost(context) {
       <table style="border-collapse:collapse;width:100%;max-width:620px;font-size:12px">
         <tr style="background:#f9f9f6;text-align:left">
           <th style="padding:6px 10px;color:#888">Name</th><th style="padding:6px 10px;color:#888">Species</th>
-          <th style="padding:6px 10px;color:#888">Sex</th><th style="padding:6px 10px;color:#888">Color</th>
+          <th style="padding:6px 10px;color:#888">Sex</th><th style="padding:6px 10px;color:#888">Breed</th>
+          <th style="padding:6px 10px;color:#888">Color</th>
           <th style="padding:6px 10px;color:#888">Age</th><th style="padding:6px 10px;color:#888">Weight</th>
           <th style="padding:6px 10px;color:#888">Shots</th><th style="padding:6px 10px;color:#888">Services</th>
         </tr>
@@ -218,7 +243,7 @@ export async function onRequestPost(context) {
   await sendAutoReply(env, {
     to: body.email,
     subject: 'We received your spay/neuter clinic registration',
-    bodyHtml: `<h2 style="color:#3b4434;margin:0 0 12px;font-family:Georgia,serif">Thanks, ${esc(String(body.owner_name).split(' ')[0])}!</h2>
+    bodyHtml: `<h2 style="color:#3b4434;margin:0 0 12px;font-family:Georgia,serif">Thanks, ${esc(ownerFirst)}!</h2>
       <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 20px">
         We've received your registration for the ${esc(CLINIC.name)} and have you down for
         <strong>${pets.length} pet${pets.length === 1 ? '' : 's'}</strong>.

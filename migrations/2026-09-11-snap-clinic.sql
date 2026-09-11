@@ -6,19 +6,31 @@
 -- Deliberately its own table, not form_submissions: this is a roster staff
 -- work through and hand to MNSNAP as a list, not a pile of messages.
 --
+-- Field-for-field this mirrors MNSNAP's intake spreadsheet (first/last name,
+-- cell/home phone, per-animal breed, two colours, age split into years and
+-- months). Collecting it in the shape the clinic needs it is the whole point —
+-- otherwise a volunteer retypes 50 animals by hand on surgery week.
+--
 -- cat_count/dog_count are stored rather than derived from the pets JSON so the
 -- capacity check is a single SUM() instead of parsing every row's JSON.
 CREATE TABLE IF NOT EXISTS clinic_registrations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   event_id INTEGER,
+  owner_first TEXT NOT NULL,
+  owner_last TEXT NOT NULL,
+  -- Denormalised "First Last" so admin lists and emails don't rebuild it
+  -- everywhere. Safe because a row is never edited after insert.
   owner_name TEXT NOT NULL,
   email TEXT NOT NULL,
-  phone TEXT NOT NULL,
+  phone_cell TEXT NOT NULL,
+  phone_home TEXT,
   address TEXT,
   city TEXT,
   state TEXT DEFAULT 'MN',
   zip TEXT,
-  pets TEXT NOT NULL,          -- JSON: [{name,species,sex,color,age,weight,shots,services[]}]
+  -- JSON: [{name,species,sex,breed,color1,color2,age_years,age_months,
+  --         weight,shots,health,services[]}]
+  pets TEXT NOT NULL,
   pet_count INTEGER NOT NULL DEFAULT 0,
   cat_count INTEGER NOT NULL DEFAULT 0,
   dog_count INTEGER NOT NULL DEFAULT 0,

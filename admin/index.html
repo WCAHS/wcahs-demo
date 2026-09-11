@@ -15,6 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <!-- SheetJS: builds the MNSNAP intake .xlsx in the browser, so no server work -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -3091,6 +3093,13 @@ const CLINIC_STATUS_STYLE = {
   ineligible: 'bg-gray-200 text-gray-600',
   cancelled:  'bg-gray-100 text-gray-400'
 };
+function petAge(p) {
+  const parts = [];
+  if (p.age_years !== '' && p.age_years != null) parts.push(p.age_years + 'y');
+  if (p.age_months !== '' && p.age_months != null) parts.push(p.age_months + 'm');
+  return parts.join(' ');
+}
+
 let _clinicData = [];
 let _clinicCaps = { cats: 25, dogs: 25 };
 let _clinicUsed = { cats: 0, dogs: 0 };
@@ -3127,7 +3136,10 @@ function paintClinic(el) {
 
   let html = `<div class="flex flex-wrap items-center justify-between gap-3 mb-2">
     <h1 class="text-2xl font-display font-bold text-sage-800">Clinic Applications</h1>
-    <button onclick="exportClinicCsv()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">Export CSV</button>
+    <div class="flex gap-2">
+      <button onclick="exportClinicXlsx()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Approved animals only, in MNSNAP's intake format">MNSNAP Roster (.xlsx)</button>
+      <button onclick="exportClinicCsv()" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Everything on screen, including notes and situations">Export CSV</button>
+    </div>
   </div>
   <p class="text-gray-500 text-sm mb-6">${all.length} application${all.length === 1 ? '' : 's'} received</p>`;
 
@@ -3181,7 +3193,7 @@ function paintClinic(el) {
           <span class="text-xs text-gray-400">${timeAgo(r.created_at)}</span>
         </div>
         <p class="text-sm text-gray-500">
-          <a href="tel:${h(r.phone)}" class="hover:underline">${fmtPhone(r.phone)}</a>
+          <a href="tel:${h(r.phone_cell)}" class="hover:underline">${fmtPhone(r.phone_cell)}</a>${r.phone_home ? ` &bull; <a href="tel:${h(r.phone_home)}" class="hover:underline">${fmtPhone(r.phone_home)}</a> <span class="text-gray-400">(home)</span>` : ''}
           &bull; <a href="mailto:${h(r.email)}" class="hover:underline">${h(r.email)}</a>
         </p>
         <p class="text-sm text-gray-500">${h(r.address || '')}${r.address && r.city ? ', ' : ''}${h(r.city || '')}${r.state ? ', ' + h(r.state) : ''}${r.zip ? ' ' + h(r.zip) : ''}</p>
@@ -3199,14 +3211,16 @@ function paintClinic(el) {
           <table class="w-full text-xs text-left">
             <tr class="text-gray-400">
               <th class="py-1 pr-3 font-semibold">Name</th><th class="py-1 pr-3 font-semibold">Species</th>
-              <th class="py-1 pr-3 font-semibold">Sex</th><th class="py-1 pr-3 font-semibold">Color</th>
+              <th class="py-1 pr-3 font-semibold">Sex</th><th class="py-1 pr-3 font-semibold">Breed</th>
+              <th class="py-1 pr-3 font-semibold">Color</th>
               <th class="py-1 pr-3 font-semibold">Age</th><th class="py-1 pr-3 font-semibold">Weight</th>
               <th class="py-1 pr-3 font-semibold">Shots</th><th class="py-1 font-semibold">Services</th>
             </tr>
             ${pets.map(p => `<tr class="border-t border-gray-100 text-gray-600">
               <td class="py-1.5 pr-3">${h(p.name || '—')}</td><td class="py-1.5 pr-3">${h(p.species || '')}</td>
-              <td class="py-1.5 pr-3">${h(p.sex || '')}</td><td class="py-1.5 pr-3">${h(p.color || '')}</td>
-              <td class="py-1.5 pr-3">${h(p.age || '')}</td><td class="py-1.5 pr-3">${h(p.weight || '')}</td>
+              <td class="py-1.5 pr-3">${h(p.sex || '')}</td><td class="py-1.5 pr-3">${h(p.breed || '')}</td>
+              <td class="py-1.5 pr-3">${h([p.color1, p.color2].filter(Boolean).join(' / '))}</td>
+              <td class="py-1.5 pr-3">${h(petAge(p))}</td><td class="py-1.5 pr-3">${h(p.weight === '' || p.weight == null ? '' : p.weight + ' lb')}</td>
               <td class="py-1.5 pr-3">${h(p.shots || '')}</td><td class="py-1.5">${h((p.services || []).join(', '))}</td>
             </tr>`).join('')}
           </table>
@@ -3262,10 +3276,128 @@ window.deleteClinicReg = async function(id) {
   await renderClinic(document.getElementById('content'));
 };
 
+// ── MNSNAP intake sheet export ───────────────────────────────────────────
+// Reproduces the spreadsheet MNSNAP works from on surgery day, one row per
+// ANIMAL, grouped the way they run the schedule: dogs first (9am check-in),
+// then cats (9:30am). The slot label in column B is what tells the surgery
+// team what they're setting up for, so it's derived from sex + species +
+// weight rather than typed.
+const DOG_BANDS = [
+  { max: 29,  label: 'Small (0-29 lbs)' },
+  { max: 49,  label: 'Medium (30-49 lbs)' },
+  { max: 70,  label: 'Large (50-70 lbs)' },
+  { max: 100, label: 'XLarge (70-100 lbs)' },
+  { max: Infinity, label: 'XXLarge (100+ lbs)' }
+];
+
+function slotLabel(pet) {
+  const sex = pet.sex || 'Unknown sex';
+  const species = pet.species || '';
+  if (String(species).toLowerCase() === 'cat') return `${sex} Cat`;
+  const w = parseInt(pet.weight, 10);
+  if (isNaN(w)) return `${sex} Dog (weight not given)`;
+  const band = DOG_BANDS.find(b => w <= b.max);
+  return `${sex} Dog ${band.label}`;
+}
+
+// Dogs before cats, then male before female, then lightest first — so the
+// sheet reads in the order the day actually runs.
+function slotSort(a, b) {
+  const sp = x => String(x.pet.species || '').toLowerCase() === 'cat' ? 1 : 0;
+  if (sp(a) !== sp(b)) return sp(a) - sp(b);
+  const sx = x => String(x.pet.sex || '').toLowerCase() === 'female' ? 1 : 0;
+  if (sx(a) !== sx(b)) return sx(a) - sx(b);
+  const w = x => { const n = parseInt(x.pet.weight, 10); return isNaN(n) ? 9999 : n; };
+  if (w(a) !== w(b)) return w(a) - w(b);
+  return String(a.reg.owner_last || '').localeCompare(String(b.reg.owner_last || ''));
+}
+
+window.exportClinicXlsx = function() {
+  if (typeof XLSX === 'undefined') {
+    alert('The spreadsheet library did not load. Check your connection and refresh.');
+    return;
+  }
+
+  // Approved only — this sheet goes to MNSNAP as the confirmed day roster.
+  const approved = _clinicData.filter(r => r.status === 'approved');
+  if (approved.length === 0) {
+    alert('No approved applications yet.\n\nApprove the applications you want on the clinic roster, then export.');
+    return;
+  }
+
+  const animals = [];
+  approved.forEach(reg => {
+    let pets = [];
+    try { pets = JSON.parse(reg.pets || '[]'); } catch(e) {}
+    pets.forEach(pet => animals.push({ reg, pet }));
+  });
+  animals.sort(slotSort);
+
+  const HEADERS = ['', '', "Owner's First Name", "Owner's Last Name", 'Cell Phone', 'Home Phone',
+    'Email', 'Street Address', 'City', 'State', 'Zip', "Pet's Name", 'Sex', 'Weight',
+    'Age Year', 'Age Months', 'Color 1', 'Color 2', 'Breed', 'Weight', 'Health Concerns',
+    'Additional Notes'];
+
+  const rows = [];
+  rows.push(['Check in times: 9am DOGS, 9:30am CATS']);
+  rows.push([]);
+  rows.push(HEADERS);
+
+  animals.forEach((a, i) => {
+    const p = a.pet, r = a.reg;
+    // "Weight" appears twice in MNSNAP's template; both are filled so the sheet
+    // matches theirs column-for-column rather than making them hunt for it.
+    rows.push([
+      i + 1,
+      slotLabel(p),
+      r.owner_first || '',
+      r.owner_last || '',
+      r.phone_cell || '',
+      r.phone_home || '',
+      r.email || '',
+      r.address || '',
+      r.city || '',
+      r.state || '',
+      r.zip || '',
+      p.name || '',
+      p.sex || '',
+      p.weight === '' || p.weight == null ? '' : p.weight,
+      p.age_years === '' || p.age_years == null ? '' : p.age_years,
+      p.age_months === '' || p.age_months == null ? '' : p.age_months,
+      p.color1 || '',
+      p.color2 || '',
+      p.breed || '',
+      p.weight === '' || p.weight == null ? '' : p.weight,
+      p.health || '',
+      [
+        (p.services || []).length ? 'Requested: ' + p.services.join(', ') : '',
+        p.shots ? 'Shots current: ' + p.shots : '',
+        r.staff_notes ? 'Staff: ' + r.staff_notes : '',
+        r.notes ? 'Owner: ' + r.notes : ''
+      ].filter(Boolean).join(' | ')
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: HEADERS.length - 1 } }];
+  ws['!cols'] = [
+    { wch: 4 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+    { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 8 }, { wch: 14 },
+    { wch: 8 }, { wch: 8 }, { wch: 9 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+    { wch: 18 }, { wch: 8 }, { wch: 28 }, { wch: 34 }
+  ];
+  ws['!freeze'] = { xSplit: 0, ySplit: 3 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Clinic Roster');
+  XLSX.writeFile(wb, 'MNSNAP-clinic-roster-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+};
+
 // One row per PET, not per family — that's the list MNSNAP schedules from.
 window.exportClinicCsv = function() {
-  const cols = ['Owner', 'Phone', 'Email', 'Address', 'City', 'State', 'ZIP',
-                'Pet Name', 'Species', 'Sex', 'Color', 'Age', 'Weight', 'Shots Current', 'Services Requested',
+  const cols = ['First Name', 'Last Name', 'Cell Phone', 'Home Phone', 'Email', 'Address', 'City', 'State', 'ZIP',
+                'Pet Name', 'Species', 'Sex', 'Breed', 'Color 1', 'Color 2', 'Age Years', 'Age Months', 'Weight',
+                'Shots Current', 'Health Concerns', 'Services Requested',
                 'Their Situation', 'Owner Notes', 'Status', 'Auto Reason', 'Staff Notes', 'Applied'];
   const rows = [cols];
   const source = _clinicFilter === 'all' ? _clinicData : _clinicData.filter(r => r.status === _clinicFilter);
@@ -3275,9 +3407,13 @@ window.exportClinicCsv = function() {
     if (pets.length === 0) pets = [{}];
     pets.forEach(p => {
       rows.push([
-        r.owner_name, r.phone, r.email, r.address || '', r.city || '', r.state || '', r.zip || '',
-        p.name || '', p.species || '', p.sex || '', p.color || '', p.age || '', p.weight || '',
-        p.shots || '', (p.services || []).join('; '),
+        r.owner_first || '', r.owner_last || '', r.phone_cell || '', r.phone_home || '', r.email,
+        r.address || '', r.city || '', r.state || '', r.zip || '',
+        p.name || '', p.species || '', p.sex || '', p.breed || '', p.color1 || '', p.color2 || '',
+        p.age_years === '' || p.age_years == null ? '' : p.age_years,
+        p.age_months === '' || p.age_months == null ? '' : p.age_months,
+        p.weight === '' || p.weight == null ? '' : p.weight,
+        p.shots || '', p.health || '', (p.services || []).join('; '),
         r.hardship || '', r.notes || '', r.status, r.auto_reason || '', r.staff_notes || '', r.created_at
       ]);
     });

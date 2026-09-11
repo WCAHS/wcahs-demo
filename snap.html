@@ -231,15 +231,23 @@
           <div>
             <h3 class="font-display text-lg font-bold text-gray-900 mb-4">Your Information</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="field-label" for="snFirst">First Name</label>
+                <input id="snFirst" type="text" class="field" placeholder="First name" required>
+              </div>
+              <div>
+                <label class="field-label" for="snLast">Last Name</label>
+                <input id="snLast" type="text" class="field" placeholder="Last name" required>
+              </div>
+              <div>
+                <label class="field-label" for="snCell">Cell Phone</label>
+                <input id="snCell" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-1234" required>
+              </div>
+              <div>
+                <label class="field-label" for="snHome">Home Phone <span class="font-normal text-gray-400">(optional)</span></label>
+                <input id="snHome" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-5678">
+              </div>
               <div class="md:col-span-2">
-                <label class="field-label" for="snName">Full Name</label>
-                <input id="snName" type="text" class="field" placeholder="First and last name" required>
-              </div>
-              <div>
-                <label class="field-label" for="snPhone">Phone</label>
-                <input id="snPhone" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-1234" required>
-              </div>
-              <div>
                 <label class="field-label" for="snEmail">Email</label>
                 <input id="snEmail" type="email" class="field" placeholder="your@email.com" required>
               </div>
@@ -405,15 +413,21 @@
         '<select class="field field-sm petSex">' +
           '<option value="">Male or female?</option><option value="Male">Male</option><option value="Female">Female</option>' +
         '</select>' +
-        '<input type="text" class="field field-sm petColor" placeholder="Color / markings">' +
-        '<input type="text" class="field field-sm petAge" placeholder="Approx. age (e.g. 2 years)">' +
-        '<input type="text" class="field field-sm petWeight" placeholder="Approx. weight (lbs)">' +
+        '<input type="text" class="field field-sm petBreed" placeholder="Breed (or best guess)">' +
+        '<input type="text" class="field field-sm petColor1" placeholder="Main color">' +
+        '<input type="text" class="field field-sm petColor2" placeholder="Second color (if any)">' +
+        '<div class="grid grid-cols-2 gap-3">' +
+          '<input type="number" min="0" max="40" class="field field-sm petAgeY" placeholder="Age (years)">' +
+          '<input type="number" min="0" max="11" class="field field-sm petAgeM" placeholder="+ months">' +
+        '</div>' +
+        '<input type="number" min="0" max="300" class="field field-sm petWeight" placeholder="Weight (lbs)">' +
         '<select class="field field-sm petShots md:col-span-2">' +
           '<option value="">Current on shots?</option>' +
           '<option value="Yes">Yes, up to date on shots</option>' +
           '<option value="No">No, not up to date</option>' +
           '<option value="Not sure">Not sure</option>' +
         '</select>' +
+        '<input type="text" class="field field-sm petHealth md:col-span-2" placeholder="Health concerns for this pet (optional)">' +
       '</div>' +
       '<p class="text-xs font-semibold text-gray-500 mt-3 mb-2">Services for this pet <span class="font-normal text-gray-400">(spay/neuter is already included)</span></p>' +
       '<div class="flex flex-wrap gap-2">' +
@@ -502,10 +516,14 @@
         name: row.querySelector('.petName').value,
         species: species,
         sex: row.querySelector('.petSex').value,
-        color: row.querySelector('.petColor').value,
-        age: row.querySelector('.petAge').value,
+        breed: row.querySelector('.petBreed').value,
+        color1: row.querySelector('.petColor1').value,
+        color2: row.querySelector('.petColor2').value,
+        age_years: row.querySelector('.petAgeY').value,
+        age_months: row.querySelector('.petAgeM').value,
         weight: row.querySelector('.petWeight').value,
         shots: row.querySelector('.petShots').value,
+        health: row.querySelector('.petHealth').value,
         services: services
       });
     });
@@ -524,9 +542,11 @@
       var res = await fetch('/api/clinic', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          owner_name: document.getElementById('snName').value,
+          owner_first: document.getElementById('snFirst').value,
+          owner_last: document.getElementById('snLast').value,
           email: document.getElementById('snEmail').value,
-          phone: document.getElementById('snPhone').value,
+          phone_cell: document.getElementById('snCell').value,
+          phone_home: document.getElementById('snHome').value,
           address: document.getElementById('snAddress').value,
           city: cityValue(),
           state: document.getElementById('snState').value,
