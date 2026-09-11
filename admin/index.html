@@ -3743,6 +3743,7 @@ function paintShortLinks(el) {
           <button onclick="copyLink('${h(l.slug)}', this)" class="text-xs text-sage-700 hover:underline font-semibold">Copy link</button>
           <button onclick='editLink(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="text-xs text-sage-700 hover:underline font-semibold">Edit</button>
           <button onclick="toggleLink('${h(l.slug)}', ${l.active ? 0 : 1})" class="text-xs text-gray-500 hover:underline">${l.active ? 'Turn off' : 'Turn on'}</button>
+          <button onclick="if(confirm('Reset the click count for wcahs.org/${h(l.slug)} back to zero?\n\nThe link keeps working \u2014 only the count and its history are cleared. Useful when the same link goes on a new poster.')) resetLinkClicks('${h(l.slug)}')" class="text-xs text-gray-500 hover:underline">Reset count</button>
           <button onclick="if(confirm('Delete this short link? Anyone who has it — including on printed posters — will get a Page Not Found.')) deleteLink('${h(l.slug)}')" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
         </div>
       </div>`;
@@ -3780,7 +3781,7 @@ function linkFormHtml(l) {
     <div class="flex flex-wrap gap-2 items-center">
       <button onclick="saveLink(${editing ? `'${h(e.slug)}'` : 'null'})" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition">Save</button>
       <button onclick="document.getElementById('linkFormArea').innerHTML=''" class="text-gray-500 text-sm px-4 py-2.5 hover:text-gray-700 transition">Cancel</button>
-      ${editing && e.clicks ? `<button onclick="if(confirm('Reset the click count for this link back to zero?')) resetLinkClicks('${h(e.slug)}')" class="text-xs text-gray-400 hover:text-red-500 ml-auto">Reset click count</button>` : ''}
+
     </div>
   </div>`;
 }
@@ -3820,7 +3821,8 @@ window.toggleLink = async function(slug, active) {
 window.resetLinkClicks = async function(slug) {
   const res = await api('/admin/short-links', { method: 'PUT', body: { slug, reset_clicks: true } });
   if (res.error) { alert(res.error); return; }
-  document.getElementById('linkFormArea').innerHTML = '';
+  const area = document.getElementById('linkFormArea');
+  if (area) area.innerHTML = '';
   await renderShortLinks(document.getElementById('content'));
 };
 
