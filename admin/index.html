@@ -3448,7 +3448,7 @@ function clinicCard(r) {
     ${r.auto_reason ? `<p class="text-xs mt-2 inline-block px-3 py-1.5 rounded-lg" style="background:#fef3c7;color:#92400e;">Auto-sorted: ${h(r.auto_reason)}</p>` : ''}
     ${(r.reason || r.hardship || r.income_eligible) ? `<div class="mt-3 rounded-xl p-3 space-y-2" style="background:#f6f7f4;border:1px solid #d2d8c8;">
       ${r.reason ? `<div>
-        <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-0.5">What they need</p>
+        <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-0.5">Their situation</p>
         <p class="text-sm text-gray-700 whitespace-pre-wrap">${h(r.reason)}</p>
       </div>` : ''}
       ${r.income_eligible ? `<div>
