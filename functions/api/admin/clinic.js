@@ -1,4 +1,4 @@
-import { json, error } from '../_helpers.js';
+import { json, error, CLINIC_DEFAULT_CLOSED_MESSAGE } from '../_helpers.js';
 
 const HOLDS_SPOT = ['applied', 'approved'];
 
@@ -47,7 +47,12 @@ export async function onRequestGet(context) {
     registrations = results || [];
   }
 
-  return json({ events: events || [], summary, registrations });
+  return json({
+    events: events || [],
+    summary,
+    registrations,
+    default_closed_message: CLINIC_DEFAULT_CLOSED_MESSAGE,
+  });
 }
 
 // Per-event form settings: the open/closed switch, its message, and capacity.

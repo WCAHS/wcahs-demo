@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_DEFAULT_CLOSED_MESSAGE } from './_helpers.js';
 
 // Residents of these four communities are what WCAHS sponsored the clinic for.
 // Anything else still submits — staff decide case by case — but it is sorted
@@ -29,8 +29,7 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-const DEFAULT_CLOSED_MESSAGE =
-  'Registration for this clinic is not open yet. Check back soon, or call us at (507) 201-7287 and we\'ll let you know as soon as it opens.';
+const DEFAULT_CLOSED_MESSAGE = CLINIC_DEFAULT_CLOSED_MESSAGE;
 
 // The clinic form belongs to an event, not to the site. "Which clinic is /snap
 // collecting for right now" is answered by the soonest published, not-yet-past

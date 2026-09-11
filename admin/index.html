@@ -3128,6 +3128,7 @@ let _formSummary = {};
 let _formEventId = null;      // null = show the index
 let _clinicData = [];
 let _clinicEvent = null;
+let _defaultClosedMsg = '';
 let _clinicFilter = 'all';
 
 async function renderClinic(el) {
@@ -3139,6 +3140,7 @@ async function renderClinic(el) {
   _formEvents = data.events || [];
   _formSummary = data.summary || {};
   _clinicData = data.registrations || [];
+  _defaultClosedMsg = data.default_closed_message || '';
   _clinicEvent = _formEventId ? _formEvents.find(e => e.id === Number(_formEventId)) : null;
 
   if (_formEventId && !_clinicEvent) { _formEventId = null; }
@@ -3281,11 +3283,17 @@ function paintFormEvent(el) {
     </div>
     ${!open ? `<div class="mt-4 pt-4 border-t border-gray-100">
       <label class="block text-xs font-semibold text-gray-600 mb-1">Message shown while closed</label>
-      <div class="flex flex-wrap gap-2">
-        <input id="closedMsg" value="${h(ev.form_closed_message || '')}" placeholder="Registration for this clinic is not open yet. Check back soon..." class="flex-1 min-w-[240px] border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
-        <button onclick="saveClosedMessage(this)" class="text-xs text-sage-700 hover:underline font-semibold px-2">Save message</button>
+      <textarea id="closedMsg" rows="2" oninput="previewClosedMessage()" placeholder="Leave blank to use the default wording below" class="w-full border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none">${h(ev.form_closed_message || '')}</textarea>
+      <div class="flex items-center gap-3 mt-2">
+        <button onclick="saveClosedMessage(this)" class="text-xs text-sage-700 hover:underline font-semibold">Save message</button>
+        <button onclick="document.getElementById('closedMsg').value=''; previewClosedMessage();" class="text-xs text-gray-400 hover:text-gray-600">Reset to default</button>
       </div>
-      <p class="text-xs text-gray-400 mt-2">Leave blank to use the default wording.</p>
+      <div class="mt-4 rounded-xl p-4 text-center" style="background:#f6f7f4;border:1px solid #d2d8c8;">
+        <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-2">What visitors see at wcahs.org/snap</p>
+        <p class="font-display font-bold text-gray-900 text-base">Registration Isn't Open Yet</p>
+        <p id="closedPreview" class="text-sm text-gray-600 mt-1 leading-relaxed"></p>
+        <p class="text-xs text-gray-400 mt-3">plus a Call and a Send a Message button</p>
+      </div>
     </div>` : ''}
   </div>`;
 
@@ -3310,6 +3318,7 @@ function paintFormEvent(el) {
     html += '<div class="space-y-3">' + shown.map(clinicCard).join('') + '</div>';
   }
   el.innerHTML = html;
+  previewClosedMessage();
 }
 
 function clinicCard(r) {
@@ -3379,10 +3388,21 @@ window.toggleClinicOpen = async function(open) {
   await renderClinic(document.getElementById('content'));
 };
 
+window.previewClosedMessage = function() {
+  const el = document.getElementById('closedMsg');
+  const prev = document.getElementById('closedPreview');
+  if (!el || !prev) return;
+  const typed = el.value.trim();
+  prev.textContent = typed || _defaultClosedMsg;
+  prev.style.fontStyle = typed ? 'normal' : 'italic';
+};
+
 window.saveClosedMessage = async function(btn) {
   const val = document.getElementById('closedMsg').value;
   const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: _formEventId, closed_message: val } });
   if (res.error) { alert(res.error); return; }
+  if (_clinicEvent) _clinicEvent.form_closed_message = val;
+  previewClosedMessage();
   if (btn) { btn.textContent = 'Saved'; setTimeout(() => { btn.textContent = 'Save message'; }, 1500); }
 };
 

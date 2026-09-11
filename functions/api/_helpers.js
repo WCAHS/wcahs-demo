@@ -1,5 +1,11 @@
 // Shared helpers for API functions
 
+// What wcahs.org/snap shows when a clinic's applications are closed and staff
+// have not written their own message. Lives here so the admin panel can display
+// the real wording instead of a paraphrase of it.
+export const CLINIC_DEFAULT_CLOSED_MESSAGE =
+  "Registration for this clinic is not open yet. Check back soon, or call us at (507) 201-7287 and we'll let you know as soon as it opens.";
+
 export function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
