@@ -1,7 +1,23 @@
 import { json } from './_helpers.js';
 
 // Statuses that should NOT appear on the public site
-const INACTIVE_STATUSES = ['Deceased', 'On Hold In-Shelter', 'On Hold In-Foster', 'Unavailable In-Foster', 'Adopted', 'Transferred', 'Reclaimed'];
+// Publishable statuses are an ALLOWLIST, not a denylist.
+//
+// This used to exclude a fixed list of inactive statuses, which meant any
+// status ShelterLuv reported that nobody had thought of was published by
+// default. That is the wrong default for a public adoption page: it put a cat
+// with the status "Healthy in Home" on the website as if he were up for
+// adoption. ShelterLuv can add or rename statuses at any time and we do not
+// find out until an animal appears who should not be there.
+//
+// Now: only statuses that positively mean "available for adoption" are shown,
+// so anything new or unrecognised stays off the site until someone looks at it.
+// Manually created animals (is_manual) bypass this - they have no ShelterLuv
+// status and are managed entirely from the admin panel.
+function isPublishable(status) {
+  if (!status) return false;
+  return /^available\b/i.test(String(status).trim());
+}
 
 function parseAnimal(a) {
   return {
@@ -21,7 +37,7 @@ export async function onRequestGet(context) {
     if (!animal) return json({ error: 'Animal not found' }, 404);
     // Don't show hidden or inactive pets publicly (unless manual)
     if (animal.hidden === 1) return json({ error: 'Animal not found' }, 404);
-    if (!animal.is_manual && INACTIVE_STATUSES.includes(animal.status)) return json({ error: 'Animal not found' }, 404);
+    if (!animal.is_manual && !isPublishable(animal.status)) return json({ error: 'Animal not found' }, 404);
 
     const parsed = parseAnimal(animal);
 
@@ -75,30 +91,30 @@ export async function onRequestGet(context) {
     // Bonded partner — ShelterLuv only says THAT a pet is bonded, staff record who with.
     try {
       const bp = await context.env.DB.prepare(
-        `SELECT a.id, a.name, a.cover_photo, a.age_display, a.sex, a.breed, a.status, a.hidden
+        `SELECT a.id, a.name, a.cover_photo, a.age_display, a.sex, a.breed, a.status, a.hidden, a.is_manual
            FROM bonded_pairs bp JOIN animals a ON a.id = bp.partner_id
           WHERE bp.animal_id = ?`
       ).bind(id).first();
-      parsed.bonded_partner = (bp && bp.hidden !== 1 && !INACTIVE_STATUSES.includes(bp.status)) ? bp : null;
+      parsed.bonded_partner = (bp && bp.hidden !== 1 && (bp.is_manual || isPublishable(bp.status))) ? bp : null;
     } catch (e) { console.error('bonded partner query failed:', e && e.message); parsed.bonded_partner = null; }
 
     // Include litter siblings if part of a litter group
     if (animal.litter_group_id) {
       try {
         const { results: siblings } = await context.env.DB.prepare(
-          'SELECT id, name, type, breed, sex, age_display, cover_photo FROM animals WHERE litter_group_id = ? AND id != ? AND (hidden = 0 OR hidden IS NULL)'
+          'SELECT id, name, type, breed, sex, age_display, cover_photo, status, is_manual FROM animals WHERE litter_group_id = ? AND id != ? AND (hidden = 0 OR hidden IS NULL)'
         ).bind(animal.litter_group_id, id).all();
-        parsed.siblings = (siblings || []).filter(s => !INACTIVE_STATUSES.includes(s.status));
+        parsed.siblings = (siblings || []).filter(s => s.is_manual || isPublishable(s.status));
       } catch(e) { parsed.siblings = []; }
     }
 
     return json(parsed);
   }
 
-  // All visible animals: not hidden, and either manual or not inactive status
+  // All visible animals: not hidden, and either manual or positively available
   const { results } = await context.env.DB.prepare('SELECT * FROM animals WHERE (hidden = 0 OR hidden IS NULL) ORDER BY name').all();
   const animals = results
-    .filter(a => a.is_manual || !INACTIVE_STATUSES.includes(a.status))
+    .filter(a => a.is_manual || isPublishable(a.status))
     .map(parseAnimal);
   return json({ animals, count: animals.length });
 }
