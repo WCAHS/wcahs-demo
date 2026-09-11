@@ -31,16 +31,33 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-async function getCapacity(db) {
+const DEFAULT_CLOSED_MESSAGE =
+  'Registration for this clinic is not open yet. Check back soon, or call us at (507) 201-7287 and we\'ll let you know as soon as it opens.';
+
+// Applications default to CLOSED. Deploying the site must never be the thing
+// that starts routing phone calls to the shelter — someone has to decide that.
+async function getSettings(db) {
   const { results } = await db.prepare(
-    `SELECT key, value FROM site_settings WHERE key IN ('clinic_cap_cats','clinic_cap_dogs')`
+    `SELECT key, value FROM site_settings
+     WHERE key IN ('clinic_cap_cats','clinic_cap_dogs','clinic_applications_open','clinic_closed_message')`
   ).all();
+  const map = {};
+  for (const row of results || []) map[row.key] = row.value;
+  return {
+    open: map.clinic_applications_open === '1',
+    closedMessage: map.clinic_closed_message || DEFAULT_CLOSED_MESSAGE,
+    raw: map,
+  };
+}
+
+async function getCapacity(db) {
+  const { raw } = await getSettings(db);
   const caps = { ...DEFAULT_CAPS };
-  for (const row of results || []) {
-    const n = parseInt(row.value, 10);
+  for (const key of ['clinic_cap_cats', 'clinic_cap_dogs']) {
+    const n = parseInt(raw[key], 10);
     if (!isNaN(n) && n >= 0) {
-      if (row.key === 'clinic_cap_cats') caps.cats = n;
-      if (row.key === 'clinic_cap_dogs') caps.dogs = n;
+      if (key === 'clinic_cap_cats') caps.cats = n;
+      if (key === 'clinic_cap_dogs') caps.dogs = n;
     }
   }
 
@@ -60,7 +77,10 @@ async function getCapacity(db) {
 // uses it to show the "applications are full" notice while still accepting.
 export async function onRequestGet(context) {
   const { caps, used } = await getCapacity(context.env.DB);
+  const { open, closedMessage } = await getSettings(context.env.DB);
   return json({
+    open,
+    closed_message: open ? null : closedMessage,
     cats: { cap: caps.cats, used: used.cats, full: used.cats >= caps.cats },
     dogs: { cap: caps.dogs, used: used.dogs, full: used.dogs >= caps.dogs },
   });
@@ -70,6 +90,11 @@ export async function onRequestPost(context) {
   const { env, request } = context;
   const body = await request.json().catch(() => null);
   if (!body) return error('Invalid request body');
+
+  const settings = await getSettings(env.DB);
+  if (!settings.open) {
+    return error(settings.closedMessage, 403);
+  }
 
   if (!body.turnstile_token) return error('CAPTCHA required');
   const valid = await verifyTurnstile(body.turnstile_token, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'));

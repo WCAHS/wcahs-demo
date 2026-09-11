@@ -217,6 +217,17 @@
         </p>
       </div>
 
+      <!-- Shown instead of the form when applications are closed -->
+      <div id="closedPanel" class="hidden bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-sage-200 text-center">
+        <img src="images/paws/paw_01.png" alt="" style="height:40px;margin:0 auto 16px;opacity:0.35;">
+        <h2 class="font-display text-2xl font-bold text-gray-900 mb-3">Registration Isn't Open Yet</h2>
+        <p id="closedMessage" class="text-gray-600 leading-relaxed max-w-xl mx-auto"></p>
+        <div class="mt-6 flex flex-wrap gap-3 justify-center">
+          <a href="tel:5072017287" class="bg-sage-600 hover:bg-sage-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-md">Call (507) 201-7287</a>
+          <a href="contact.html" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-bold text-sm px-6 py-3 rounded-xl transition">Send a Message</a>
+        </div>
+      </div>
+
       <!-- Registration form -->
       <div id="register" class="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-sage-200">
         <h2 class="font-display text-2xl font-bold text-gray-900 mb-2">Register for the Clinic</h2>
@@ -488,15 +499,26 @@
 
   // Show the "full" notice when a species has no spots left. Applications stay
   // open either way — the notice sets expectations, it doesn't block anyone.
+  document.getElementById('register').style.display = 'none';
+
   fetch('/api/clinic').then(function(r) { return r.json(); }).then(function(cap) {
-    if (!cap || (!cap.cats.full && !cap.dogs.full)) return;
+    if (!cap || !cap.open) {
+      document.getElementById('closedMessage').textContent =
+        (cap && cap.closed_message) || 'Registration for this clinic is not open yet. Please check back soon.';
+      document.getElementById('closedPanel').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('register').style.display = '';
+    if (!cap.cats.full && !cap.dogs.full) return;
     var msg;
     if (cap.cats.full && cap.dogs.full) msg = 'All cat and dog spots for this clinic are currently spoken for.';
     else if (cap.cats.full) msg = 'Cat spots for this clinic are currently spoken for. Dog spots may still be available.';
     else msg = 'Dog spots for this clinic are currently spoken for. Cat spots may still be available.';
     document.getElementById('capacityDetail').textContent = msg + ' ';
     document.getElementById('capacityNotice').classList.remove('hidden');
-  }).catch(function(){});
+  }).catch(function(){
+    document.getElementById('register').style.display = '';
+  });
 
   addPet();
 
