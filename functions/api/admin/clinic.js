@@ -1,77 +1,83 @@
 import { json, error } from '../_helpers.js';
 
-const DEFAULT_CAPS = { cats: 25, dogs: 25 };
 const HOLDS_SPOT = ['applied', 'approved'];
 
-async function readClinicSettings(db) {
-  const { results } = await db.prepare(
-    `SELECT key, value FROM site_settings
-     WHERE key IN ('clinic_cap_cats','clinic_cap_dogs','clinic_applications_open','clinic_closed_message')`
-  ).all();
-  const map = {};
-  for (const row of results || []) map[row.key] = row.value;
-
-  const caps = { ...DEFAULT_CAPS };
-  for (const key of ['clinic_cap_cats', 'clinic_cap_dogs']) {
-    const n = parseInt(map[key], 10);
-    if (!isNaN(n) && n >= 0) {
-      if (key === 'clinic_cap_cats') caps.cats = n;
-      if (key === 'clinic_cap_dogs') caps.dogs = n;
-    }
-  }
-  return {
-    caps,
-    open: map.clinic_applications_open === '1',
-    closed_message: map.clinic_closed_message || '',
-  };
-}
-
+// Every event that has a form attached, newest first. This is the index the
+// admin "Event Forms" tab renders: one card per event, with its own
+// applications, capacity and open/closed switch.
 export async function onRequestGet(context) {
   const db = context.env.DB;
-  const { results } = await db.prepare(
-    'SELECT * FROM clinic_registrations ORDER BY created_at DESC'
+  const url = new URL(context.request.url);
+  const eventId = url.searchParams.get('event_id');
+
+  const { results: events } = await db.prepare(
+    `SELECT id, title, date, time, location, published, form_key, form_open,
+            form_closed_message, cap_cats, cap_dogs
+     FROM events WHERE form_key IS NOT NULL AND form_key != ''
+     ORDER BY date DESC`
   ).all();
 
-  const settings = await readClinicSettings(db);
-  const used = await db.prepare(
-    `SELECT COALESCE(SUM(cat_count), 0) AS cats, COALESCE(SUM(dog_count), 0) AS dogs
-     FROM clinic_registrations
-     WHERE status IN (${HOLDS_SPOT.map(() => '?').join(',')})`
-  ).bind(...HOLDS_SPOT).first();
+  // Counts for every form event in one pass, so the index doesn't fan out into
+  // a query per event.
+  const { results: counts } = await db.prepare(
+    `SELECT event_id, status, COUNT(*) AS n,
+            COALESCE(SUM(cat_count), 0) AS cats, COALESCE(SUM(dog_count), 0) AS dogs
+     FROM clinic_registrations GROUP BY event_id, status`
+  ).all();
 
-  return json({
-    registrations: results || [],
-    caps: settings.caps,
-    open: settings.open,
-    closed_message: settings.closed_message,
-    used: { cats: used?.cats || 0, dogs: used?.dogs || 0 },
-  });
+  const summary = {};
+  for (const row of counts || []) {
+    const key = row.event_id == null ? 'unassigned' : row.event_id;
+    if (!summary[key]) summary[key] = { total: 0, by_status: {}, used: { cats: 0, dogs: 0 } };
+    summary[key].total += row.n;
+    summary[key].by_status[row.status] = row.n;
+    if (HOLDS_SPOT.includes(row.status)) {
+      summary[key].used.cats += row.cats;
+      summary[key].used.dogs += row.dogs;
+    }
+  }
+
+  // Applications are only loaded when an event is actually opened, so the index
+  // stays cheap however many clinics pile up over the years.
+  let registrations = null;
+  if (eventId) {
+    const { results } = await db.prepare(
+      'SELECT * FROM clinic_registrations WHERE event_id = ? ORDER BY created_at DESC'
+    ).bind(eventId).all();
+    registrations = results || [];
+  }
+
+  return json({ events: events || [], summary, registrations });
 }
 
-// Capacity lives here rather than in site settings so staff (who can reach
-// /api/admin/clinic but not /api/admin/settings) can change it themselves.
+// Per-event form settings: the open/closed switch, its message, and capacity.
+// Lives here rather than under /api/admin/events so staff — who can reach
+// /api/admin/clinic but not site settings — can run their own clinic.
 export async function onRequestPut(context) {
   const body = await context.request.json().catch(() => null);
-  if (!body) return error('Invalid request body');
+  if (!body || !body.event_id) return error('event_id is required');
 
-  const updates = [];
-  for (const [field, key] of [['cap_cats', 'clinic_cap_cats'], ['cap_dogs', 'clinic_cap_dogs']]) {
+  const sets = [];
+  const vals = [];
+
+  for (const [field, col] of [['cap_cats', 'cap_cats'], ['cap_dogs', 'cap_dogs']]) {
     if (body[field] === undefined) continue;
     const n = parseInt(body[field], 10);
     if (isNaN(n) || n < 0) return error('Capacity must be zero or a positive number');
-    updates.push([key, String(n)]);
+    sets.push(`${col}=?`); vals.push(n);
   }
-  if (body.open !== undefined) updates.push(['clinic_applications_open', body.open ? '1' : '0']);
+  if (body.open !== undefined) { sets.push('form_open=?'); vals.push(body.open ? 1 : 0); }
   if (body.closed_message !== undefined) {
-    updates.push(['clinic_closed_message', String(body.closed_message).slice(0, 500)]);
+    sets.push('form_closed_message=?'); vals.push(String(body.closed_message).slice(0, 500));
   }
-  if (updates.length === 0) return error('Nothing to update');
+  if (body.form_key !== undefined) {
+    sets.push('form_key=?'); vals.push(body.form_key ? String(body.form_key).slice(0, 40) : null);
+  }
+  if (sets.length === 0) return error('Nothing to update');
 
-  const stmt = context.env.DB.prepare(
-    `INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
-     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
-  );
-  await context.env.DB.batch(updates.map(([k, v]) => stmt.bind(k, v)));
+  sets.push("updated_at=datetime('now')");
+  vals.push(body.event_id);
 
-  return json({ ok: true, ...(await readClinicSettings(context.env.DB)) });
+  await context.env.DB.prepare(`UPDATE events SET ${sets.join(', ')} WHERE id=?`).bind(...vals).run();
+  return json({ ok: true });
 }

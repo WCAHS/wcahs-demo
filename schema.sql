@@ -26,6 +26,16 @@ CREATE TABLE IF NOT EXISTS events (
   color TEXT DEFAULT 'sage',
   cta_url TEXT,
   cta_label TEXT,
+  -- An event can have a registration form attached. form_key names which form
+  -- ('clinic' is the spay/neuter application); NULL means the event has none.
+  -- Everything about running that form lives on the event row, so a second
+  -- clinic next year is a new event rather than a code change, and each
+  -- event keeps its own applications, capacity and open/closed state.
+  form_key TEXT,
+  form_open INTEGER NOT NULL DEFAULT 0,
+  form_closed_message TEXT,
+  cap_cats INTEGER NOT NULL DEFAULT 25,
+  cap_dogs INTEGER NOT NULL DEFAULT 25,
   published INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

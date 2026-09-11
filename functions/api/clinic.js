@@ -5,8 +5,6 @@ import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAud
 // into Ineligible for review rather than taking a spot automatically.
 const ELIGIBLE_CITIES = ['Elysian', 'Janesville', 'Waseca', 'Waterville'];
 
-const DEFAULT_CAPS = { cats: 25, dogs: 25 };
-
 // Statuses that hold a surgery slot. Overflow, ineligible and cancelled do not.
 const HOLDS_SPOT = ['applied', 'approved'];
 
@@ -34,55 +32,55 @@ function esc(s) {
 const DEFAULT_CLOSED_MESSAGE =
   'Registration for this clinic is not open yet. Check back soon, or call us at (507) 201-7287 and we\'ll let you know as soon as it opens.';
 
-// Applications default to CLOSED. Deploying the site must never be the thing
-// that starts routing phone calls to the shelter — someone has to decide that.
-async function getSettings(db) {
-  const { results } = await db.prepare(
-    `SELECT key, value FROM site_settings
-     WHERE key IN ('clinic_cap_cats','clinic_cap_dogs','clinic_applications_open','clinic_closed_message')`
-  ).all();
-  const map = {};
-  for (const row of results || []) map[row.key] = row.value;
-  return {
-    open: map.clinic_applications_open === '1',
-    closedMessage: map.clinic_closed_message || DEFAULT_CLOSED_MESSAGE,
-    raw: map,
-  };
+// The clinic form belongs to an event, not to the site. "Which clinic is /snap
+// collecting for right now" is answered by the soonest published, not-yet-past
+// event carrying form_key='clinic' — so running another one next year means
+// creating an event, not editing code.
+async function getActiveClinicEvent(db) {
+  return await db.prepare(
+    `SELECT id, title, date, time, location, form_open, form_closed_message, cap_cats, cap_dogs
+     FROM events
+     WHERE form_key = 'clinic' AND published = 1
+       AND (end_date >= date('now') OR (end_date IS NULL AND date >= date('now')))
+     ORDER BY date ASC
+     LIMIT 1`
+  ).first();
 }
 
-async function getCapacity(db) {
-  const { raw } = await getSettings(db);
-  const caps = { ...DEFAULT_CAPS };
-  for (const key of ['clinic_cap_cats', 'clinic_cap_dogs']) {
-    const n = parseInt(raw[key], 10);
-    if (!isNaN(n) && n >= 0) {
-      if (key === 'clinic_cap_cats') caps.cats = n;
-      if (key === 'clinic_cap_dogs') caps.dogs = n;
-    }
-  }
-
-  const used = await db.prepare(
+async function usedSpots(db, eventId) {
+  const row = await db.prepare(
     `SELECT COALESCE(SUM(cat_count), 0) AS cats, COALESCE(SUM(dog_count), 0) AS dogs
      FROM clinic_registrations
-     WHERE status IN (${HOLDS_SPOT.map(() => '?').join(',')})`
-  ).bind(...HOLDS_SPOT).first();
-
-  return {
-    caps,
-    used: { cats: used?.cats || 0, dogs: used?.dogs || 0 },
-  };
+     WHERE event_id = ? AND status IN (${HOLDS_SPOT.map(() => '?').join(',')})`
+  ).bind(eventId, ...HOLDS_SPOT).first();
+  return { cats: row?.cats || 0, dogs: row?.dogs || 0 };
 }
 
-// Public capacity read — no personal data, just whether spots remain. The page
-// uses it to show the "applications are full" notice while still accepting.
+// Public read — no personal data. Says whether a clinic is taking applications
+// and whether spots remain, so the page can show the right thing.
 export async function onRequestGet(context) {
-  const { caps, used } = await getCapacity(context.env.DB);
-  const { open, closedMessage } = await getSettings(context.env.DB);
+  const db = context.env.DB;
+  const ev = await getActiveClinicEvent(db);
+
+  // No upcoming clinic at all: closed, with wording that doesn't promise one.
+  if (!ev) {
+    return json({
+      open: false,
+      event: null,
+      closed_message: 'There is no spay/neuter clinic scheduled right now. Call us at (507) 201-7287 or watch our events page for the next one.',
+      cats: { cap: 0, used: 0, full: true },
+      dogs: { cap: 0, used: 0, full: true },
+    });
+  }
+
+  const used = await usedSpots(db, ev.id);
+  const open = ev.form_open === 1;
   return json({
     open,
-    closed_message: open ? null : closedMessage,
-    cats: { cap: caps.cats, used: used.cats, full: used.cats >= caps.cats },
-    dogs: { cap: caps.dogs, used: used.dogs, full: used.dogs >= caps.dogs },
+    event: { id: ev.id, title: ev.title, date: ev.date },
+    closed_message: open ? null : (ev.form_closed_message || DEFAULT_CLOSED_MESSAGE),
+    cats: { cap: ev.cap_cats, used: used.cats, full: used.cats >= ev.cap_cats },
+    dogs: { cap: ev.cap_dogs, used: used.dogs, full: used.dogs >= ev.cap_dogs },
   });
 }
 
@@ -91,9 +89,12 @@ export async function onRequestPost(context) {
   const body = await request.json().catch(() => null);
   if (!body) return error('Invalid request body');
 
-  const settings = await getSettings(env.DB);
-  if (!settings.open) {
-    return error(settings.closedMessage, 403);
+  const ev = await getActiveClinicEvent(env.DB);
+  if (!ev) {
+    return error('There is no spay/neuter clinic scheduled right now.', 403);
+  }
+  if (ev.form_open !== 1) {
+    return error(ev.form_closed_message || DEFAULT_CLOSED_MESSAGE, 403);
   }
 
   if (!body.turnstile_token) return error('CAPTCHA required');
@@ -158,7 +159,8 @@ export async function onRequestPost(context) {
   if (pets.length === 1) reasons.push('Only one animal in the household');
   if (!cityEligible) reasons.push(`Outside the sponsored communities (${city || 'no city given'})`);
 
-  const { caps, used } = await getCapacity(env.DB);
+  const used = await usedSpots(env.DB, ev.id);
+  const caps = { cats: ev.cap_cats, dogs: ev.cap_dogs };
 
   if (reasons.length > 0) {
     status = 'ineligible';
@@ -183,7 +185,7 @@ export async function onRequestPost(context) {
         pets, pet_count, cat_count, dog_count, hardship, notes, status, auto_reason)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
-    body.event_id || null,
+    ev.id,
     ownerFirst,
     ownerLast,
     ownerName,
@@ -254,7 +256,7 @@ export async function onRequestPost(context) {
         </tr>
         ${petRows}
       </table>
-      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#clinic-reg-${regId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">View in Admin &rarr;</a></div>`,
+      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#clinic-reg-${ev.id}-${regId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">View in Admin &rarr;</a></div>`,
   });
 
   // People are counting on a date, so they get proof it went through. The

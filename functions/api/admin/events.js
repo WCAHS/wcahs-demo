@@ -12,12 +12,12 @@ export async function onRequestPost(context) {
   if (!body || !body.title || !body.date) return error('Title and date required');
 
   const result = await context.env.DB.prepare(
-    `INSERT INTO events (title, date, end_date, time, location, description, badge, color, cta_url, cta_label, published)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO events (title, date, end_date, time, location, description, badge, color, cta_url, cta_label, form_key, published)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     body.title, body.date, body.end_date || null, body.time || null, body.location || null,
     body.description || null, body.badge || null, body.color || 'auto',
-    body.cta_url || null, body.cta_label || null,
+    body.cta_url || null, body.cta_label || null, body.form_key || null,
     body.published !== undefined ? (body.published ? 1 : 0) : 1
   ).run();
 

@@ -7,11 +7,13 @@ export async function onRequestPost(context) {
     return error('Username and password required');
   }
 
-  // Verify turnstile if token provided
-  if (body.turnstile_token) {
-    const valid = await verifyTurnstile(body.turnstile_token, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'));
-    if (!valid) return error('CAPTCHA verification failed', 403);
-  }
+  // The CAPTCHA is the only brute-force protection on this login — there is no
+  // rate limiting behind it. It used to run only `if (body.turnstile_token)`,
+  // which meant omitting the field skipped the check entirely and left the
+  // admin password open to unlimited scripted guessing.
+  if (!body.turnstile_token) return error('CAPTCHA required', 403);
+  const captchaOk = await verifyTurnstile(body.turnstile_token, env.TURNSTILE_SECRET, request.headers.get('CF-Connecting-IP'));
+  if (!captchaOk) return error('CAPTCHA verification failed', 403);
 
   const user = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(body.username).first();
   if (!user) return error('Invalid credentials', 401);
