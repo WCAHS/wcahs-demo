@@ -14,6 +14,9 @@ export async function onRequestPut(context) {
     sets.push('status=?'); vals.push(body.status);
   }
   if (body.staff_notes !== undefined) { sets.push('staff_notes=?'); vals.push(body.staff_notes); }
+  // Spots open up when people cancel, so staff need to move someone off the
+  // waiting list without having to approve them in the same breath.
+  if (body.waitlisted !== undefined) { sets.push('waitlisted=?'); vals.push(body.waitlisted ? 1 : 0); }
   if (sets.length === 0) return error('Nothing to update');
 
   sets.push("updated_at=datetime('now')");

@@ -3268,7 +3268,10 @@ function paintFormEvent(el) {
   let html = `<button onclick="backToFormIndex()" class="text-sm text-sage-700 hover:underline font-semibold mb-3">&larr; All event forms</button>
   <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
     <h1 class="text-2xl font-display font-bold text-sage-800">${h(ev.title)}</h1>
-    <button onclick="exportClinicXlsx()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Approved animals only, in MNSNAP's intake format">Export for MNSNAP (.xlsx)</button>
+    <div class="flex flex-wrap gap-2">
+      <a href="/snap?preview=1" target="_blank" rel="noopener" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="See the public form without opening applications">Preview form</a>
+      <button onclick="exportClinicXlsx()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Approved animals only, in MNSNAP's intake format">Export for MNSNAP (.xlsx)</button>
+    </div>
   </div>
   <p class="text-gray-500 text-sm mb-6">${formatDate(ev.date)} &bull; ${all.length} application${all.length === 1 ? '' : 's'}</p>`;
 
@@ -3339,7 +3342,7 @@ function clinicCard(r) {
       <div>
         <span class="font-bold text-gray-900">${h(r.owner_name)}</span>
         <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${style}">${h(r.status)}</span>
-        ${r.waitlisted ? '<span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 ml-1" title="Applied after the spots filled — holds no slot unless you approve it">waitlist</span>' : ''}
+        ${r.waitlisted ? '<span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 ml-1" title="Applied after the spots filled — holds no slot until you move them off the waiting list or approve them">waitlist</span>' : ''}
         <span class="text-xs px-2 py-0.5 rounded-full bg-sage-100 text-sage-700 ml-1">${counts.join(', ') || '0 pets'}</span>
       </div>
       <span class="text-xs text-gray-400">${timeAgo(r.created_at)}</span>
@@ -3379,6 +3382,9 @@ function clinicCard(r) {
       </select>
       <input id="clinicNote${r.id}" value="${h(r.staff_notes || '')}" placeholder="Staff notes (e.g. appointment time)" class="flex-1 min-w-[180px] border border-sage-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sage-400">
       <button onclick="saveClinicNote(${r.id}, this)" class="text-xs text-sage-700 hover:underline font-semibold">Save note</button>
+      ${r.status !== 'cancelled' ? (r.waitlisted
+        ? `<button onclick="setWaitlisted(${r.id}, false)" class="text-xs text-blue-600 hover:underline font-semibold">Move off waitlist</button>`
+        : `<button onclick="setWaitlisted(${r.id}, true)" class="text-xs text-gray-400 hover:text-blue-600">Move to waitlist</button>`) : ''}
       <button onclick="if(confirm('Delete this application? This cannot be undone.')) deleteClinicReg(${r.id})" class="text-xs text-red-400 hover:underline">Delete</button>
     </div>
   </div>`;
@@ -3397,6 +3403,23 @@ window.setFormState = async function(state) {
 // from the server rather than being guessed at here.
 window.setClinicStatus = async function(id, status) {
   const res = await api('/admin/clinic/' + id, { method: 'PUT', body: { status } });
+  if (res.error) { alert(res.error); return; }
+  await renderClinic(document.getElementById('content'));
+};
+
+window.setWaitlisted = async function(id, waitlisted) {
+  const row = _clinicData.find(r => r.id === id);
+  if (waitlisted === false && row && _clinicEvent) {
+    // Coming off the waiting list means taking a slot, which may not be there.
+    const used = (_formSummary[_clinicEvent.id] || { used: { cats: 0, dogs: 0 } }).used;
+    const overCats = row.cat_count > 0 && used.cats + row.cat_count > _clinicEvent.cap_cats;
+    const overDogs = row.dog_count > 0 && used.dogs + row.dog_count > _clinicEvent.cap_dogs;
+    if (overCats || overDogs) {
+      const which = [overCats ? 'cat' : null, overDogs ? 'dog' : null].filter(Boolean).join(' and ');
+      if (!confirm(`This will put you over the ${which} spot limit.\n\nMove them off the waiting list anyway?`)) return;
+    }
+  }
+  const res = await api('/admin/clinic/' + id, { method: 'PUT', body: { waitlisted } });
   if (res.error) { alert(res.error); return; }
   await renderClinic(document.getElementById('content'));
 };

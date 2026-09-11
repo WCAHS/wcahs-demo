@@ -124,6 +124,16 @@
   <section class="py-12 md:py-16">
     <div class="max-w-4xl mx-auto px-4">
 
+      <!-- Staff preview: ?preview=1 shows the form whatever state it's in -->
+      <div id="previewBanner" class="hidden rounded-2xl p-5 mb-8" style="background:#e8ebe3; border:2px solid #b3bea3;">
+        <p class="font-bold mb-1" style="color:#3b4434;">Staff preview</p>
+        <p class="text-sm leading-relaxed" style="color:#48543e;">
+          This is what the form looks like to the public. Submitting is disabled here, and
+          applications are <strong><span id="previewState"></span></strong> right now. Visitors see
+          whatever the current state shows, not this page.
+        </p>
+      </div>
+
       <!-- Capacity notice (filled in by JS when a species is full) -->
       <div id="capacityNotice" class="hidden rounded-2xl p-6 mb-8" style="background:#fef3c7; border:2px solid #fde68a;">
         <p class="font-bold mb-1" style="color:#92400e;">Applications are full &mdash; but please still apply</p>
@@ -258,14 +268,10 @@
                 <input id="snLast" type="text" class="field" placeholder="Last name" required>
               </div>
               <div>
-                <label class="field-label" for="snCell">Cell Phone</label>
+                <label class="field-label" for="snCell">Phone</label>
                 <input id="snCell" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-1234" required>
               </div>
               <div>
-                <label class="field-label" for="snHome">Home Phone <span class="font-normal text-gray-400">(optional)</span></label>
-                <input id="snHome" type="tel" oninput="formatPhone(this)" class="field" placeholder="(507) 555-5678">
-              </div>
-              <div class="md:col-span-2">
                 <label class="field-label" for="snEmail">Email</label>
                 <input id="snEmail" type="email" class="field" placeholder="your@email.com" required>
               </div>
@@ -506,9 +512,24 @@
 
   // Show the "full" notice when a species has no spots left. Applications stay
   // open either way — the notice sets expectations, it doesn't block anyone.
+  var IS_PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
+
   document.getElementById('register').style.display = 'none';
 
   fetch('/api/clinic').then(function(r) { return r.json(); }).then(function(cap) {
+    if (IS_PREVIEW) {
+      // Staff are looking at the form itself, so show it whatever state it's in.
+      var stateLabel = { open: 'open', closed: 'closed', reviewing: 'being reviewed', none: 'not scheduled' };
+      document.getElementById('previewState').textContent = stateLabel[(cap && cap.state) || 'closed'] || 'closed';
+      document.getElementById('previewBanner').classList.remove('hidden');
+      document.getElementById('register').style.display = '';
+      var btn = document.getElementById('snSubmit');
+      btn.textContent = 'Submitting is disabled in preview';
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+      return;
+    }
     if (!cap || !cap.open) {
       document.getElementById('closedHeading').textContent =
         (cap && cap.heading) || 'Registration Is Closed';
@@ -536,6 +557,13 @@
     var status = document.getElementById('snStatus');
     var btn = document.getElementById('snSubmit');
     var turnstile = document.querySelector('#snapForm [name="cf-turnstile-response"]');
+
+    if (IS_PREVIEW) {
+      status.innerHTML = '<div class="rounded-xl p-4 text-center" style="background:#e8ebe3;border:2px solid #b3bea3;"><p class="font-bold" style="color:#3b4434;">Preview only</p><p class="text-sm mt-1" style="color:#48543e;">Nothing was submitted. Open applications in the admin panel to take real ones.</p></div>';
+      status.classList.remove('hidden');
+      status.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
     var pets = [];
     document.querySelectorAll('.petRow').forEach(function(row) {
@@ -577,7 +605,6 @@
           owner_last: document.getElementById('snLast').value,
           email: document.getElementById('snEmail').value,
           phone_cell: document.getElementById('snCell').value,
-          phone_home: document.getElementById('snHome').value,
           address: document.getElementById('snAddress').value,
           city: cityValue(),
           state: document.getElementById('snState').value,
