@@ -6,11 +6,12 @@ export async function onRequestPut(context) {
   if (!body) return error('Invalid request body');
 
   await context.env.DB.prepare(
-    `UPDATE events SET title=?, date=?, end_date=?, time=?, location=?, description=?, badge=?, color=?, published=?, updated_at=datetime('now')
+    `UPDATE events SET title=?, date=?, end_date=?, time=?, location=?, description=?, badge=?, color=?, cta_url=?, cta_label=?, published=?, updated_at=datetime('now')
      WHERE id=?`
   ).bind(
     body.title, body.date, body.end_date || null, body.time || null, body.location || null,
     body.description || null, body.badge || null, body.color || 'auto',
+    body.cta_url || null, body.cta_label || null,
     body.published ? 1 : 0, id
   ).run();
 

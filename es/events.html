@@ -155,6 +155,7 @@
             '</div>' +
             '<p class="text-gray-500 text-sm mb-3">' + (ev.time||'') + (ev.time && ev.location ? ' &bull; ' : '') + (ev.location||'') + '</p>' +
             (ev.description ? '<p class="text-gray-600 text-sm leading-relaxed">' + ev.description + '</p>' : '') +
+            (ev.cta_url ? '<a href="' + ev.cta_url + '" class="inline-block mt-4 bg-sage-600 hover:bg-sage-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-md">' + (ev.cta_label || 'Más Información') + ' &rarr;</a>' : '') +
           '</div></div>';
       }).join('') + '</div>';
     }).catch(function(){});

@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS events (
   description TEXT,
   badge TEXT,
   color TEXT DEFAULT 'sage',
+  cta_url TEXT,
+  cta_label TEXT,
   published INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -174,4 +176,25 @@ CREATE TABLE IF NOT EXISTS foster_updates (
   content TEXT,
   photo_url TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Registrations for the MNSNAP spay/neuter clinic (and any future clinic).
+-- Deliberately its own table, not form_submissions: this is a roster staff
+-- work through and hand to MNSNAP as a list, not a pile of messages.
+CREATE TABLE IF NOT EXISTS clinic_registrations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER,
+  owner_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  address TEXT,
+  city TEXT,
+  zip TEXT,
+  pets TEXT NOT NULL,          -- JSON array: [{name,species,sex,age,weight,breed}]
+  pet_count INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'new',  -- new | contacted | scheduled | cancelled
+  staff_notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

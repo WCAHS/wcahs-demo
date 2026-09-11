@@ -159,6 +159,7 @@
         <a onclick="navigate('pets')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="pets">Pets</a>
         <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="lost-found">Lost & Found</a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
+        <a onclick="navigate('clinic')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="clinic">Clinic</a>
         <!-- Email management handled in Resend dashboard -->
         <!-- FAQ temporarily hidden — editor needs rework -->
         <!-- <a onclick="navigate('faq')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="faq">FAQ</a> -->
@@ -309,8 +310,8 @@ function showDashboard(user) {
     // Pages a role may land on. The saved page has to be checked against this too —
     // restoring it blindly dropped fosters on the Inbox, which they can't read.
     const PAGES_BY_ROLE = {
-      admin:  ['submissions','pets','lost-found','events','faq','settings','about','users','my-account','analytics','foster-pets'],
-      staff:  ['submissions','pets','lost-found','events','my-account'],
+      admin:  ['submissions','pets','lost-found','events','clinic','faq','settings','about','users','my-account','analytics','foster-pets'],
+      staff:  ['submissions','pets','lost-found','events','clinic','my-account'],
       foster: ['foster-pets','my-account']
     };
     const validPages = PAGES_BY_ROLE[user.role] || PAGES_BY_ROLE.staff;
@@ -366,6 +367,7 @@ function navigate(page) {
     case 'pets': renderPets(content); break;
     case 'lost-found': renderLostFoundManage(content); break;
     case 'events': renderEvents(content); break;
+    case 'clinic': renderClinic(content); break;
     case 'email': renderEmail(content); break;
     case 'faq': renderFaq(content); break;
     case 'settings': renderSettings(content); break;
@@ -1267,6 +1269,11 @@ function eventFormHtml(ev) {
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">Address</label><input id="evAddress" value="${h(address)}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. 123 Main St, Waseca"></div>
     </div>
     <div class="mb-4"><label class="block text-xs font-semibold text-gray-600 mb-1">Description</label><textarea id="evDesc" rows="3" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">${h(e.description||'')}</textarea></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Button Link <span class="font-normal text-gray-400">(optional)</span></label><input id="evCtaUrl" value="${h(e.cta_url||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. /snap"></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Button Text</label><input id="evCtaLabel" value="${h(e.cta_label||'')}" class="w-full border border-sage-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" placeholder="e.g. Register Now"></div>
+    </div>
+    <p class="text-xs text-gray-400 mb-4 -mt-2">Adds a button to this event on the public Events page. Leave the link blank for no button.</p>
     <div class="flex items-center gap-4 mb-4">
       <label class="flex items-center gap-2 text-sm"><input id="evPublished" type="checkbox" ${e.published!==0?'checked':''}> Published</label>
     </div>
@@ -1307,6 +1314,8 @@ window.saveEvent = async function(id) {
     location: location,
     description: document.getElementById('evDesc').value,
     badge: badge,
+    cta_url: document.getElementById('evCtaUrl').value.trim(),
+    cta_label: document.getElementById('evCtaLabel').value.trim(),
     color: 'auto',
     published: document.getElementById('evPublished').checked,
   };
@@ -3070,8 +3079,171 @@ window.deleteUser = async function(id) {
 };
 
 // ── Deep link handling ──
+// ── Clinic Registrations ──
+const CLINIC_STATUSES = ['new', 'contacted', 'scheduled', 'cancelled'];
+const CLINIC_STATUS_STYLE = {
+  new:       'bg-amber-100 text-amber-700',
+  contacted: 'bg-sage-100 text-sage-700',
+  scheduled: 'bg-green-100 text-green-700',
+  cancelled: 'bg-gray-100 text-gray-500'
+};
+let _clinicData = [];
+let _clinicFilter = 'all';
+
+async function renderClinic(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Clinic Registrations</h1><p class="text-gray-400">Loading...</p>';
+  const data = await api('/admin/clinic');
+  if (data.error) { el.innerHTML += '<p class="text-red-500">' + data.error + '</p>'; return; }
+  _clinicData = Array.isArray(data) ? data : [];
+  paintClinic(el);
+}
+
+function paintClinic(el) {
+  el = el || document.getElementById('content');
+  const all = _clinicData;
+  const shown = _clinicFilter === 'all' ? all : all.filter(r => r.status === _clinicFilter);
+  const totalPets = all.filter(r => r.status !== 'cancelled')
+                       .reduce((n, r) => n + (r.pet_count || 0), 0);
+
+  let html = `<div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Clinic Registrations</h1>
+    <button onclick="exportClinicCsv()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition">Export CSV</button>
+  </div>
+  <p class="text-gray-500 text-sm mb-6">${all.length} registration${all.length === 1 ? '' : 's'} &bull; ${totalPets} pet${totalPets === 1 ? '' : 's'} to schedule</p>`;
+
+  html += '<div class="flex flex-wrap gap-2 mb-6">';
+  const tabs = [['all', 'All']].concat(CLINIC_STATUSES.map(st => [st, st.charAt(0).toUpperCase() + st.slice(1)]));
+  tabs.forEach(([key, label]) => {
+    const count = key === 'all' ? all.length : all.filter(r => r.status === key).length;
+    const active = _clinicFilter === key;
+    html += `<button onclick="setClinicFilter('${key}')" class="text-sm font-semibold px-4 py-2 rounded-xl transition ${active ? 'bg-sage-700 text-white' : 'bg-white text-gray-500 hover:text-sage-700'}">${label} <span class="opacity-60">${count}</span></button>`;
+  });
+  html += '</div>';
+
+  if (shown.length === 0) {
+    html += '<div class="card p-8 text-center text-gray-400">No registrations' + (_clinicFilter === 'all' ? ' yet' : ' with this status') + '</div>';
+  } else {
+    html += '<div class="space-y-3">';
+    shown.forEach(r => {
+      let pets = [];
+      try { pets = JSON.parse(r.pets || '[]'); } catch(e) {}
+      const style = CLINIC_STATUS_STYLE[r.status] || CLINIC_STATUS_STYLE.new;
+      html += `<div id="clinic-reg-${r.id}" class="card p-5 ${r.status === 'cancelled' ? 'opacity-60' : ''}">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-1">
+          <div>
+            <span class="font-bold text-gray-900">${h(r.owner_name)}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${style}">${h(r.status)}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-sage-100 text-sage-700 ml-1">${r.pet_count} pet${r.pet_count === 1 ? '' : 's'}</span>
+          </div>
+          <span class="text-xs text-gray-400">${timeAgo(r.created_at)}</span>
+        </div>
+        <p class="text-sm text-gray-500">
+          <a href="tel:${h(r.phone)}" class="hover:underline">${fmtPhone(r.phone)}</a>
+          &bull; <a href="mailto:${h(r.email)}" class="hover:underline">${h(r.email)}</a>
+        </p>
+        <p class="text-sm text-gray-500">${h(r.address || '')}${r.address && r.city ? ', ' : ''}${h(r.city || '')}${r.zip ? ' ' + h(r.zip) : ''}</p>
+        ${r.notes ? '<p class="text-sm text-gray-600 mt-2 whitespace-pre-wrap">' + h(r.notes) + '</p>' : ''}
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <tr class="text-gray-400">
+              <th class="py-1 pr-4 font-semibold">Name</th><th class="py-1 pr-4 font-semibold">Species</th>
+              <th class="py-1 pr-4 font-semibold">Sex</th><th class="py-1 pr-4 font-semibold">Age</th>
+              <th class="py-1 pr-4 font-semibold">Weight</th><th class="py-1 font-semibold">Breed/Color</th>
+            </tr>
+            ${pets.map(p => `<tr class="border-t border-gray-100 text-gray-600">
+              <td class="py-1.5 pr-4">${h(p.name || '—')}</td><td class="py-1.5 pr-4">${h(p.species || '')}</td>
+              <td class="py-1.5 pr-4">${h(p.sex || '')}</td><td class="py-1.5 pr-4">${h(p.age || '')}</td>
+              <td class="py-1.5 pr-4">${h(p.weight || '')}</td><td class="py-1.5">${h(p.breed || '')}</td>
+            </tr>`).join('')}
+          </table>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 mt-4">
+          <select onchange="setClinicStatus(${r.id}, this.value)" class="border border-sage-200 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sage-400">
+            ${CLINIC_STATUSES.map(st => `<option value="${st}"${r.status === st ? ' selected' : ''}>${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('')}
+          </select>
+          <input id="clinicNote${r.id}" value="${h(r.staff_notes || '')}" placeholder="Staff notes (e.g. appointment time)" class="flex-1 min-w-[180px] border border-sage-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sage-400">
+          <button onclick="saveClinicNote(${r.id}, this)" class="text-xs text-sage-700 hover:underline font-semibold">Save note</button>
+          <button onclick="if(confirm('Delete this registration? This cannot be undone.')) deleteClinicReg(${r.id})" class="text-xs text-red-400 hover:underline">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+window.setClinicFilter = function(key) { _clinicFilter = key; paintClinic(); };
+
+window.setClinicStatus = async function(id, status) {
+  const res = await api('/admin/clinic/' + id, { method: 'PUT', body: { status } });
+  if (res.error) { alert(res.error); return; }
+  const row = _clinicData.find(r => r.id === id);
+  if (row) row.status = status;
+  paintClinic();
+};
+
+window.saveClinicNote = async function(id, btn) {
+  const val = document.getElementById('clinicNote' + id).value;
+  const res = await api('/admin/clinic/' + id, { method: 'PUT', body: { staff_notes: val } });
+  if (res.error) { alert(res.error); return; }
+  const row = _clinicData.find(r => r.id === id);
+  if (row) row.staff_notes = val;
+  if (btn) { btn.textContent = 'Saved'; setTimeout(() => { btn.textContent = 'Save note'; }, 1500); }
+};
+
+window.deleteClinicReg = async function(id) {
+  const res = await api('/admin/clinic/' + id, { method: 'DELETE' });
+  if (res.error) { alert(res.error); return; }
+  _clinicData = _clinicData.filter(r => r.id !== id);
+  paintClinic();
+};
+
+// One row per PET, not per family — that's the list MNSNAP actually schedules from.
+window.exportClinicCsv = function() {
+  const cols = ['Owner', 'Phone', 'Email', 'Address', 'City', 'ZIP', 'Pet Name', 'Species', 'Sex', 'Age', 'Weight', 'Breed/Color', 'Owner Notes', 'Status', 'Staff Notes', 'Registered'];
+  const rows = [cols];
+  const source = _clinicFilter === 'all' ? _clinicData : _clinicData.filter(r => r.status === _clinicFilter);
+  source.forEach(r => {
+    let pets = [];
+    try { pets = JSON.parse(r.pets || '[]'); } catch(e) {}
+    if (pets.length === 0) pets = [{}];
+    pets.forEach(p => {
+      rows.push([
+        r.owner_name, r.phone, r.email, r.address || '', r.city || '', r.zip || '',
+        p.name || '', p.species || '', p.sex || '', p.age || '', p.weight || '', p.breed || '',
+        r.notes || '', r.status, r.staff_notes || '', r.created_at
+      ]);
+    });
+  });
+  const csv = rows.map(row => row.map(cell => {
+    const v = String(cell == null ? '' : cell);
+    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }).join(',')).join('\r\n');
+
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'wcahs-clinic-registrations-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 function handleDeepLink() {
   const hash = window.location.hash;
+  if (hash && hash.startsWith('#clinic-reg-')) {
+    const regId = hash.replace('#clinic-reg-', '');
+    navigate('clinic');
+    setTimeout(() => {
+      const el = document.getElementById('clinic-reg-' + regId);
+      if (el) {
+        el.classList.add('ring-2', 'ring-sage-400');
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      window.location.hash = '';
+    }, 500);
+    return;
+  }
   if (!hash || !hash.startsWith('#inbox-')) return;
   // Format: #inbox-sub-42 or #inbox-lf
   navigate('submissions');
