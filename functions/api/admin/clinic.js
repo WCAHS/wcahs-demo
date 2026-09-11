@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
 
   const { results: events } = await db.prepare(
     `SELECT id, title, date, time, location, published, form_key, form_state,
-            cap_cats, cap_dogs
+            cap_cats, cap_dogs, notify_emails
      FROM events WHERE form_key IS NOT NULL AND form_key != ''
      ORDER BY date DESC`
   ).all();
@@ -66,6 +66,7 @@ export async function onRequestGet(context) {
     summary,
     registrations,
     form_states: CLINIC_FORM_STATES,
+    default_mailboxes: ['info@wcahs.org', 'admin@wcahs.org'],
   });
 }
 
@@ -84,6 +85,18 @@ export async function onRequestPut(context) {
     const n = parseInt(body[field], 10);
     if (isNaN(n) || n < 0) return error('Capacity must be zero or a positive number');
     sets.push(`${col}=?`); vals.push(n);
+  }
+  if (body.notify_emails !== undefined) {
+    const list = Array.isArray(body.notify_emails) ? body.notify_emails : [];
+    const cleaned = list
+      .map(a => String(a).trim())
+      .filter(Boolean);
+    const bad = cleaned.find(a => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a));
+    if (bad) return error(`"${bad}" doesn't look like an email address`);
+    // Empty means "no preference" — the shelter defaults apply, rather than a
+    // form whose submissions reach nobody.
+    sets.push('notify_emails=?');
+    vals.push(cleaned.length ? JSON.stringify(cleaned.slice(0, 10)) : null);
   }
   if (body.state !== undefined) {
     if (!CLINIC_FORM_STATES[body.state]) return error('Unknown form state');

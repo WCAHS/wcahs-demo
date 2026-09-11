@@ -1679,26 +1679,31 @@ async function renderSettings(el) {
     { key: 'contact',    label: 'Contact messages' },
     { key: 'foster',     label: 'Foster applications' },
     { key: 'lost_found', label: 'Lost & Found reports' },
-    { key: 'clinic',     label: 'Clinic applications' },
   ];
+  // Clinic applications are deliberately absent: an event form carries its own
+  // recipients, set under Event Forms alongside its capacity and open/closed
+  // state. Two places to change the same thing is how they end up disagreeing.
   const MAILBOXES = ['info@wcahs.org', 'admin@wcahs.org'];
   let notify = {};
   try { notify = typeof data.notify_recipients === 'string' ? JSON.parse(data.notify_recipients) : (data.notify_recipients || {}); } catch(e) { notify = {}; }
 
   settingsHtml += `<div class="card p-6 mb-6">
     <h2 class="font-bold text-gray-900 mb-1">Notifications</h2>
-    <p class="text-xs text-gray-500 mb-4">Who gets an email when someone submits each form. Unchecking everything falls back to both mailboxes &mdash; a submission nobody is told about is worse than an extra email.</p>
+    <p class="text-xs text-gray-500 mb-4">Who gets an email when someone submits each form. Separate several addresses with commas. Unchecking everything and leaving the box empty falls back to both mailboxes &mdash; a submission nobody is told about is worse than an extra email. <span class="text-gray-400">Clinic applications are set per event under Event Forms.</span></p>
     <div class="space-y-4">
       ${NOTIFY_FORMS.map(f => {
         const current = Array.isArray(notify[f.key]) ? notify[f.key] : MAILBOXES;
         const extra = current.filter(a => !MAILBOXES.includes(a));
         return `<div class="border-t border-gray-100 pt-4 first:border-0 first:pt-0">
-          <p class="text-sm font-semibold text-gray-700 mb-2">${f.label}</p>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+            <p class="text-sm font-semibold text-gray-700">${f.label}</p>
+            <p class="text-xs text-gray-400">now going to: ${current.length ? current.map(h).join(', ') : 'nobody — will fall back to both'}</p>
+          </div>
           <div class="flex flex-wrap items-center gap-4">
             ${MAILBOXES.map(m => `<label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
               <input type="checkbox" class="notifyBox" data-form="${f.key}" value="${m}" ${current.includes(m) ? 'checked' : ''}> ${m}
             </label>`).join('')}
-            <input type="email" class="notifyExtra border border-sage-200 rounded-xl px-3 py-2 text-sm flex-1 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-sage-400" data-form="${f.key}" value="${h(extra[0] || '')}" placeholder="Also send to (optional)">
+            <input type="text" class="notifyExtra border border-sage-200 rounded-xl px-3 py-2 text-sm flex-1 min-w-[220px] focus:outline-none focus:ring-2 focus:ring-sage-400" data-form="${f.key}" value="${h(extra.join(', '))}" placeholder="Also send to (comma-separated)">
           </div>
         </div>`;
       }).join('')}
@@ -1926,11 +1931,18 @@ window.saveSettings = async function() {
     if (!notifyMap[cb.dataset.form]) notifyMap[cb.dataset.form] = [];
     if (cb.checked) notifyMap[cb.dataset.form].push(cb.value);
   });
+  let badAddress = null;
   document.querySelectorAll('.notifyExtra').forEach(inp => {
-    const v = inp.value.trim();
     if (!notifyMap[inp.dataset.form]) notifyMap[inp.dataset.form] = [];
-    if (v && v.includes('@')) notifyMap[inp.dataset.form].push(v);
+    inp.value.split(',').map(a => a.trim()).filter(Boolean).forEach(a => {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a)) notifyMap[inp.dataset.form].push(a);
+      else badAddress = a;
+    });
   });
+  if (badAddress) {
+    alert(`"${badAddress}" doesn't look like an email address.\n\nNothing was saved \u2014 fix it and save again.`);
+    return;
+  }
   if (Object.keys(notifyMap).length) body.notify_recipients = notifyMap;
 
   // Under construction — only save if techadmin
@@ -3212,6 +3224,7 @@ let _formEventId = null;      // null = show the index
 let _clinicData = [];
 let _clinicEvent = null;
 let _formStates = {};
+let _defaultMailboxes = ['info@wcahs.org', 'admin@wcahs.org'];
 let _clinicFilter = 'all';
 
 async function renderClinic(el) {
@@ -3224,6 +3237,7 @@ async function renderClinic(el) {
   _formSummary = data.summary || {};
   _clinicData = data.registrations || [];
   _formStates = data.form_states || {};
+  if (Array.isArray(data.default_mailboxes) && data.default_mailboxes.length) _defaultMailboxes = data.default_mailboxes;
   _clinicEvent = _formEventId ? _formEvents.find(e => e.id === Number(_formEventId)) : null;
 
   if (_formEventId && !_clinicEvent) { _formEventId = null; }
@@ -3394,6 +3408,24 @@ function paintFormEvent(el) {
   const sum = _formSummary[ev.id] || {};
   const appr = sum.approved || { cats: 0, dogs: 0 };
   const pend = sum.pending || { cats: 0, dogs: 0 };
+  const notifyList = (() => {
+    try { const a = JSON.parse(ev.notify_emails || 'null'); return Array.isArray(a) ? a : null; } catch (e) { return null; }
+  })();
+  const notifyShown = notifyList && notifyList.length ? notifyList : _defaultMailboxes;
+
+  html += `<div class="card p-5 mb-3">
+    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+      <p class="text-xs font-bold uppercase tracking-wider text-sage-400">Who gets notified</p>
+      <p class="text-xs text-gray-400">${(notifyList && notifyList.length) ? 'set for this form' : 'using the shelter default'}</p>
+    </div>
+    <p class="text-sm text-gray-600 mb-3">Emailed whenever someone applies: <strong>${notifyShown.map(h).join(', ')}</strong></p>
+    <div class="flex flex-wrap gap-2">
+      <input id="notifyEmails" value="${h((notifyList || []).join(', '))}" placeholder="${h(_defaultMailboxes.join(', '))}" class="flex-1 min-w-[240px] border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+      <button onclick="saveNotifyEmails(this)" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2 rounded-xl transition">Save</button>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">Separate several addresses with commas. Leave blank to use the shelter's usual mailboxes.</p>
+  </div>`;
+
   html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
     ${capacityBar('cats', 'Cat spots', appr.cats, pend.cats, ev.cap_cats)}
     ${capacityBar('dogs', 'Dog spots', appr.dogs, pend.dogs, ev.cap_dogs)}
@@ -3502,6 +3534,15 @@ function clinicCard(r) {
 }
 
 window.setClinicFilter = function(key) { _clinicFilter = key; paintFormEvent(document.getElementById('content')); };
+
+window.saveNotifyEmails = async function(btn) {
+  const raw = document.getElementById('notifyEmails').value;
+  const list = raw.split(',').map(a => a.trim()).filter(Boolean);
+  const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: _formEventId, notify_emails: list } });
+  if (res.error) { alert(res.error); return; }
+  if (btn) btn.textContent = 'Saved';
+  await renderClinic(document.getElementById('content'));
+};
 
 window.setFormState = async function(state) {
   if (state === 'open' && !confirm('Open applications?\n\nThe form at wcahs.org/snap goes live immediately, and every submission emails info@ and admin@.')) return;

@@ -37,7 +37,7 @@ function esc(s) {
 // creating an event, not editing code.
 async function getActiveClinicEvent(db) {
   return await db.prepare(
-    `SELECT id, title, date, time, location, form_state, cap_cats, cap_dogs
+    `SELECT id, title, date, time, location, form_state, cap_cats, cap_dogs, notify_emails
      FROM events
      WHERE form_key = 'clinic' AND published = 1
        AND (end_date >= date('now') OR (end_date IS NULL AND date >= date('now')))
@@ -241,8 +241,22 @@ export async function onRequestPost(context) {
       ? { bg: '#fef3c7', border: '#fde68a', fg: '#92400e', text: '<strong>Applied</strong>, but on the <strong>waiting list</strong> — the spots were already full. Contact if one opens.' }
       : { bg: '#e8ebe3', border: '#d2d8c8', fg: '#3b4434', text: 'Sorted into <strong>Applied</strong> — spots are available.' };
 
+  // Recipients live on the event, so a clinic run by one volunteer doesn't have
+  // to route every other form through them too. Falls back to site settings,
+  // then to the shelter mailboxes.
+  let clinicRecipients = null;
+  try {
+    if (ev.notify_emails) {
+      const parsed = JSON.parse(ev.notify_emails);
+      if (Array.isArray(parsed) && parsed.length) clinicRecipients = parsed;
+    }
+  } catch (e) {
+    console.error('event notify_emails is not valid JSON:', e && e.message);
+  }
+
   await sendNotification(env, {
     type: 'clinic',
+    to: clinicRecipients,
     subject: `Clinic ${status === 'ineligible' ? 'Registration (NEEDS REVIEW)' : waitlisted ? 'Registration (WAITLIST)' : 'Registration'}: ${ownerName} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Spay/Neuter Clinic Registration</h2>
       <p style="background:${statusBanner.bg};border:1px solid ${statusBanner.border};color:${statusBanner.fg};padding:10px 14px;border-radius:8px;font-size:13px;margin:0 0 16px">

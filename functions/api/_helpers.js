@@ -112,9 +112,13 @@ export async function notifyRecipients(env, type) {
   }
 }
 
-export async function sendNotification(env, { subject, html, type }) {
+// `to` lets a caller name its own recipients (an event form carries its own);
+// everything else resolves by form type from site settings.
+export async function sendNotification(env, { subject, html, type, to: explicitTo }) {
   if (!env.RESEND_API_KEY) return;
-  const to = await notifyRecipients(env, type);
+  const to = (Array.isArray(explicitTo) && explicitTo.length)
+    ? explicitTo.filter(a => typeof a === 'string' && a.includes('@')).slice(0, 10)
+    : await notifyRecipients(env, type);
   if (!to.length) return;
   try {
     await fetch('https://api.resend.com/emails', {

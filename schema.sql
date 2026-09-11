@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS events (
   -- open | closed | reviewing. Wording for each state is fixed in
   -- functions/api/_helpers.js, not stored per event.
   form_state TEXT NOT NULL DEFAULT 'closed',
+  -- JSON array of addresses notified when this form is submitted. NULL means
+  -- fall back to the shelter's default mailboxes.
+  notify_emails TEXT,
   cap_cats INTEGER NOT NULL DEFAULT 25,
   cap_dogs INTEGER NOT NULL DEFAULT 25,
   published INTEGER NOT NULL DEFAULT 1,
