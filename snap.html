@@ -227,7 +227,7 @@
       <!-- Shown instead of the form when applications are closed -->
       <div id="closedPanel" class="hidden bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-sage-200 text-center">
         <img src="images/paws/paw_01.png" alt="" style="height:40px;margin:0 auto 16px;opacity:0.35;">
-        <h2 class="font-display text-2xl font-bold text-gray-900 mb-3">Registration Isn't Open Yet</h2>
+        <h2 id="closedHeading" class="font-display text-2xl font-bold text-gray-900 mb-3"></h2>
         <p id="closedMessage" class="text-gray-600 leading-relaxed max-w-xl mx-auto"></p>
         <div class="mt-6 flex flex-wrap gap-3 justify-center">
           <a href="tel:5072017287" class="bg-sage-600 hover:bg-sage-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-md">Call (507) 201-7287</a>
@@ -510,8 +510,10 @@
 
   fetch('/api/clinic').then(function(r) { return r.json(); }).then(function(cap) {
     if (!cap || !cap.open) {
+      document.getElementById('closedHeading').textContent =
+        (cap && cap.heading) || 'Registration Is Closed';
       document.getElementById('closedMessage').textContent =
-        (cap && cap.closed_message) || 'Registration for this clinic is not open yet. Please check back soon.';
+        (cap && cap.closed_message) || 'We\'re not accepting applications right now. Call us at (507) 201-7287.';
       document.getElementById('closedPanel').classList.remove('hidden');
       return;
     }

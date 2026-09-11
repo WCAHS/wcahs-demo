@@ -3107,11 +3107,14 @@ window.deleteUser = async function(id) {
 // an event and turning its form on — not touching code.
 const FORM_TYPES = { clinic: 'Spay/Neuter Clinic Application' };
 
-const CLINIC_STATUSES = ['applied', 'approved', 'overflow', 'ineligible', 'cancelled'];
+// Four statuses, not five. "Overflow" used to be its own tab, but it was never
+// a different kind of application — just an applied one that arrived after the
+// spots filled. It's a badge on the card now (waitlisted), so staff work one
+// queue and can still see at a glance who is waiting on a cancellation.
+const CLINIC_STATUSES = ['applied', 'approved', 'ineligible', 'cancelled'];
 const CLINIC_STATUS_STYLE = {
   applied:    'bg-amber-100 text-amber-700',
   approved:   'bg-green-100 text-green-700',
-  overflow:   'bg-blue-100 text-blue-700',
   ineligible: 'bg-gray-200 text-gray-600',
   cancelled:  'bg-gray-100 text-gray-400'
 };
@@ -3128,7 +3131,7 @@ let _formSummary = {};
 let _formEventId = null;      // null = show the index
 let _clinicData = [];
 let _clinicEvent = null;
-let _defaultClosedMsg = '';
+let _formStates = {};
 let _clinicFilter = 'all';
 
 async function renderClinic(el) {
@@ -3140,7 +3143,7 @@ async function renderClinic(el) {
   _formEvents = data.events || [];
   _formSummary = data.summary || {};
   _clinicData = data.registrations || [];
-  _defaultClosedMsg = data.default_closed_message || '';
+  _formStates = data.form_states || {};
   _clinicEvent = _formEventId ? _formEvents.find(e => e.id === Number(_formEventId)) : null;
 
   if (_formEventId && !_clinicEvent) { _formEventId = null; }
@@ -3167,12 +3170,13 @@ function paintFormIndex(el) {
   _formEvents.forEach(ev => {
     const sum = _formSummary[ev.id] || { total: 0, by_status: {}, used: { cats: 0, dogs: 0 } };
     const past = new Date(ev.date + 'T23:59:59') < new Date();
-    const open = ev.form_open === 1;
+    const evState = _formStates[ev.form_state] ? ev.form_state : 'closed';
+    const open = evState === 'open';
     html += `<div class="card p-5 ${past ? 'opacity-70' : ''}">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <span class="font-bold text-gray-900">${h(ev.title)}</span>
-          <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${open ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${open ? 'Applications open' : 'Applications closed'}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${open ? 'bg-green-100 text-green-700' : evState === 'reviewing' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}">Applications ${open ? 'open' : evState === 'reviewing' ? 'being reviewed' : 'closed'}</span>
           ${!ev.published ? '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 ml-1">Draft</span>' : ''}
           ${past ? '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 ml-1">Past</span>' : ''}
           <p class="text-sm text-gray-500 mt-1">${formatDate(ev.date)} &bull; ${h(FORM_TYPES[ev.form_key] || ev.form_key)}</p>
@@ -3185,6 +3189,7 @@ function paintFormIndex(el) {
         ${CLINIC_STATUSES.filter(st => sum.by_status[st]).map(st =>
           `<span class="text-xs px-2 py-1 rounded-lg ${CLINIC_STATUS_STYLE[st]}">${st} ${sum.by_status[st]}</span>`).join('')
           || '<span class="text-xs text-gray-400">No applications yet</span>'}
+        ${sum.waitlisted ? `<span class="text-xs px-2 py-1 rounded-lg bg-blue-100 text-blue-700">waitlist ${sum.waitlisted}</span>` : ''}
       </div>
       <p class="text-xs text-gray-400 mt-3">
         Cats ${sum.used.cats}/${ev.cap_cats}${sum.used.cats >= ev.cap_cats ? ' (full)' : ''}
@@ -3253,9 +3258,12 @@ window.saveCap = async function(key) {
 function paintFormEvent(el) {
   const ev = _clinicEvent;
   const all = _clinicData;
-  const shown = _clinicFilter === 'all' ? all : all.filter(r => r.status === _clinicFilter);
+  const shown = _clinicFilter === 'all' ? all
+    : _clinicFilter === 'waitlist' ? all.filter(r => r.waitlisted)
+    : all.filter(r => r.status === _clinicFilter);
   const used = (_formSummary[ev.id] || { used: { cats: 0, dogs: 0 } }).used;
-  const open = ev.form_open === 1;
+  const state = _formStates[ev.form_state] ? ev.form_state : 'closed';
+  const open = state === 'open';
 
   let html = `<button onclick="backToFormIndex()" class="text-sm text-sage-700 hover:underline font-semibold mb-3">&larr; All event forms</button>
   <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
@@ -3264,36 +3272,31 @@ function paintFormEvent(el) {
   </div>
   <p class="text-gray-500 text-sm mb-6">${formatDate(ev.date)} &bull; ${all.length} application${all.length === 1 ? '' : 's'}</p>`;
 
-  html += `<div class="card p-5 mb-4" style="${open ? 'border-left:4px solid #5c6b4e' : 'border-left:4px solid #d97706'}">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+  const STATE_STYLE = {
+    open:      { bar: '#5c6b4e', text: '#48543e', label: 'OPEN',          note: 'The form at wcahs.org/snap is live and accepting applications.' },
+    closed:    { bar: '#d97706', text: '#b45309', label: 'CLOSED',        note: 'Visitors see the clinic details and a closed notice instead of the form.' },
+    reviewing: { bar: '#5c6b4e', text: '#48543e', label: 'BEING REVIEWED', note: 'Visitors are told registration has closed and applications are being worked through.' }
+  };
+  const st = STATE_STYLE[state] || STATE_STYLE.closed;
+
+  html += `<div class="card p-5 mb-4" style="border-left:4px solid ${st.bar}">
+    <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <p class="font-bold text-gray-900">Applications are
-          <span style="color:${open ? '#48543e' : '#b45309'}">${open ? 'OPEN' : 'CLOSED'}</span>
-        </p>
-        <p class="text-xs text-gray-500 mt-0.5">
-          ${open
-            ? 'The form at wcahs.org/snap is live and accepting applications for this event.'
-            : 'wcahs.org/snap shows the clinic details and a "not open yet" notice instead of the form.'}
-        </p>
+        <p class="font-bold text-gray-900">Applications are <span style="color:${st.text}">${st.label}</span></p>
+        <p class="text-xs text-gray-500 mt-0.5">${st.note}</p>
       </div>
-      <button onclick="toggleClinicOpen(${open ? 'false' : 'true'})"
-        class="${open ? 'bg-white border border-amber-300 text-amber-700 hover:bg-amber-50' : 'bg-sage-700 hover:bg-sage-800 text-white'} font-semibold text-sm px-5 py-2.5 rounded-xl transition">
-        ${open ? 'Close applications' : 'Open applications'}
-      </button>
+      <div class="flex flex-wrap gap-1.5">
+        ${['open', 'closed', 'reviewing'].map(k => `
+          <button onclick="setFormState('${k}')" class="text-xs font-semibold px-3 py-2 rounded-xl transition ${state === k ? 'bg-sage-700 text-white' : 'bg-white border border-sage-200 text-gray-500 hover:text-sage-700'}">
+            ${(_formStates[k] && _formStates[k].label) || k}
+          </button>`).join('')}
+      </div>
     </div>
-    ${!open ? `<div class="mt-4 pt-4 border-t border-gray-100">
-      <label class="block text-xs font-semibold text-gray-600 mb-1">Message shown while closed</label>
-      <textarea id="closedMsg" rows="2" oninput="previewClosedMessage()" placeholder="Leave blank to use the default wording below" class="w-full border border-sage-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none">${h(ev.form_closed_message || '')}</textarea>
-      <div class="flex items-center gap-3 mt-2">
-        <button onclick="saveClosedMessage(this)" class="text-xs text-sage-700 hover:underline font-semibold">Save message</button>
-        <button onclick="document.getElementById('closedMsg').value=''; previewClosedMessage();" class="text-xs text-gray-400 hover:text-gray-600">Reset to default</button>
-      </div>
-      <div class="mt-4 rounded-xl p-4 text-center" style="background:#f6f7f4;border:1px solid #d2d8c8;">
-        <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-2">What visitors see at wcahs.org/snap</p>
-        <p class="font-display font-bold text-gray-900 text-base">Registration Isn't Open Yet</p>
-        <p id="closedPreview" class="text-sm text-gray-600 mt-1 leading-relaxed"></p>
-        <p class="text-xs text-gray-400 mt-3">plus a Call and a Send a Message button</p>
-      </div>
+    ${state !== 'open' ? `<div class="mt-4 rounded-xl p-4 text-center" style="background:#f6f7f4;border:1px solid #d2d8c8;">
+      <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-2">What visitors see at wcahs.org/snap</p>
+      <p class="font-display font-bold text-gray-900 text-base">${h((_formStates[state] && _formStates[state].heading) || '')}</p>
+      <p class="text-sm text-gray-600 mt-1 leading-relaxed max-w-xl mx-auto">${h((_formStates[state] && _formStates[state].message) || '')}</p>
+      <p class="text-xs text-gray-400 mt-3">plus a Call and a Send a Message button</p>
     </div>` : ''}
   </div>`;
 
@@ -3305,20 +3308,22 @@ function paintFormEvent(el) {
 
   html += '<div class="flex flex-wrap gap-2 mb-6">';
   const tabs = [['all', 'All']].concat(CLINIC_STATUSES.map(st => [st, st.charAt(0).toUpperCase() + st.slice(1)]));
+  tabs.push(['waitlist', 'Waitlist']);
   tabs.forEach(([key, label]) => {
-    const count = key === 'all' ? all.length : all.filter(r => r.status === key).length;
+    const count = key === 'all' ? all.length
+      : key === 'waitlist' ? all.filter(r => r.waitlisted).length
+      : all.filter(r => r.status === key).length;
     const active = _clinicFilter === key;
     html += `<button onclick="setClinicFilter('${key}')" class="text-sm font-semibold px-4 py-2 rounded-xl transition ${active ? 'bg-sage-700 text-white' : 'bg-white text-gray-500 hover:text-sage-700'}">${label} <span class="opacity-60">${count}</span></button>`;
   });
   html += '</div>';
 
   if (shown.length === 0) {
-    html += '<div class="card p-8 text-center text-gray-400">No applications' + (_clinicFilter === 'all' ? ' yet' : ' with this status') + '</div>';
+    html += '<div class="card p-8 text-center text-gray-400">No applications' + (_clinicFilter === 'all' ? ' yet' : _clinicFilter === 'waitlist' ? ' on the waiting list' : ' with this status') + '</div>';
   } else {
     html += '<div class="space-y-3">' + shown.map(clinicCard).join('') + '</div>';
   }
   el.innerHTML = html;
-  previewClosedMessage();
 }
 
 function clinicCard(r) {
@@ -3334,6 +3339,7 @@ function clinicCard(r) {
       <div>
         <span class="font-bold text-gray-900">${h(r.owner_name)}</span>
         <span class="text-xs px-2 py-0.5 rounded-full ml-2 ${style}">${h(r.status)}</span>
+        ${r.waitlisted ? '<span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 ml-1" title="Applied after the spots filled — holds no slot unless you approve it">waitlist</span>' : ''}
         <span class="text-xs px-2 py-0.5 rounded-full bg-sage-100 text-sage-700 ml-1">${counts.join(', ') || '0 pets'}</span>
       </div>
       <span class="text-xs text-gray-400">${timeAgo(r.created_at)}</span>
@@ -3380,30 +3386,11 @@ function clinicCard(r) {
 
 window.setClinicFilter = function(key) { _clinicFilter = key; paintFormEvent(document.getElementById('content')); };
 
-window.toggleClinicOpen = async function(open) {
-  if (open && !confirm('Open applications?\n\nThe form at wcahs.org/snap goes live immediately, and every submission emails info@ and admin@.')) return;
-  if (!open && !confirm('Close applications?\n\nVisitors will see the clinic details and a "not open yet" notice instead of the form. Applications already received are not affected.')) return;
-  const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: _formEventId, open } });
+window.setFormState = async function(state) {
+  if (state === 'open' && !confirm('Open applications?\n\nThe form at wcahs.org/snap goes live immediately, and every submission emails info@ and admin@.')) return;
+  const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: _formEventId, state } });
   if (res.error) { alert(res.error); return; }
   await renderClinic(document.getElementById('content'));
-};
-
-window.previewClosedMessage = function() {
-  const el = document.getElementById('closedMsg');
-  const prev = document.getElementById('closedPreview');
-  if (!el || !prev) return;
-  const typed = el.value.trim();
-  prev.textContent = typed || _defaultClosedMsg;
-  prev.style.fontStyle = typed ? 'normal' : 'italic';
-};
-
-window.saveClosedMessage = async function(btn) {
-  const val = document.getElementById('closedMsg').value;
-  const res = await api('/admin/clinic', { method: 'PUT', body: { event_id: _formEventId, closed_message: val } });
-  if (res.error) { alert(res.error); return; }
-  if (_clinicEvent) _clinicEvent.form_closed_message = val;
-  previewClosedMessage();
-  if (btn) { btn.textContent = 'Saved'; setTimeout(() => { btn.textContent = 'Save message'; }, 1500); }
 };
 
 // Approving an application consumes a spot, so the counts have to come back

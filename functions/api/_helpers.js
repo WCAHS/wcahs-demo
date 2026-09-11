@@ -1,10 +1,34 @@
 // Shared helpers for API functions
 
-// What wcahs.org/snap shows when a clinic's applications are closed and staff
-// have not written their own message. Lives here so the admin panel can display
-// the real wording instead of a paraphrase of it.
-export const CLINIC_DEFAULT_CLOSED_MESSAGE =
-  "Registration for this clinic is not open yet. Check back soon, or call us at (507) 201-7287 and we'll let you know as soon as it opens.";
+// A clinic form is in exactly one of these states, and each carries its own
+// fixed wording. Deliberately NOT editable: this text is read by people who may
+// be anxious about a pet, and it should stay accurate and kind without anyone
+// having to maintain it. Defined once here so the public page and the admin
+// preview can never drift apart.
+export const CLINIC_FORM_STATES = {
+  open: {
+    label: 'Open',
+    heading: null,
+    message: null,
+  },
+  closed: {
+    label: 'Closed',
+    heading: 'Registration Is Closed',
+    message: "We're not accepting applications for this clinic right now. Call us at (507) 201-7287 and we'll let you know when registration opens.",
+  },
+  reviewing: {
+    label: 'Being reviewed',
+    heading: 'Applications Are Being Reviewed',
+    message: "Registration has closed and we're going through the applications we received. If you applied, a WCAHS volunteer will be in touch with you. Questions in the meantime? Call us at (507) 201-7287.",
+  },
+};
+
+// Shown when no upcoming clinic exists at all — distinct from a clinic whose
+// registration is closed, and careful not to promise one that isn't scheduled.
+export const CLINIC_NO_EVENT = {
+  heading: 'No Clinic Scheduled Right Now',
+  message: "We don't have a spay/neuter clinic on the calendar at the moment. Call us at (507) 201-7287 or watch our events page — we'll announce the next one there.",
+};
 
 export function json(data, status = 200) {
   return new Response(JSON.stringify(data), {

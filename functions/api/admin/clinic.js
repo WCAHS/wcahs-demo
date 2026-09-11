@@ -1,6 +1,8 @@
-import { json, error, CLINIC_DEFAULT_CLOSED_MESSAGE } from '../_helpers.js';
+import { json, error, CLINIC_FORM_STATES } from '../_helpers.js';
 
-const HOLDS_SPOT = ['applied', 'approved'];
+// Mirrors HOLDS_SPOT_SQL in functions/api/clinic.js — a waitlisted application
+// holds no slot until someone approves it.
+const HOLDS_SPOT = r => r.status === 'approved' || (r.status === 'applied' && !r.waitlisted);
 
 // Every event that has a form attached, newest first. This is the index the
 // admin "Event Forms" tab renders: one card per event, with its own
@@ -11,8 +13,8 @@ export async function onRequestGet(context) {
   const eventId = url.searchParams.get('event_id');
 
   const { results: events } = await db.prepare(
-    `SELECT id, title, date, time, location, published, form_key, form_open,
-            form_closed_message, cap_cats, cap_dogs
+    `SELECT id, title, date, time, location, published, form_key, form_state,
+            cap_cats, cap_dogs
      FROM events WHERE form_key IS NOT NULL AND form_key != ''
      ORDER BY date DESC`
   ).all();
@@ -20,9 +22,9 @@ export async function onRequestGet(context) {
   // Counts for every form event in one pass, so the index doesn't fan out into
   // a query per event.
   const { results: counts } = await db.prepare(
-    `SELECT event_id, status, COUNT(*) AS n,
+    `SELECT event_id, status, waitlisted, COUNT(*) AS n,
             COALESCE(SUM(cat_count), 0) AS cats, COALESCE(SUM(dog_count), 0) AS dogs
-     FROM clinic_registrations GROUP BY event_id, status`
+     FROM clinic_registrations GROUP BY event_id, status, waitlisted`
   ).all();
 
   const summary = {};
@@ -30,8 +32,9 @@ export async function onRequestGet(context) {
     const key = row.event_id == null ? 'unassigned' : row.event_id;
     if (!summary[key]) summary[key] = { total: 0, by_status: {}, used: { cats: 0, dogs: 0 } };
     summary[key].total += row.n;
-    summary[key].by_status[row.status] = row.n;
-    if (HOLDS_SPOT.includes(row.status)) {
+    summary[key].by_status[row.status] = (summary[key].by_status[row.status] || 0) + row.n;
+    if (row.waitlisted) summary[key].waitlisted = (summary[key].waitlisted || 0) + row.n;
+    if (HOLDS_SPOT(row)) {
       summary[key].used.cats += row.cats;
       summary[key].used.dogs += row.dogs;
     }
@@ -51,7 +54,7 @@ export async function onRequestGet(context) {
     events: events || [],
     summary,
     registrations,
-    default_closed_message: CLINIC_DEFAULT_CLOSED_MESSAGE,
+    form_states: CLINIC_FORM_STATES,
   });
 }
 
@@ -71,9 +74,9 @@ export async function onRequestPut(context) {
     if (isNaN(n) || n < 0) return error('Capacity must be zero or a positive number');
     sets.push(`${col}=?`); vals.push(n);
   }
-  if (body.open !== undefined) { sets.push('form_open=?'); vals.push(body.open ? 1 : 0); }
-  if (body.closed_message !== undefined) {
-    sets.push('form_closed_message=?'); vals.push(String(body.closed_message).slice(0, 500));
+  if (body.state !== undefined) {
+    if (!CLINIC_FORM_STATES[body.state]) return error('Unknown form state');
+    sets.push('form_state=?'); vals.push(body.state);
   }
   if (body.form_key !== undefined) {
     sets.push('form_key=?'); vals.push(body.form_key ? String(body.form_key).slice(0, 40) : null);

@@ -32,8 +32,9 @@ CREATE TABLE IF NOT EXISTS events (
   -- clinic next year is a new event rather than a code change, and each
   -- event keeps its own applications, capacity and open/closed state.
   form_key TEXT,
-  form_open INTEGER NOT NULL DEFAULT 0,
-  form_closed_message TEXT,
+  -- open | closed | reviewing. Wording for each state is fixed in
+  -- functions/api/_helpers.js, not stored per event.
+  form_state TEXT NOT NULL DEFAULT 'closed',
   cap_cats INTEGER NOT NULL DEFAULT 25,
   cap_dogs INTEGER NOT NULL DEFAULT 25,
   published INTEGER NOT NULL DEFAULT 1,
@@ -222,8 +223,12 @@ CREATE TABLE IF NOT EXISTS clinic_registrations (
   dog_count INTEGER NOT NULL DEFAULT 0,
   hardship TEXT,               -- their case for a case-by-case exception
   notes TEXT,
-  -- applied | approved | overflow | ineligible | cancelled
+  -- applied | approved | ineligible | cancelled
   status TEXT NOT NULL DEFAULT 'applied',
+  -- Applied after the spots for its species were already full. Not a separate
+  -- status: it's the same application, it just doesn't hold a surgery slot
+  -- unless someone approves it.
+  waitlisted INTEGER NOT NULL DEFAULT 0,
   auto_reason TEXT,            -- why the form auto-sorted it this way
   staff_notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

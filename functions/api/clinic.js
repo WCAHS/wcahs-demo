@@ -1,12 +1,14 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_DEFAULT_CLOSED_MESSAGE } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_FORM_STATES, CLINIC_NO_EVENT } from './_helpers.js';
 
 // Residents of these four communities are what WCAHS sponsored the clinic for.
 // Anything else still submits — staff decide case by case — but it is sorted
 // into Ineligible for review rather than taking a spot automatically.
 const ELIGIBLE_CITIES = ['Elysian', 'Janesville', 'Waseca', 'Waterville'];
 
-// Statuses that hold a surgery slot. Overflow, ineligible and cancelled do not.
-const HOLDS_SPOT = ['applied', 'approved'];
+// Which applications hold a surgery slot: anything approved, plus applications
+// still awaiting a decision that weren't waitlisted. Ineligible, cancelled and
+// waitlisted ones do not — that's the whole point of the waitlist flag.
+const HOLDS_SPOT_SQL = `(status = 'approved' OR (status = 'applied' AND waitlisted = 0))`;
 
 const CLINIC = {
   name: 'MNSNAP Spay & Neuter Clinic',
@@ -29,15 +31,13 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-const DEFAULT_CLOSED_MESSAGE = CLINIC_DEFAULT_CLOSED_MESSAGE;
-
 // The clinic form belongs to an event, not to the site. "Which clinic is /snap
 // collecting for right now" is answered by the soonest published, not-yet-past
 // event carrying form_key='clinic' — so running another one next year means
 // creating an event, not editing code.
 async function getActiveClinicEvent(db) {
   return await db.prepare(
-    `SELECT id, title, date, time, location, form_open, form_closed_message, cap_cats, cap_dogs
+    `SELECT id, title, date, time, location, form_state, cap_cats, cap_dogs
      FROM events
      WHERE form_key = 'clinic' AND published = 1
        AND (end_date >= date('now') OR (end_date IS NULL AND date >= date('now')))
@@ -50,34 +50,40 @@ async function usedSpots(db, eventId) {
   const row = await db.prepare(
     `SELECT COALESCE(SUM(cat_count), 0) AS cats, COALESCE(SUM(dog_count), 0) AS dogs
      FROM clinic_registrations
-     WHERE event_id = ? AND status IN (${HOLDS_SPOT.map(() => '?').join(',')})`
-  ).bind(eventId, ...HOLDS_SPOT).first();
+     WHERE event_id = ? AND ${HOLDS_SPOT_SQL}`
+  ).bind(eventId).first();
   return { cats: row?.cats || 0, dogs: row?.dogs || 0 };
 }
 
-// Public read — no personal data. Says whether a clinic is taking applications
-// and whether spots remain, so the page can show the right thing.
+// Public read — no personal data. Says which state the clinic form is in and
+// whether spots remain, and carries the wording so the page never hardcodes a
+// heading that could go stale (e.g. "not open YET" after the clinic happened).
 export async function onRequestGet(context) {
   const db = context.env.DB;
   const ev = await getActiveClinicEvent(db);
 
-  // No upcoming clinic at all: closed, with wording that doesn't promise one.
   if (!ev) {
     return json({
       open: false,
+      state: 'none',
       event: null,
-      closed_message: 'There is no spay/neuter clinic scheduled right now. Call us at (507) 201-7287 or watch our events page for the next one.',
+      heading: CLINIC_NO_EVENT.heading,
+      closed_message: CLINIC_NO_EVENT.message,
       cats: { cap: 0, used: 0, full: true },
       dogs: { cap: 0, used: 0, full: true },
     });
   }
 
+  const state = CLINIC_FORM_STATES[ev.form_state] ? ev.form_state : 'closed';
+  const open = state === 'open';
   const used = await usedSpots(db, ev.id);
-  const open = ev.form_open === 1;
+
   return json({
     open,
+    state,
     event: { id: ev.id, title: ev.title, date: ev.date },
-    closed_message: open ? null : (ev.form_closed_message || DEFAULT_CLOSED_MESSAGE),
+    heading: open ? null : CLINIC_FORM_STATES[state].heading,
+    closed_message: open ? null : CLINIC_FORM_STATES[state].message,
     cats: { cap: ev.cap_cats, used: used.cats, full: used.cats >= ev.cap_cats },
     dogs: { cap: ev.cap_dogs, used: used.dogs, full: used.dogs >= ev.cap_dogs },
   });
@@ -90,10 +96,11 @@ export async function onRequestPost(context) {
 
   const ev = await getActiveClinicEvent(env.DB);
   if (!ev) {
-    return error('There is no spay/neuter clinic scheduled right now.', 403);
+    return error(CLINIC_NO_EVENT.message, 403);
   }
-  if (ev.form_open !== 1) {
-    return error(ev.form_closed_message || DEFAULT_CLOSED_MESSAGE, 403);
+  const state = CLINIC_FORM_STATES[ev.form_state] ? ev.form_state : 'closed';
+  if (state !== 'open') {
+    return error(CLINIC_FORM_STATES[state].message, 403);
   }
 
   if (!body.turnstile_token) return error('CAPTCHA required');
@@ -153,6 +160,7 @@ export async function onRequestPost(context) {
   // Ineligible is a sorting bin, never a rejection: staff approve these case by
   // case, which is why the form asks people to explain their situation.
   let status = 'applied';
+  let waitlisted = 0;
   const reasons = [];
 
   if (pets.length === 1) reasons.push('Only one animal in the household');
@@ -165,13 +173,13 @@ export async function onRequestPost(context) {
     status = 'ineligible';
   } else {
     // A spot has to exist for every animal on the application, or the whole
-    // application goes to overflow — one application, one status.
+    // application goes on the waiting list — one application, one outcome.
     const catsWontFit = catCount > 0 && used.cats + catCount > caps.cats;
     const dogsWontFit = dogCount > 0 && used.dogs + dogCount > caps.dogs;
     if (catsWontFit || dogsWontFit) {
-      status = 'overflow';
-      if (catsWontFit) reasons.push(`Cat spots full (${used.cats}/${caps.cats})`);
-      if (dogsWontFit) reasons.push(`Dog spots full (${used.dogs}/${caps.dogs})`);
+      waitlisted = 1;
+      if (catsWontFit) reasons.push(`Applied after cat spots filled (${used.cats}/${caps.cats})`);
+      if (dogsWontFit) reasons.push(`Applied after dog spots filled (${used.dogs}/${caps.dogs})`);
     }
   }
 
@@ -181,8 +189,8 @@ export async function onRequestPost(context) {
     `INSERT INTO clinic_registrations
        (event_id, owner_first, owner_last, owner_name, email, phone_cell, phone_home,
         address, city, state, zip,
-        pets, pet_count, cat_count, dog_count, hardship, notes, status, auto_reason)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pets, pet_count, cat_count, dog_count, hardship, notes, status, waitlisted, auto_reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     ev.id,
     ownerFirst,
@@ -202,6 +210,7 @@ export async function onRequestPost(context) {
     body.hardship || null,
     body.notes || null,
     status,
+    waitlisted,
     autoReason
   ).run();
 
@@ -223,14 +232,14 @@ export async function onRequestPost(context) {
       <td style="padding:6px 10px;border-top:1px solid #eee">${esc((p.services || []).join(', '))}</td>
     </tr>`).join('');
 
-  const statusBanner = {
-    applied:    { bg: '#e8ebe3', border: '#d2d8c8', fg: '#3b4434', text: 'Sorted into <strong>Applied</strong> — spots are available.' },
-    overflow:   { bg: '#fef3c7', border: '#fde68a', fg: '#92400e', text: 'Sorted into <strong>Overflow</strong> — the clinic is full for this species. Contact if a spot opens.' },
-    ineligible: { bg: '#fef3c7', border: '#fde68a', fg: '#92400e', text: 'Sorted into <strong>Ineligible</strong> — needs a case-by-case decision.' },
-  }[status];
+  const statusBanner = status === 'ineligible'
+    ? { bg: '#fef3c7', border: '#fde68a', fg: '#92400e', text: 'Sorted into <strong>Ineligible</strong> — needs a case-by-case decision.' }
+    : waitlisted
+      ? { bg: '#fef3c7', border: '#fde68a', fg: '#92400e', text: '<strong>Applied</strong>, but on the <strong>waiting list</strong> — the spots were already full. Contact if one opens.' }
+      : { bg: '#e8ebe3', border: '#d2d8c8', fg: '#3b4434', text: 'Sorted into <strong>Applied</strong> — spots are available.' };
 
   await sendNotification(env, {
-    subject: `Clinic ${status === 'applied' ? 'Registration' : status === 'overflow' ? 'Registration (OVERFLOW)' : 'Registration (NEEDS REVIEW)'}: ${ownerName} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
+    subject: `Clinic ${status === 'ineligible' ? 'Registration (NEEDS REVIEW)' : waitlisted ? 'Registration (WAITLIST)' : 'Registration'}: ${ownerName} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Spay/Neuter Clinic Registration</h2>
       <p style="background:${statusBanner.bg};border:1px solid ${statusBanner.border};color:${statusBanner.fg};padding:10px 14px;border-radius:8px;font-size:13px;margin:0 0 16px">
         ${statusBanner.text}${autoReason ? `<br><span style="opacity:.85">${esc(autoReason)}</span>` : ''}
@@ -260,11 +269,11 @@ export async function onRequestPost(context) {
 
   // People are counting on a date, so they get proof it went through. The
   // wording never promises a spot — staff confirm every one by phone.
-  const waitNote = status === 'applied'
-    ? `A WCAHS volunteer will contact you to confirm your appointment time and go over what to bring.`
-    : status === 'overflow'
+  const waitNote = status === 'ineligible'
+    ? `Because of how your application came in, a WCAHS volunteer will review it personally before we schedule. We look at every application individually, so please don't assume this is a no.`
+    : waitlisted
       ? `The clinic is currently full, so you're on our waiting list. If someone cancels or can't make it, we'll call you — this does happen, so please keep an eye on your phone.`
-      : `Because of how your application came in, a WCAHS volunteer will review it personally before we schedule. We look at every application individually, so please don't assume this is a no.`;
+      : `A WCAHS volunteer will contact you to confirm your appointment time and go over what to bring.`;
 
   await sendAutoReply(env, {
     to: body.email,
@@ -291,10 +300,11 @@ export async function onRequestPost(context) {
   return json({
     ok: true,
     status,
-    message: status === 'overflow'
-      ? "Application received. The clinic is full right now, so you're on our waiting list — we'll call you if a spot opens."
-      : status === 'ineligible'
-        ? "Application received. A WCAHS volunteer will review it personally and get back to you."
+    waitlisted: !!waitlisted,
+    message: status === 'ineligible'
+      ? "Application received. A WCAHS volunteer will review it personally and get back to you."
+      : waitlisted
+        ? "Application received. The clinic is full right now, so you're on our waiting list — we'll call you if a spot opens."
         : "Registration received! We'll contact you to confirm your appointment time.",
   });
 }
