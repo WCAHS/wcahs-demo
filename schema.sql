@@ -221,7 +221,11 @@ CREATE TABLE IF NOT EXISTS clinic_registrations (
   pet_count INTEGER NOT NULL DEFAULT 0,
   cat_count INTEGER NOT NULL DEFAULT 0,
   dog_count INTEGER NOT NULL DEFAULT 0,
-  hardship TEXT,               -- their case for a case-by-case exception
+  reason TEXT,                 -- what they need done and why
+  -- yes | no | unsure. Self-attested against MNSNAP's published guidelines.
+  -- No figures, no proof: this is for planning, not means-testing.
+  income_eligible TEXT,
+  hardship TEXT,               -- why consider them if spots run short
   notes TEXT,
   -- applied | approved | ineligible | cancelled
   status TEXT NOT NULL DEFAULT 'applied',

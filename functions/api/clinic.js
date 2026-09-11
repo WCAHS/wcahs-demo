@@ -189,8 +189,9 @@ export async function onRequestPost(context) {
     `INSERT INTO clinic_registrations
        (event_id, owner_first, owner_last, owner_name, email, phone_cell, phone_home,
         address, city, state, zip,
-        pets, pet_count, cat_count, dog_count, hardship, notes, status, waitlisted, auto_reason)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pets, pet_count, cat_count, dog_count,
+        reason, income_eligible, hardship, notes, status, waitlisted, auto_reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     ev.id,
     ownerFirst,
@@ -207,7 +208,9 @@ export async function onRequestPost(context) {
     pets.length,
     catCount,
     dogCount,
-    body.hardship || null,
+    body.reason ? String(body.reason).slice(0, 1000) : null,
+    ['yes', 'no', 'unsure'].includes(body.income_eligible) ? body.income_eligible : null,
+    body.hardship ? String(body.hardship).slice(0, 1000) : null,
     body.notes || null,
     status,
     waitlisted,
@@ -251,7 +254,9 @@ export async function onRequestPost(context) {
         <tr><td style="padding:8px 12px;color:#888;font-size:13px">Phone</td><td style="padding:8px 12px"><a href="tel:${esc(body.phone_cell)}">${esc(body.phone_cell)}</a> (cell)${body.phone_home ? `<br><a href="tel:${esc(body.phone_home)}">${esc(body.phone_home)}</a> (home)` : ''}</td></tr>
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Address</td><td style="padding:8px 12px">${esc(body.address)}<br>${esc(city)}, ${esc(body.state || 'MN')} ${esc(body.zip)}</td></tr>
         <tr><td style="padding:8px 12px;color:#888;font-size:13px">Animals</td><td style="padding:8px 12px">${catCount} cat${catCount === 1 ? '' : 's'}, ${dogCount} dog${dogCount === 1 ? '' : 's'}</td></tr>
-        ${body.hardship ? `<tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Their situation</td><td style="padding:8px 12px;white-space:pre-wrap">${esc(body.hardship)}</td></tr>` : ''}
+        ${body.reason ? `<tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">What they need</td><td style="padding:8px 12px;white-space:pre-wrap">${esc(body.reason)}</td></tr>` : ''}
+        ${body.income_eligible ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px">Income guidelines</td><td style="padding:8px 12px">${({ yes: 'Meets them', no: 'Does not meet them', unsure: 'Not sure' })[body.income_eligible] || ''}</td></tr>` : ''}
+        ${body.hardship ? `<tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">If spots run short</td><td style="padding:8px 12px;white-space:pre-wrap">${esc(body.hardship)}</td></tr>` : ''}
         ${body.notes ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Notes</td><td style="padding:8px 12px;white-space:pre-wrap">${esc(body.notes)}</td></tr>` : ''}
       </table>
       <h3 style="color:#5c6b4e;margin:24px 0 8px;font-size:15px">Pets (${pets.length})</h3>

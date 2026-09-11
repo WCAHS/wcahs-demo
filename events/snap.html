@@ -324,20 +324,45 @@
             <p id="petSummary" class="text-gray-400 text-xs mt-3"></p>
           </div>
 
-          <!-- Situation -->
+          <!-- Details that decide the application -->
           <div class="pt-2 border-t border-gray-100">
-            <h3 class="font-display text-lg font-bold text-gray-900 mt-6 mb-1">Tell Us About Your Situation</h3>
-            <p class="text-gray-400 text-xs mb-4">
-              Optional, and it stays between you and WCAHS staff.
+            <h3 class="font-display text-lg font-bold text-gray-900 mt-6 mb-1">A Few More Details</h3>
+            <p class="text-gray-400 text-xs mb-5">
+              This is what WCAHS uses to plan the day and to sort applications if we get more than we
+              have spots for. It stays between you and shelter staff.
             </p>
-            <label class="field-label" for="snHardship">
-              Is there anything you'd like us to know when we review your application?
-            </label>
-            <textarea id="snHardship" rows="4" class="field resize-none" placeholder="For example: you have one pet but money is tight right now, you live just outside the listed towns, you're caring for animals someone left behind, or you're on a fixed income. We read every one of these."></textarea>
-            <p class="text-gray-400 text-xs mt-2 leading-relaxed">
-              We ask because we'd rather make an exception than turn away someone who needs help. There's
-              no wrong answer, and leaving it blank won't count against you.
-            </p>
+
+            <div class="mb-5">
+              <label class="field-label" for="snReason">What are you hoping to get done at this clinic?</label>
+              <textarea id="snReason" rows="3" class="field resize-none" placeholder="We have three cats and two dogs at home and none of them are fixed yet. We'd like to get them all done before spring."></textarea>
+            </div>
+
+            <div class="mb-5">
+              <label class="field-label" for="snIncome">Do you meet MNSNAP's income guidelines?</label>
+              <select id="snIncome" class="field">
+                <option value="">Select one</option>
+                <option value="yes">Yes &mdash; I'm on a needs-based program, or under the income limits</option>
+                <option value="no">No</option>
+                <option value="unsure">I'm not sure</option>
+              </select>
+              <p class="text-gray-400 text-xs mt-2 leading-relaxed">
+                MNSNAP serves Minnesota pet owners taking part in a state or federal assistance program,
+                or earning under roughly $45,180 for one person or $93,600 for a household. We don't ask
+                for figures or proof &mdash; your answer is enough, and "not sure" is a fine answer.
+              </p>
+            </div>
+
+            <div>
+              <label class="field-label" for="snHardship">
+                If we get more applications than spots, is there anything you'd like us to consider?
+                <span class="font-normal text-gray-400">(optional)</span>
+              </label>
+              <textarea id="snHardship" rows="3" class="field resize-none" placeholder="Both of our females are unspayed and we're worried about another litter before spring."></textarea>
+              <p class="text-gray-400 text-xs mt-2 leading-relaxed">
+                We only look at this when we have to choose between applications. Leaving it blank won't
+                count against you.
+              </p>
+            </div>
           </div>
 
           <!-- Anything else -->
@@ -456,14 +481,35 @@
       '<p class="text-xs font-semibold text-gray-500 mt-3 mb-2">Services for this pet <span class="font-normal text-gray-400">(spay/neuter is already included)</span></p>' +
       '<div class="flex flex-wrap gap-2">' +
         SERVICES.map(function(s) {
-          return '<label class="svc"><input type="checkbox" class="petSvc" value="' + s.label + '">' +
+          return '<label class="svc"><input type="checkbox" class="petSvc" data-covered="' + (s.covered ? '1' : '0') + '" onchange="updateExtrasNotice(' + i + ')" value="' + s.label + '">' +
                  s.label + (s.covered ? ' <span style="color:#5c6b4e;font-weight:700">(covered)</span>' : '') +
                  '</label>';
         }).join('') +
-      '</div>';
+      '</div>' +
+      '<p id="extrasNotice' + i + '" class="hidden" style="margin-top:10px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;">' +
+        '<strong>Please note:</strong> <span class="extrasList"></span> ' +
+        'covered by WCAHS. You can still add them &mdash; MNSNAP charges for these separately, ' +
+        'paid directly to them on the day of your appointment. We\'ll go over the cost when we call.' +
+      '</p>';
     document.getElementById('petRows').appendChild(row);
     renumberPets();
     updatePetSummary();
+  }
+
+  // Nobody should find out at the clinic that something they ticked costs money.
+  function updateExtrasNotice(i) {
+    var row = document.querySelector('.petRow[data-idx="' + i + '"]');
+    if (!row) return;
+    var notice = document.getElementById('extrasNotice' + i);
+    var extras = [];
+    row.querySelectorAll('.petSvc:checked').forEach(function(cb) {
+      if (cb.dataset.covered !== '1') extras.push(cb.value);
+    });
+    if (extras.length === 0) { notice.classList.add('hidden'); return; }
+    var list = extras.length === 1 ? extras[0]
+      : extras.slice(0, -1).join(', ') + ' and ' + extras[extras.length - 1];
+    notice.querySelector('.extrasList').textContent = list + (extras.length === 1 ? " isn't" : " aren't");
+    notice.classList.remove('hidden');
   }
 
   function removePet(i) {
@@ -610,6 +656,8 @@
           state: document.getElementById('snState').value,
           zip: document.getElementById('snZip').value,
           pets: pets,
+          reason: document.getElementById('snReason').value,
+          income_eligible: document.getElementById('snIncome').value,
           hardship: document.getElementById('snHardship').value,
           notes: document.getElementById('snNotes').value,
           acknowledged_household: document.getElementById('snHousehold').checked,
