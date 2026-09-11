@@ -278,6 +278,7 @@ export async function onRequestPost(context) {
       <table style="border-collapse:collapse;width:100%;background:#f6f7f4;border-radius:10px">
         <tr><td style="padding:10px 16px;color:#93a27e;font-size:12px;font-weight:700;text-transform:uppercase">Date</td><td style="padding:10px 16px;font-weight:600;color:#3b4434">${esc(CLINIC.date)}</td></tr>
         <tr><td style="padding:10px 16px;color:#93a27e;font-size:12px;font-weight:700;text-transform:uppercase">Time</td><td style="padding:10px 16px;font-weight:600;color:#3b4434">${esc(CLINIC.time)}</td></tr>
+        <tr><td style="padding:10px 16px;color:#93a27e;font-size:12px;font-weight:700;text-transform:uppercase">Check-in</td><td style="padding:10px 16px;font-weight:600;color:#3b4434">Dogs 9:00 AM &bull; Cats 9:30 AM</td></tr>
         <tr><td style="padding:10px 16px;color:#93a27e;font-size:12px;font-weight:700;text-transform:uppercase">Location</td><td style="padding:10px 16px;font-weight:600;color:#3b4434">${esc(CLINIC.address)}</td></tr>
       </table>
       <p style="color:#777;font-size:13px;line-height:1.7;margin:20px 0 0">
