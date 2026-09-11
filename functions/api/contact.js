@@ -31,6 +31,7 @@ export async function onRequestPost(context) {
   }
 
   await sendNotification(env, {
+    type: 'contact',
     subject: `New Contact: ${body.subject || 'General Inquiry'} — ${body.name}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Contact Message</h2>
       <table style="border-collapse:collapse;width:100%;max-width:500px">

@@ -1653,6 +1653,38 @@ async function renderSettings(el) {
     </div>`;
   }
 
+  // Who hears about each form. Staff accounts have no email of their own, so
+  // this routes between the two shelter mailboxes plus an optional extra.
+  const NOTIFY_FORMS = [
+    { key: 'contact',    label: 'Contact messages' },
+    { key: 'foster',     label: 'Foster applications' },
+    { key: 'lost_found', label: 'Lost & Found reports' },
+    { key: 'clinic',     label: 'Clinic applications' },
+  ];
+  const MAILBOXES = ['info@wcahs.org', 'admin@wcahs.org'];
+  let notify = {};
+  try { notify = typeof data.notify_recipients === 'string' ? JSON.parse(data.notify_recipients) : (data.notify_recipients || {}); } catch(e) { notify = {}; }
+
+  settingsHtml += `<div class="card p-6 mb-6">
+    <h2 class="font-bold text-gray-900 mb-1">Notifications</h2>
+    <p class="text-xs text-gray-500 mb-4">Who gets an email when someone submits each form. Unchecking everything falls back to both mailboxes &mdash; a submission nobody is told about is worse than an extra email.</p>
+    <div class="space-y-4">
+      ${NOTIFY_FORMS.map(f => {
+        const current = Array.isArray(notify[f.key]) ? notify[f.key] : MAILBOXES;
+        const extra = current.filter(a => !MAILBOXES.includes(a));
+        return `<div class="border-t border-gray-100 pt-4 first:border-0 first:pt-0">
+          <p class="text-sm font-semibold text-gray-700 mb-2">${f.label}</p>
+          <div class="flex flex-wrap items-center gap-4">
+            ${MAILBOXES.map(m => `<label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <input type="checkbox" class="notifyBox" data-form="${f.key}" value="${m}" ${current.includes(m) ? 'checked' : ''}> ${m}
+            </label>`).join('')}
+            <input type="email" class="notifyExtra border border-sage-200 rounded-xl px-3 py-2 text-sm flex-1 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-sage-400" data-form="${f.key}" value="${h(extra[0] || '')}" placeholder="Also send to (optional)">
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
   settingsHtml += `<button onclick="saveSettings()" class="bg-sage-700 hover:bg-sage-800 text-white font-bold px-6 py-3 rounded-xl transition">Save Settings</button>
   <span id="settingsSaved" class="text-sm font-bold ml-3 hidden" style="color:#5c6b4e;">Settings saved!</span>`;
 
@@ -1868,6 +1900,19 @@ window.saveSettings = async function() {
     body.popup_button_shape = document.getElementById('setPopupBtnShape').value;
     body.popup_button_variant = document.getElementById('setPopupBtnVariant').value;
   }
+  // Notification routing
+  const notifyMap = {};
+  document.querySelectorAll('.notifyBox').forEach(cb => {
+    if (!notifyMap[cb.dataset.form]) notifyMap[cb.dataset.form] = [];
+    if (cb.checked) notifyMap[cb.dataset.form].push(cb.value);
+  });
+  document.querySelectorAll('.notifyExtra').forEach(inp => {
+    const v = inp.value.trim();
+    if (!notifyMap[inp.dataset.form]) notifyMap[inp.dataset.form] = [];
+    if (v && v.includes('@')) notifyMap[inp.dataset.form].push(v);
+  });
+  if (Object.keys(notifyMap).length) body.notify_recipients = notifyMap;
+
   // Under construction — only save if techadmin
   const ucEl = document.getElementById('setUcEnabled');
   if (ucEl) {

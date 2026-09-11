@@ -239,6 +239,7 @@ export async function onRequestPost(context) {
       : { bg: '#e8ebe3', border: '#d2d8c8', fg: '#3b4434', text: 'Sorted into <strong>Applied</strong> — spots are available.' };
 
   await sendNotification(env, {
+    type: 'clinic',
     subject: `Clinic ${status === 'ineligible' ? 'Registration (NEEDS REVIEW)' : waitlisted ? 'Registration (WAITLIST)' : 'Registration'}: ${ownerName} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Spay/Neuter Clinic Registration</h2>
       <p style="background:${statusBanner.bg};border:1px solid ${statusBanner.border};color:${statusBanner.fg};padding:10px 14px;border-radius:8px;font-size:13px;margin:0 0 16px">

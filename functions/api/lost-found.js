@@ -53,6 +53,7 @@ export async function onRequestPost(context) {
 
   const typeLabel = body.type === 'lost' ? 'Lost Pet' : 'Found Pet';
   await sendNotification(env, {
+    type: 'lost_found',
     subject: `New ${typeLabel} Report — ${body.pet_name || body.species}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New ${typeLabel} Report</h2>
       <table style="border-collapse:collapse;width:100%;max-width:500px">

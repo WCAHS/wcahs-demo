@@ -85,8 +85,37 @@ export async function hashPassword(password) {
   return `${saltB64}:${hashB64}`;
 }
 
-export async function sendNotification(env, { subject, html }) {
+// The two shelter mailboxes. Staff accounts have no email address of their own,
+// so notifications are routed between these rather than to individual people.
+export const NOTIFY_MAILBOXES = ['info@wcahs.org', 'admin@wcahs.org'];
+
+// Which mailboxes hear about which form. Staff set this per form in Site
+// Settings — clinic applications may belong to whoever runs the clinic, while a
+// lost-pet report should reach everyone.
+export async function notifyRecipients(env, type) {
+  const fallback = NOTIFY_MAILBOXES;
+  if (!type || !env.DB) return fallback;
+  try {
+    const row = await env.DB.prepare(
+      "SELECT value FROM site_settings WHERE key = 'notify_recipients'"
+    ).first();
+    if (!row || !row.value) return fallback;
+    const map = JSON.parse(row.value);
+    const list = map && map[type];
+    // An empty list would mean a submission nobody is told about, which is a
+    // worse failure than an unwanted email. Fall back rather than send nowhere.
+    if (!Array.isArray(list) || list.length === 0) return fallback;
+    return list.filter(a => typeof a === 'string' && a.includes('@')).slice(0, 10);
+  } catch (e) {
+    console.error('notifyRecipients failed, using defaults:', e && e.message);
+    return fallback;
+  }
+}
+
+export async function sendNotification(env, { subject, html, type }) {
   if (!env.RESEND_API_KEY) return;
+  const to = await notifyRecipients(env, type);
+  if (!to.length) return;
   try {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -96,7 +125,7 @@ export async function sendNotification(env, { subject, html }) {
       },
       body: JSON.stringify({
         from: 'WCAHS Notifications <noreply@wcahs.org>',
-        to: ['info@wcahs.org', 'admin@wcahs.org'],
+        to,
         subject,
         html,
       }),

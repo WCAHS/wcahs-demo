@@ -30,6 +30,7 @@ export async function onRequestPost(context) {
   }
 
   await sendNotification(env, {
+    type: 'foster',
     subject: `New Foster Application — ${body.name}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Foster Application</h2>
       <table style="border-collapse:collapse;width:100%;max-width:500px">
