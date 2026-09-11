@@ -3258,10 +3258,7 @@ function paintFormEvent(el) {
   let html = `<button onclick="backToFormIndex()" class="text-sm text-sage-700 hover:underline font-semibold mb-3">&larr; All event forms</button>
   <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
     <h1 class="text-2xl font-display font-bold text-sage-800">${h(ev.title)}</h1>
-    <div class="flex gap-2">
-      <button onclick="exportClinicXlsx()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Approved animals only, in MNSNAP's intake format">MNSNAP Roster (.xlsx)</button>
-      <button onclick="exportClinicCsv()" class="bg-white border border-sage-200 text-sage-700 hover:bg-sage-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Everything on screen, including notes and situations">Export CSV</button>
-    </div>
+    <button onclick="exportClinicXlsx()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition" title="Approved animals only, in MNSNAP's intake format">Export for MNSNAP (.xlsx)</button>
   </div>
   <p class="text-gray-500 text-sm mb-6">${formatDate(ev.date)} &bull; ${all.length} application${all.length === 1 ? '' : 's'}</p>`;
 
@@ -3527,45 +3524,6 @@ window.exportClinicXlsx = function() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Clinic Roster');
   XLSX.writeFile(wb, 'MNSNAP-clinic-roster-' + new Date().toISOString().slice(0, 10) + '.xlsx');
-};
-
-// One row per PET, not per family — that's the list MNSNAP schedules from.
-window.exportClinicCsv = function() {
-  const cols = ['First Name', 'Last Name', 'Cell Phone', 'Home Phone', 'Email', 'Address', 'City', 'State', 'ZIP',
-                'Pet Name', 'Species', 'Sex', 'Breed', 'Color 1', 'Color 2', 'Age Years', 'Age Months', 'Weight',
-                'Shots Current', 'Health Concerns', 'Services Requested',
-                'Their Situation', 'Owner Notes', 'Status', 'Auto Reason', 'Staff Notes', 'Applied'];
-  const rows = [cols];
-  const source = _clinicFilter === 'all' ? _clinicData : _clinicData.filter(r => r.status === _clinicFilter);
-  source.forEach(r => {
-    let pets = [];
-    try { pets = JSON.parse(r.pets || '[]'); } catch(e) {}
-    if (pets.length === 0) pets = [{}];
-    pets.forEach(p => {
-      rows.push([
-        r.owner_first || '', r.owner_last || '', r.phone_cell || '', r.phone_home || '', r.email,
-        r.address || '', r.city || '', r.state || '', r.zip || '',
-        p.name || '', p.species || '', p.sex || '', p.breed || '', p.color1 || '', p.color2 || '',
-        p.age_years === '' || p.age_years == null ? '' : p.age_years,
-        p.age_months === '' || p.age_months == null ? '' : p.age_months,
-        p.weight === '' || p.weight == null ? '' : p.weight,
-        p.shots || '', p.health || '', (p.services || []).join('; '),
-        r.hardship || '', r.notes || '', r.status, r.auto_reason || '', r.staff_notes || '', r.created_at
-      ]);
-    });
-  });
-  const csv = rows.map(row => row.map(cell => {
-    const v = String(cell == null ? '' : cell);
-    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-  }).join(',')).join('\r\n');
-
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'wcahs-clinic-applications-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 };
 
 function handleDeepLink() {
