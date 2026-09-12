@@ -1,3 +1,4 @@
 .env
 .wrangler/
 data/sync.log
+tools/fonts/
