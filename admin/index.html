@@ -3733,64 +3733,83 @@ window.exportClinicXlsx = function() {
   });
   animals.sort(slotSort);
 
-  const HEADERS = ['', '', "Owner's First Name", "Owner's Last Name", 'Cell Phone', 'Home Phone',
-    'Email', 'Street Address', 'City', 'State', 'Zip', "Pet's Name", 'Sex', 'Weight',
-    'Age Year', 'Age Months', 'Color 1', 'Color 2', 'Breed', 'Weight', 'Health Concerns',
-    'Additional Notes'];
+  // MNSNAP's workbook is three tabs, and the cat tabs are NOT the dog tab minus
+  // rows — they are two columns narrower. The section heading already says which
+  // sex, and weight appears once instead of twice, so "Sex" and the first
+  // "Weight" are absent. Emitting the dog layout for a cat shifted every value
+  // two columns left, which is why breed showed a colour and the colour columns
+  // showed ages.
+  const COMMON = ['', '', "Owner's First Name", "Owner's Last Name", 'Cell Phone', 'Home Phone',
+    'Email', 'Street Address', 'City', 'State', 'Zip', "Pet's Name"];
+  const TAIL = ['Age Year', 'Age Months', 'Color 1', 'Color 2', 'Breed', 'Weight',
+    'Health Concerns', 'Additional Notes'];
+  const DOG_HEADERS = COMMON.concat(['Sex', 'Weight'], TAIL);
+  const CAT_HEADERS = COMMON.concat(TAIL);
 
-  const rows = [];
-  rows.push(['Check in times: 9am DOGS, 9:30am CATS']);
-  rows.push([]);
-  rows.push(HEADERS);
+  const num = v => (v === '' || v == null ? '' : v);
 
-  animals.forEach((a, i) => {
-    const p = a.pet, r = a.reg;
-    // "Weight" appears twice in MNSNAP's template; both are filled so the sheet
-    // matches theirs column-for-column rather than making them hunt for it.
-    rows.push([
-      i + 1,
-      slotLabel(p),
-      r.owner_first || '',
-      r.owner_last || '',
-      r.phone_cell || '',
-      r.phone_home || '',
-      r.email || '',
-      r.address || '',
-      r.city || '',
-      r.state || '',
-      r.zip || '',
-      p.name || '',
-      p.sex || '',
-      p.weight === '' || p.weight == null ? '' : p.weight,
-      p.age_years === '' || p.age_years == null ? '' : p.age_years,
-      p.age_months === '' || p.age_months == null ? '' : p.age_months,
-      p.color1 || '',
-      p.color2 || '',
-      p.breed || '',
-      p.weight === '' || p.weight == null ? '' : p.weight,
-      p.health || '',
-      [
-        (p.services || []).length ? 'Requested: ' + p.services.join(', ') : '',
-        p.shots ? 'Shots current: ' + p.shots : '',
-        r.income_eligible ? 'Income guidelines: ' + (INCOME_LABEL[r.income_eligible] || r.income_eligible) : '',
-        r.staff_notes ? 'Staff: ' + r.staff_notes : '',
-        r.notes ? 'Owner: ' + r.notes : ''
-      ].filter(Boolean).join(' | ')
-    ]);
-  });
+  // Only what MNSNAP needs to do the surgery. The owner's own notes, our staff
+  // notes and the income answer are ours to act on and stay in the admin panel.
+  function additionalNotes(p) {
+    return [
+      (p.services || []).length ? 'Requested: ' + p.services.join(', ') : '',
+      p.shots ? 'Shots current: ' + p.shots : ''
+    ].filter(Boolean).join(' | ');
+  }
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: HEADERS.length - 1 } }];
-  ws['!cols'] = [
-    { wch: 4 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
-    { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 8 }, { wch: 14 },
-    { wch: 8 }, { wch: 8 }, { wch: 9 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
-    { wch: 18 }, { wch: 8 }, { wch: 28 }, { wch: 34 }
-  ];
-  ws['!freeze'] = { xSplit: 0, ySplit: 3 };
+  function sheetFor(list, headers, isDog) {
+    const rows = [];
+    rows.push(['Check in times: 9am DOGS, 9:30am CATS']);
+    rows.push([]);
+    rows.push(headers);
+    list.forEach((a, i) => {
+      const p = a.pet, r = a.reg;
+      const row = [
+        i + 1,
+        slotLabel(p),
+        r.owner_first || '', r.owner_last || '',
+        r.phone_cell || '', r.phone_home || '',
+        r.email || '', r.address || '', r.city || '', r.state || '', r.zip || '',
+        p.name || ''
+      ];
+      // Dogs carry sex and a weight here; the cat tabs have neither column.
+      if (isDog) row.push(p.sex || '', num(p.weight));
+      row.push(
+        num(p.age_years), num(p.age_months),
+        p.color1 || '', p.color2 || '',
+        p.breed || '',
+        num(p.weight),
+        p.health || '',
+        additionalNotes(p)
+      );
+      rows.push(row);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+    const widths = [{ wch: 4 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 8 },
+      { wch: 14 }];
+    if (isDog) widths.push({ wch: 8 }, { wch: 8 });
+    widths.push({ wch: 9 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 18 },
+      { wch: 8 }, { wch: 28 }, { wch: 34 });
+    ws['!cols'] = widths;
+    ws['!freeze'] = { xSplit: 0, ySplit: 3 };
+    return ws;
+  }
+
+  const isCat = a => String(a.pet.species || '').toLowerCase() === 'cat';
+  const isFemale = a => String(a.pet.sex || '').toLowerCase() === 'female';
+  const dogs = animals.filter(a => !isCat(a));
+  const femaleCats = animals.filter(a => isCat(a) && isFemale(a));
+  // Anything without a usable sex lands here rather than vanishing from the
+  // workbook — better MNSNAP sees it on the wrong tab than not at all.
+  const maleCats = animals.filter(a => isCat(a) && !isFemale(a));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Clinic Roster');
+  XLSX.utils.book_append_sheet(wb, sheetFor(dogs, DOG_HEADERS, true), 'Dogs');
+  XLSX.utils.book_append_sheet(wb, sheetFor(femaleCats, CAT_HEADERS, false), 'Female Cats');
+  XLSX.utils.book_append_sheet(wb, sheetFor(maleCats, CAT_HEADERS, false), 'Male Cats');
   XLSX.writeFile(wb, 'MNSNAP-clinic-roster-' + new Date().toISOString().slice(0, 10) + '.xlsx');
 };
 
