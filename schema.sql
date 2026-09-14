@@ -260,3 +260,14 @@ CREATE TABLE IF NOT EXISTS short_link_hits (
   count INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (slug, day)
 );
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at TEXT NOT NULL DEFAULT (datetime('now')),
+  username TEXT,
+  outcome TEXT NOT NULL,
+  ip TEXT,
+  user_agent TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_at ON login_attempts(at DESC);

@@ -18,12 +18,21 @@ export async function onRequestPost(context) {
   if (body.password.length < 8) return error('Password must be at least 8 characters');
   if (!['admin', 'staff', 'foster'].includes(body.role)) return error('Role must be admin, staff, or foster');
 
-  const existing = await context.env.DB.prepare('SELECT id FROM users WHERE username = ?').bind(body.username).first();
+  // Stored trimmed, and the collision check is case-insensitive to match how
+  // login looks accounts up. An "Admin" alongside an "admin" would make the
+  // login's NOCASE lookup ambiguous, and neither person could be told which
+  // account they actually have.
+  const username = String(body.username).trim();
+  if (!username) return error('Username required');
+
+  const existing = await context.env.DB.prepare(
+    'SELECT id FROM users WHERE username = ? COLLATE NOCASE'
+  ).bind(username).first();
   if (existing) return error('Username already exists');
 
   const hash = await hashPassword(body.password);
   await context.env.DB.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)')
-    .bind(body.username, hash, body.role).run();
+    .bind(username, hash, body.role).run();
 
   return json({ ok: true });
 }
