@@ -3518,7 +3518,10 @@ function clinicCard(r) {
       &bull; <a href="mailto:${h(r.email)}" class="hover:underline">${h(r.email)}</a>
     </p>
     <p class="text-sm text-gray-500">${h(r.address || '')}${r.address && r.city ? ', ' : ''}${h(r.city || '')}${r.state ? ', ' + h(r.state) : ''}${r.zip ? ' ' + h(r.zip) : ''}</p>
-    ${r.auto_reason ? `<p class="text-xs mt-2 inline-block px-3 py-1.5 rounded-lg" style="background:#fef3c7;color:#92400e;">Auto-sorted: ${h(r.auto_reason)}</p>` : ''}
+    <!-- Why the form waitlisted or flagged them on the way in. Only useful while
+         the decision is still open: once staff have approved someone, it's a
+         stale note about spot counts that no longer apply to them. -->
+    ${r.auto_reason && r.status !== 'approved' ? `<p class="text-xs mt-2 inline-block px-3 py-1.5 rounded-lg" style="background:#fef3c7;color:#92400e;">Auto-sorted: ${h(r.auto_reason)}</p>` : ''}
     ${(r.reason || r.hardship || r.income_eligible) ? `<div class="mt-3 rounded-xl p-3 space-y-2" style="background:#f6f7f4;border:1px solid #d2d8c8;">
       ${r.reason ? `<div>
         <p class="text-xs font-bold uppercase tracking-wider text-sage-400 mb-0.5">Their situation</p>
