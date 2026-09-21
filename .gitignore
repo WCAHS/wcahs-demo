@@ -2,3 +2,15 @@
 .wrangler/
 data/sync.log
 tools/fonts/
+
+# local test artifacts (never deploy)
+.dev.vars
+.seed-local.sql
+.lf-seed.json
+
+tools/mail-out/
+.devserver.log
+.mailsink.log
+.imgcache/
+.imgkeys.txt
+node_modules/

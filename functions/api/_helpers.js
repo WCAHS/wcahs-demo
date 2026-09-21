@@ -112,6 +112,13 @@ export async function notifyRecipients(env, type) {
   }
 }
 
+// Where the mail actually goes. Defaults to Resend; a local dev server can point
+// this at a capture endpoint so outgoing mail can be reviewed without a real
+// send. Production never sets RESEND_BASE_URL, so this is the live API there.
+function emailsEndpoint(env) {
+  return (env.RESEND_BASE_URL || 'https://api.resend.com') + '/emails';
+}
+
 // `to` lets a caller name its own recipients (an event form carries its own);
 // everything else resolves by form type from site settings.
 export async function sendNotification(env, { subject, html, type, to: explicitTo }) {
@@ -121,7 +128,7 @@ export async function sendNotification(env, { subject, html, type, to: explicitT
     : await notifyRecipients(env, type);
   if (!to.length) return;
   try {
-    await fetch('https://api.resend.com/emails', {
+    await fetch(emailsEndpoint(env), {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + env.RESEND_API_KEY,
@@ -145,7 +152,7 @@ const EMAIL_HEADER = `<div style="background:#48543e;padding:24px 32px;text-alig
 export async function sendAutoReply(env, { to, subject, bodyHtml }) {
   if (!env.RESEND_API_KEY || !to) return;
   try {
-    await fetch('https://api.resend.com/emails', {
+    await fetch(emailsEndpoint(env), {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + env.RESEND_API_KEY,
@@ -168,7 +175,7 @@ const AUDIENCE_ID = '39382335-2d39-4734-9231-6aa080c7cd5b';
 export async function addToAudience(env, { email, firstName, lastName }) {
   if (!env.RESEND_API_KEY || !email) return;
   try {
-    await fetch(`https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`, {
+    await fetch(`${env.RESEND_BASE_URL || 'https://api.resend.com'}/audiences/${AUDIENCE_ID}/contacts`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + env.RESEND_API_KEY,
