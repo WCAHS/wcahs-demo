@@ -1,2 +1,6 @@
 /.env /404.html 404
 /.env.* /404.html 404
+# Developer tooling is committed but must never be served. tools/ is otherwise
+# publicly readable (verified: /tools/make-og-images.py returned 200), and the
+# Lost & Found test harness contains a local test password.
+/tools/* /404.html 404
