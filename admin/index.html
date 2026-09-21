@@ -127,6 +127,18 @@
           <input id="loginPass" type="password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-600" required>
         </div>
         <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+        <!-- The live sitekey is bound to wcahs.org, so on a local dev server the
+             widget never issues a token and the login can't be tested at all.
+             Swap in Cloudflare's documented always-passes test key when — and
+             only when — we're on localhost. This runs during parse, before the
+             async api.js can render the widget, and `hostname` is never
+             "localhost" in production. -->
+        <script>
+          if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            document.currentScript.previousElementSibling
+              .setAttribute('data-sitekey', '1x00000000000000000000AA');
+          }
+        </script>
         <div id="loginError" class="hidden text-red-600 text-sm"></div>
         <button type="submit" class="w-full bg-sage-700 hover:bg-sage-900 text-white font-bold py-3 rounded-2xl transition">Log In</button>
       </form>
@@ -322,9 +334,16 @@ function showDashboard(user) {
     const validPages = PAGES_BY_ROLE[user.role] || PAGES_BY_ROLE.staff;
     const savedPage = sessionStorage.getItem('wcahs_admin_page');
     const defaultPage = user.role === 'foster' ? 'foster-pets' : 'submissions';
-    navigate(validPages.includes(savedPage) ? savedPage : defaultPage);
+    // A deep link decides the page itself. Rendering the saved page first and
+    // letting the link re-navigate a moment later meant two async renders were
+    // writing to #content at once, and on a slow connection the saved page's
+    // fetch could land last and wipe out the report the link had just opened.
+    const linked = deepLinkPage();
+    const target = (linked && validPages.includes(linked)) ? linked
+      : (validPages.includes(savedPage) ? savedPage : defaultPage);
+    navigate(target);
     if (user.role !== 'foster') loadBadgeCounts();
-    setTimeout(handleDeepLink, 100);
+    if (linked) handleDeepLink();
   } catch(e) {
     console.error('Dashboard error:', e);
     document.getElementById('content').innerHTML = '<p class="text-red-500">Error loading dashboard: ' + e.message + '</p>';
@@ -389,6 +408,27 @@ function navigate(page) {
 }
 
 // ── Helpers ──
+// Approving a report moves it to a different section, which used to happen in
+// total silence — the row simply vanished from the inbox and nothing said where
+// it had gone. Anything that moves a record between sections says so here.
+function toast(message, tone) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:100;' +
+      'max-width:calc(100vw - 32px);padding:12px 20px;border-radius:14px;font-size:14px;font-weight:600;' +
+      'box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:center;transition:opacity .25s';
+    document.body.appendChild(el);
+  }
+  el.style.background = tone === 'error' ? '#dc2626' : '#48543e';
+  el.style.color = '#fff';
+  el.textContent = message;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 5000);
+}
+
 function h(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 function zohoCompose(to, subject) { window.open('https://mail.zoho.com/zm/#/compose?to='+encodeURIComponent(to)+(subject?'&subject='+encodeURIComponent(subject):''), 'zoho_compose', 'width=700,height=600,scrollbars=yes,resizable=yes'); }
 function fmtPhone(p) { if(!p)return''; const d=p.replace(/\D/g,''); if(d.length===10)return'('+d.substring(0,3)+') '+d.substring(3,6)+'-'+d.substring(6); if(d.length===11&&d[0]==='1')return'('+d.substring(1,4)+') '+d.substring(4,7)+'-'+d.substring(7); return p; }
@@ -777,14 +817,40 @@ window.toggleReport = function(id) {
 };
 
 window.updateReport = async function(id, status) {
-  await api('/admin/lost-found/' + id, { method: 'PUT', body: { status } });
-  navigate('submissions'); loadBadgeCounts();
+  const res = await api('/admin/lost-found/' + id, { method: 'PUT', body: { status } });
+  // The old version ignored the response entirely, so a failed save looked
+  // exactly like a successful one: the inbox re-rendered either way.
+  if (!res || res.error) {
+    toast(res && res.error ? res.error : 'Could not save that — try again.', 'error');
+    return;
+  }
+  loadBadgeCounts();
+  if (status === 'approved') {
+    // Approved reports leave the inbox for the Lost & Found section, which on a
+    // phone is hidden behind the hamburger menu. Take her there and point at the
+    // report rather than dropping her back on an inbox it just disappeared from.
+    _lfManageFilter = 'active';
+    navigate('lost-found');
+    toast('Approved — it’s live on the public Lost & Found page now.');
+    whenRendered('lf-card-' + id, (el) => {
+      el.classList.add('ring-2', 'ring-sage-400');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return;
+  }
+  navigate('submissions');
+  toast(status === 'rejected' ? 'Rejected — it stays in the inbox, off the website.' : 'Saved.');
 };
 
 window.resolveReport = async function(id) {
   const note = prompt('Resolution note (e.g., "Reunited with owner"):');
-  await api('/admin/lost-found/' + id, { method: 'PUT', body: { status: 'resolved', resolved_note: note || '' } });
-  navigate('submissions'); loadBadgeCounts();
+  if (note === null) return;
+  const res = await api('/admin/lost-found/' + id, { method: 'PUT', body: { status: 'resolved', resolved_note: note || '' } });
+  if (!res || res.error) { toast(res && res.error ? res.error : 'Could not save that — try again.', 'error'); return; }
+  loadBadgeCounts();
+  _lfManageFilter = 'resolved';
+  navigate('lost-found');
+  toast('Marked resolved — it’s off the public page, under Resolved.');
 };
 
 window.generatePoster = function(report) {
@@ -862,7 +928,7 @@ async function renderLostFoundManage(el) {
         }
       }
 
-      html += `<div class="card p-4 flex items-center gap-4">
+      html += `<div id="lf-card-${r.id}" class="card p-4 flex items-center gap-4">
         ${thumbHtml}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-0.5">
@@ -3983,6 +4049,38 @@ window.copyLink = function(slug, btn) {
   else prompt('Copy this link:', text);
 };
 
+// A deep link has to survive a slow render. Every one of these links is opened
+// from a notification email, which in practice means a phone on cellular, where
+// the inbox fetch routinely takes longer than any fixed timer we might guess at.
+// The old code waited 500ms, looked once, and cleared the hash whether or not it
+// had found anything — so a slow load silently dropped the admin on a plain
+// inbox with the report they tapped still buried and collapsed, and reloading
+// couldn't retry because the hash was already gone.
+//
+// So: poll for the element, and only consume the hash once we've actually used
+// it. If we time out the hash stays put and a reload is a real second chance.
+function whenRendered(elementId, onFound, timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 15000);
+  (function poll() {
+    const el = document.getElementById(elementId);
+    if (el) return onFound(el);
+    if (Date.now() > deadline) return;          // leave the hash alone
+    setTimeout(poll, 100);
+  })();
+}
+
+// Which admin page the current hash points at, or null. Split out from the
+// handler so showDashboard() can navigate straight there: it used to render the
+// last-visited page and *then* render the deep link's page 100ms later, and
+// because both renders are async the slower fetch won and could wipe out the
+// page the link had just opened.
+function deepLinkPage() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#clinic-reg-')) return 'forms';
+  if (hash.startsWith('#inbox-')) return 'submissions';
+  return null;
+}
+
 function handleDeepLink() {
   const hash = window.location.hash;
   if (hash && hash.startsWith('#clinic-reg-')) {
@@ -3997,13 +4095,9 @@ function handleDeepLink() {
     const regId = parts.length > 1 ? parts[1] : parts[0];
     const action = parts.length > 2 ? parts[2] : null;
     if (evId) _formEventId = Number(evId);
-    navigate('forms');
-    setTimeout(() => {
-      const el = document.getElementById('clinic-reg-' + regId);
-      if (el) {
-        el.classList.add('ring-2', 'ring-sage-400');
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    whenRendered('clinic-reg-' + regId, (el) => {
+      el.classList.add('ring-2', 'ring-sage-400');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       window.location.hash = '';
       if (action && ['approved', 'approve', 'ineligible', 'cancelled'].includes(action)) {
         const status = action === 'approve' ? 'approved' : action;
@@ -4014,24 +4108,19 @@ function handleDeepLink() {
           setClinicStatus(row.id, status);
         }
       }
-    }, 900);
+    });
     return;
   }
   if (!hash || !hash.startsWith('#inbox-')) return;
-  // Format: #inbox-sub-42 or #inbox-lf
-  navigate('submissions');
+  // Format: #inbox-sub-42 or #inbox-lf-42
   const itemId = hash.replace('#inbox-', '');
-  // Wait for inbox to render, then open the item
-  setTimeout(() => {
-    const el = document.getElementById(itemId);
+  whenRendered(itemId, (el) => {
     const arrow = document.getElementById(itemId.replace('sub-', 'sub-arrow-').replace('lf-', 'lf-arrow-'));
-    if (el) {
-      el.classList.remove('hidden');
-      if (arrow) arrow.style.transform = 'rotate(180deg)';
-      el.closest('.inbox-item')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    el.classList.remove('hidden');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+    el.closest('.inbox-item')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     window.location.hash = '';
-  }, 500);
+  });
 }
 
 // ── Init ──
