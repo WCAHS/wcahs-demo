@@ -13,6 +13,8 @@
  * after the deep-link handler has already given up looking for the report.
  */
 const { chromium, devices } = require('playwright');
+const fs = require('fs');
+const path = require('path');
 
 const BASE = process.env.BASE || 'http://localhost:8799';
 const USER = process.env.ADMIN_USER || 'admin';
@@ -127,6 +129,11 @@ async function pendingIds(page) {
   // ── 3. Approving tells the admin where the report went ────────────────────
   await page.evaluate(() => sessionStorage.setItem('wcahs_admin_page', 'submissions'));
   await openDeepLink(page, `#inbox-lf-${id}`);
+  // Wait for the row to EXIST first. Waiting only for :not(.hidden) and
+  // swallowing the timeout meant that on a slow render this fell through to
+  // locator.count() before the inbox had painted, and the test failed for a
+  // reason that had nothing to do with Approve.
+  await page.waitForSelector(`#lf-${id}`, { state: 'attached', timeout: 20000 }).catch(() => {});
   await page.waitForSelector(`#lf-${id}:not(.hidden)`, { timeout: 15000 }).catch(() => {});
   // If the deep link didn't open it, open it by hand — this test is about what
   // Approve does, and it has to be measurable on the unfixed build too.
@@ -152,6 +159,79 @@ async function pendingIds(page) {
       'no confirmation text found after approving');
   } else {
     check('approve button reachable after deep link', false, 'never found the Approve button');
+  }
+
+  // ── 4. Editing a report's details from the admin ──────────────────────────
+  const editTarget = (await pendingIds(page))[0];
+  if (editTarget) {
+    await page.evaluate(() => sessionStorage.setItem('wcahs_admin_page', 'submissions'));
+    await openDeepLink(page, `#inbox-lf-${editTarget}`);
+    await page.waitForSelector(`#lf-${editTarget}:not(.hidden)`, { timeout: 15000 }).catch(() => {});
+    const editBtn = page.locator(`#lf-${editTarget} button:has-text("Edit Details")`).first();
+    check('a report has an Edit Details button', await editBtn.count() > 0);
+    if (await editBtn.count()) {
+      await editBtn.click();
+      await page.waitForSelector('#lf-f-description', { timeout: 10000 });
+      const typo = 'Corrected by test ' + Date.now();
+      await page.fill('#lf-f-description', typo);
+      await page.fill('#lf-f-pet_name', 'Editted Name');
+      await page.click('#lf-modal-save');
+      await page.waitForTimeout(LATENCY_MS * 2 + 1500);
+      const saved = await page.evaluate(async (rid) => {
+        const rows = await (await fetch('/api/admin/lost-found', { credentials: 'same-origin' })).json();
+        return rows.find(r => r.id === rid);
+      }, editTarget);
+      check('edits are persisted to the report',
+        saved && saved.description === typo && saved.pet_name === 'Editted Name',
+        `description=${saved && saved.description}, pet_name=${saved && saved.pet_name}`);
+      check('editing does not change the report’s status',
+        saved && saved.status === 'pending', `status=${saved && saved.status}`);
+    }
+  }
+
+  // ── 5. Adding a report by hand (a phone-in) ───────────────────────────────
+  const before = await page.evaluate(async () => {
+    const rows = await (await fetch('/api/admin/lost-found', { credentials: 'same-origin' })).json();
+    return rows.length;
+  });
+  await page.evaluate(() => sessionStorage.setItem('wcahs_admin_page', 'lost-found'));
+  await page.goto(`${BASE}/admin/?t=${Date.now()}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('button:has-text("+ Add Report")', { timeout: 15000 });
+  await page.click('button:has-text("+ Add Report")');
+  await page.waitForSelector('#lf-f-species', { timeout: 10000 });
+  await page.selectOption('#lf-f-species', 'Cat');
+  await page.fill('#lf-f-color', 'Orange tabby');
+  await page.fill('#lf-f-location_details', 'Phone-in test, 3rd St');
+  await page.fill('#lf-f-reporter_name', 'Caller On The Phone');
+  // A Lost & Found entry without a photo is close to useless, so the upload
+  // path has to be exercised, not just the text fields.
+  const photo = process.env.TEST_PHOTO || path.join(__dirname, '..', '.imgcache', '1789914847918-lpi1m8.jpg');
+  const withPhoto = fs.existsSync(photo);
+  if (withPhoto) await page.setInputFiles('#lf-f-photos', photo);
+  await page.click('#lf-modal-save');
+  await page.waitForTimeout(LATENCY_MS * 2 + 2000);
+  const added = await page.evaluate(async () => {
+    const rows = await (await fetch('/api/admin/lost-found', { credentials: 'same-origin' })).json();
+    return { count: rows.length, row: rows.find(r => r.reporter_name === 'Caller On The Phone') };
+  });
+  check('a report can be added by hand', added.count === before + 1 && !!added.row,
+    `count ${before} -> ${added.count}`);
+  check('a hand-added report is live immediately',
+    added.row && added.row.status === 'approved', `status=${added.row && added.row.status}`);
+  check('a hand-added report reaches the public page',
+    await page.evaluate(async () => {
+      const rows = await (await fetch('/api/lost-found')).json();
+      return rows.some(r => r.color === 'Orange tabby');
+    }));
+  if (withPhoto) {
+    const photoOk = added.row && added.row.photo_url && added.row.photo_url.includes('/api/images/');
+    check('a photo attached by hand is uploaded and linked', !!photoOk,
+      `photo_url=${added.row && added.row.photo_url}`);
+    if (photoOk) {
+      const url = JSON.parse(added.row.photo_url)[0];
+      const status = await page.evaluate(async u => (await fetch(u)).status, url);
+      check('that uploaded photo actually serves', status === 200, `GET ${url} -> ${status}`);
+    }
   }
 
   await browser.close();

@@ -9,12 +9,26 @@ export async function onRequestPut(context) {
   const vals = [];
   if (body.status) { sets.push('status=?'); vals.push(body.status); }
   if (body.resolved_note !== undefined) { sets.push('resolved_note=?'); vals.push(body.resolved_note); }
-  if (body.pet_name !== undefined) { sets.push('pet_name=?'); vals.push(body.pet_name); }
-  if (body.breed !== undefined) { sets.push('breed=?'); vals.push(body.breed); }
-  if (body.color !== undefined) { sets.push('color=?'); vals.push(body.color); }
-  if (body.description !== undefined) { sets.push('description=?'); vals.push(body.description); }
-  if (body.location_details !== undefined) { sets.push('location_details=?'); vals.push(body.location_details); }
   if (body.renew) { sets.push("created_at=datetime('now')"); }
+
+  // Everything a report holds that a person could get wrong on a phone keyboard,
+  // or that staff learn after the fact ("it does have a collar"). Only the five
+  // the poster happened to send were editable before, and only through the
+  // poster — there was no way to correct a report from the admin at all.
+  const EDITABLE = ['type', 'pet_name', 'species', 'breed', 'color', 'gender',
+    'location_details', 'description', 'collar_details', 'collar_status',
+    'temperament', 'current_location', 'reporter_name', 'reporter_phone',
+    'reporter_email', 'photo_url'];
+  for (const field of EDITABLE) {
+    if (body[field] === undefined) continue;
+    // type, species and reporter_name are NOT NULL; blanking one would either
+    // fail the write or render as an empty card rather than fail loudly.
+    if ((field === 'type' || field === 'species' || field === 'reporter_name') && !body[field]) continue;
+    if (field === 'type' && body.type !== 'lost' && body.type !== 'found') continue;
+    sets.push(`${field}=?`);
+    vals.push(body[field] === '' ? null : body[field]);
+  }
+
   if (sets.length === 0) return error('Nothing to update');
 
   sets.push("updated_at=datetime('now')");

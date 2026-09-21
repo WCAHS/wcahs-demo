@@ -152,7 +152,7 @@
       </div>
 
       <div class="sec">Pet Info</div>
-      <div class="f"><label>Pet Name <span class="req">*</span></label><input id="f-name" oninput="up()" placeholder="Required"></div>
+      <div class="f"><label>Pet Name <span class="req" id="name-req">*</span></label><input id="f-name" oninput="up()" placeholder="Required"></div>
       <div class="f"><label>Breed Line <span class="req">*</span></label><input id="f-breed" placeholder="e.g. Yellow Lab, Male, 4 yrs" oninput="up()"></div>
       <div class="f"><label>Color</label><input id="f-color" oninput="up()"></div>
       <div class="row3">
@@ -195,7 +195,7 @@
 const $ = id => document.getElementById(id);
 
 // State
-let S = { type:'lost', name:'', breed:'', color:'', weight:'', collar:'', mc:'', desc:'', loc:'', date:'', cname:'', phone:'', rid:'', photos:[], pi:0, reporterEmail:'', saved: false, savedImageUrl: '' };
+let S = { type:'lost', name:'', species:'', breed:'', color:'', weight:'', collar:'', mc:'', desc:'', loc:'', date:'', cname:'', phone:'', rid:'', photos:[], pi:0, reporterEmail:'', saved: false, savedImageUrl: '' };
 
 // Load from sessionStorage
 (function load() {
@@ -205,6 +205,7 @@ let S = { type:'lost', name:'', breed:'', color:'', weight:'', collar:'', mc:'',
     const d = JSON.parse(raw);
     S.type = d.type || 'lost';
     S.name = d.pet_name || '';
+    S.species = d.species || '';
     S.color = d.color || '';
     S.weight = d.weight || '';
     S.collar = d.collar_details || d.collar_status || '';
@@ -218,7 +219,10 @@ let S = { type:'lost', name:'', breed:'', color:'', weight:'', collar:'', mc:'',
     const parts = [d.breed, d.gender, d.age].filter(Boolean);
     S.breed = parts.join(', ') || (d.species || '');
     if (!S.breed && d.species) S.breed = d.species;
-    if (d.created_at) try { S.date = d.created_at.split('T')[0]; } catch(e){}
+    // created_at is "2026-09-20 14:34:08" — a space, not a T — so split('T')
+    // returned the whole string, which an <input type="date"> rejects outright
+    // and silently leaves blank. Take the first ten characters instead.
+    if (d.created_at) S.date = String(d.created_at).slice(0, 10);
     let photos = [];
     if (d.photo_url) {
       try { photos = JSON.parse(d.photo_url); } catch(e) { photos = [d.photo_url]; }
@@ -249,6 +253,12 @@ function syncType() {
     b.classList.remove('lost-on','found-on');
     if (b.dataset.t === S.type) b.classList.add(S.type + '-on');
   });
+  // Keep the form honest about what it actually demands: a found stray needs no
+  // name, and marking the field required was what locked the whole toolbar.
+  const req = document.getElementById('name-req');
+  const nameInput = document.getElementById('f-name');
+  if (req) req.style.display = S.type === 'lost' ? '' : 'none';
+  if (nameInput) nameInput.placeholder = S.type === 'lost' ? 'Required' : 'Optional — e.g. "Found Cat"';
 }
 function setType(t) { S.type = t; S.saved = false; syncType(); up(); updateBarState(); }
 
@@ -284,7 +294,12 @@ function read() {
 function up() { read(); render(); }
 
 function updateBarState() {
-  const hasRequired = S.name && S.breed && S.loc && S.phone;
+  // A found stray has no name, and demanding one disabled every button on the
+  // bar — Save included — which made the poster unusable for exactly the reports
+  // that most need one. A name is required for a LOST pet (it's the headline you
+  // call out); a found pet falls back to "Found Dog"/"Found Cat".
+  const needsName = S.type === 'lost';
+  const hasRequired = (needsName ? !!S.name : true) && S.breed && S.loc && S.phone;
   $('saveBtn').disabled = !hasRequired;
   $('printBtn').disabled = !S.saved;
   $('emailBtn').disabled = !S.saved;
@@ -338,7 +353,9 @@ function renderPoster() {
     '<div class="p-head '+tc+'"><h1>'+headline+'</h1><div class="sub">'+esc(sub)+'</div></div>'+
     '<div class="p-body">'+
     '<div class="p-photo">'+(photo ? '<img src="'+esc(photo)+'" crossorigin="anonymous" alt="">' : '<div class="none">No Photo Available</div>')+'</div>'+
-    '<div class="p-name">'+(S.name ? esc(S.name) : '<span style="color:#ccc;font-style:italic">Pet Name</span>')+(S.name && lost?'<span class="responds">Responds to "'+esc(S.name)+'"</span>':'')+'</div>'+
+    // A found stray usually has no name; "Found Cat" is a real headline, where
+    // a grey "Pet Name" placeholder just looks like an unfinished poster.
+    '<div class="p-name">'+(S.name ? esc(S.name) : (lost ? '<span style="color:#ccc;font-style:italic">Pet Name</span>' : esc('Found ' + (S.species || 'Pet'))))+(S.name && lost?'<span class="responds">Responds to "'+esc(S.name)+'"</span>':'')+'</div>'+
     '<div class="p-grid">'+grid+'</div>'+
     '<div class="p-details">'+
       '<div class="p-desc">'+(S.desc ? esc(S.desc) : '<span style="color:#ccc;font-style:italic">Description and identifying details will appear here...</span>')+'</div>'+
@@ -471,7 +488,7 @@ async function confirmPublish(btn) {
   btn.textContent = 'Publishing...';
   try {
     // Update the report with edited details and approve
-    await fetch('/api/admin/lost-found/' + S.rid, {
+    const res = await fetch('/api/admin/lost-found/' + S.rid, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -483,12 +500,18 @@ async function confirmPublish(btn) {
         location_details: S.loc,
       }),
     });
+    // fetch only rejects on a network failure, so without this a 403 or a 500
+    // still announced "Posted to Lost & Found!" and nothing had been saved.
+    const out = await res.json().catch(() => null);
+    if (!res.ok || !out || out.error) {
+      throw new Error((out && out.error) || ('Server said ' + res.status));
+    }
     toast('Posted to Lost & Found!');
     btn.closest('.modal-overlay').remove();
     $('publishBtn').innerHTML = '&#10004; Published';
     $('publishBtn').disabled = true;
   } catch(e) {
-    toast('Error publishing');
+    toast(e && e.message ? 'Could not publish: ' + e.message : 'Error publishing');
     btn.disabled = false;
     btn.textContent = 'Post to Website';
   }
