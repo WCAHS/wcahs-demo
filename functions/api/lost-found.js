@@ -74,7 +74,8 @@ export async function onRequestPost(context) {
         ${body.location_details ? `<tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Location</td><td style="padding:8px 12px">${body.location_details}</td></tr>` : ''}
         <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Reporter</td><td style="padding:8px 12px">${body.reporter_name}${body.reporter_email ? ' &lt;' + body.reporter_email + '&gt;' : ''}</td></tr>
       </table>
-      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-lf-${reportId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">Open this report &rarr;</a></div>`,
+      <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-lf-${reportId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">Open this report &rarr;</a></div>
+      <p style="margin:14px 0 0;text-align:center;color:#888;font-size:12px">Approving it puts it on the website. After that you'll find it under <b>Lost &amp; Found</b> in the admin menu, not the Inbox. There's nothing to reply to here.</p>`,
   });
 
   // Every report used to vanish into the inbox without a word back, which left

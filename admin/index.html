@@ -104,8 +104,15 @@
 </head>
 <body>
 
+  <!-- Shown while /auth/me is in flight. The login form used to be the page's
+       resting state, so a signed-in admin arriving from an email link saw it
+       flash up for a second and reasonably concluded she'd been logged out. -->
+  <div id="authLoading" class="min-h-screen flex items-center justify-center p-4">
+    <img src="../images/logo.png" alt="WCAHS" class="h-12 opacity-60">
+  </div>
+
   <!-- Login Screen -->
-  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+  <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-sm border border-sage-100 p-8 w-full max-w-sm">
       <div class="text-center mb-6">
         <img src="../images/logo.png" alt="WCAHS" class="h-12 mx-auto mb-3">
@@ -252,6 +259,7 @@ async function checkAuth() {
   } catch(e) {
     console.error('Auth check failed:', e);
   }
+  document.getElementById('authLoading').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
 }
 
@@ -298,10 +306,19 @@ function resetTurnstile() {
 let currentRole = 'staff';
 let currentUsername = '';
 
+// Pages a role may land on. The saved page has to be checked against this too —
+// restoring it blindly dropped fosters on the Inbox, which they can't read.
+const PAGES_BY_ROLE = {
+  admin:  ['submissions','pets','lost-found','events','forms','links','faq','settings','about','users','my-account','analytics','foster-pets'],
+  staff:  ['submissions','pets','lost-found','events','forms','my-account'],
+  foster: ['foster-pets','my-account']
+};
+
 function showDashboard(user) {
   try {
     currentRole = user.role;
     currentUsername = user.username;
+    document.getElementById('authLoading').classList.add('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
     document.getElementById('loggedInAs').textContent = user.username + ' (' + user.role + ')';
@@ -324,13 +341,6 @@ function showDashboard(user) {
       `;
       nav.prepend(fosterNav);
     }
-    // Pages a role may land on. The saved page has to be checked against this too —
-    // restoring it blindly dropped fosters on the Inbox, which they can't read.
-    const PAGES_BY_ROLE = {
-      admin:  ['submissions','pets','lost-found','events','forms','links','faq','settings','about','users','my-account','analytics','foster-pets'],
-      staff:  ['submissions','pets','lost-found','events','forms','my-account'],
-      foster: ['foster-pets','my-account']
-    };
     const validPages = PAGES_BY_ROLE[user.role] || PAGES_BY_ROLE.staff;
     const savedPage = sessionStorage.getItem('wcahs_admin_page');
     const defaultPage = user.role === 'foster' ? 'foster-pets' : 'submissions';
@@ -338,12 +348,8 @@ function showDashboard(user) {
     // letting the link re-navigate a moment later meant two async renders were
     // writing to #content at once, and on a slow connection the saved page's
     // fetch could land last and wipe out the report the link had just opened.
-    const linked = deepLinkPage();
-    const target = (linked && validPages.includes(linked)) ? linked
-      : (validPages.includes(savedPage) ? savedPage : defaultPage);
-    navigate(target);
+    if (!followDeepLink()) navigate(validPages.includes(savedPage) ? savedPage : defaultPage);
     if (user.role !== 'foster') loadBadgeCounts();
-    if (linked) handleDeepLink();
   } catch(e) {
     console.error('Dashboard error:', e);
     document.getElementById('content').innerHTML = '<p class="text-red-500">Error loading dashboard: ' + e.message + '</p>';
@@ -416,7 +422,9 @@ function toast(message, tone) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'toast';
-    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:100;' +
+    // Top, not bottom: Safari on iPhone floats its address bar over the bottom of
+    // the page, and a toast at bottom:24px sat underneath it, unseen.
+    el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 12px);z-index:100;' +
       'max-width:calc(100vw - 32px);padding:12px 20px;border-radius:14px;font-size:14px;font-weight:600;' +
       'box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:center;transition:opacity .25s';
     document.body.appendChild(el);
@@ -426,7 +434,7 @@ function toast(message, tone) {
   el.textContent = message;
   el.style.opacity = '1';
   clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.opacity = '0'; }, 5000);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 8000);
 }
 
 function h(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
@@ -4260,6 +4268,55 @@ function deepLinkPage() {
   if (hash.startsWith('#clinic-reg-')) return 'forms';
   if (hash.startsWith('#inbox-')) return 'submissions';
   return null;
+}
+
+// Go wherever the hash points. Returns false when there's no (permitted) link,
+// so the caller can fall back to the saved page.
+function followDeepLink() {
+  const page = deepLinkPage();
+  if (!page || !(PAGES_BY_ROLE[currentRole] || PAGES_BY_ROLE.staff).includes(page)) return false;
+  if (window.location.hash.startsWith('#inbox-lf-')) {
+    // This one picks its own page: the report may have left the inbox.
+    openLinkedReport(window.location.hash.replace('#inbox-lf-', ''));
+    return true;
+  }
+  navigate(page);
+  handleDeepLink();
+  return true;
+}
+
+// iPhone Safari can hand an email link to a tab that already has the admin
+// open. When only the #fragment differs, that's not a page load — nothing
+// re-ran and she was left looking at whatever page was already up.
+window.addEventListener('hashchange', () => { if (currentUsername) followDeepLink(); });
+
+// A lost & found notification email is only accurate until someone acts on
+// it. The link used to assume the report was still pending in the inbox; once
+// anyone had approved it (two mailboxes get every email) the link opened an
+// inbox the report was no longer in and silently gave up — "it goes back to
+// the last page". Look the report up first and go to wherever it lives now.
+async function openLinkedReport(id) {
+  document.getElementById('content').innerHTML = '<p class="text-gray-400">Loading...</p>';
+  const rows = await api('/admin/lost-found');
+  const r = Array.isArray(rows) ? rows.find(x => String(x.id) === String(id)) : null;
+  if (!r || r.status === 'pending' || r.status === 'rejected') {
+    navigate('submissions');
+    if (!r) { window.location.hash = ''; toast('That report has been deleted.', 'error'); return; }
+    if (r.status === 'rejected') toast('This report was rejected — it is not on the website.');
+    handleDeepLink();
+    return;
+  }
+  window.location.hash = '';
+  const monthAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+  _lfManageFilter = r.status === 'resolved' ? 'resolved' : (r.created_at >= monthAgo ? 'active' : 'expired');
+  navigate('lost-found');
+  toast(r.status === 'resolved'
+    ? 'This report has already been marked resolved.'
+    : 'Already approved — this report is live on the website’s Lost & Found page.');
+  whenRendered('lf-card-' + r.id, (el) => {
+    el.classList.add('ring-2', 'ring-sage-400');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 }
 
 function handleDeepLink() {
