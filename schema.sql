@@ -66,7 +66,11 @@ CREATE TABLE IF NOT EXISTS lost_found_reports (
   collar_status TEXT,
   resolved_note TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  seen_date TEXT,
+  address TEXT,
+  lat REAL,
+  lng REAL
 );
 
 CREATE TABLE IF NOT EXISTS form_submissions (
@@ -78,7 +82,8 @@ CREATE TABLE IF NOT EXISTS form_submissions (
   message TEXT NOT NULL,
   is_read INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'new',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  archived_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS faq (

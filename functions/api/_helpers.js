@@ -207,3 +207,28 @@ export async function verifyPassword(password, stored) {
   const hashB64 = btoa(String.fromCharCode(...new Uint8Array(hash)));
   return hashB64 === expectedB64;
 }
+
+// Lost & Found place + date, validated once for the public form and the admin.
+// A pin outside southern Minnesota is a mis-tap or junk, not a pet sighting.
+export function cleanLFPlace(body) {
+  const num = v => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
+  let lat = num(body.lat), lng = num(body.lng);
+  if (lat == null || lng == null || lat < 43 || lat > 45.5 || lng < -95.5 || lng > -92) { lat = null; lng = null; }
+  let seen = typeof body.seen_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.seen_date) ? body.seen_date : null;
+  // A date picker can't pick tomorrow, but a hand-built request can.
+  if (seen && seen > new Date(Date.now() + 36e5 * 24).toISOString().slice(0, 10)) seen = null;
+  const address = typeof body.address === 'string' && body.address.trim() ? body.address.trim().slice(0, 200) : null;
+  return { seen_date: seen, address, lat, lng };
+}
+
+// What the public sees of a place: the pin rounded to ~100m and the address
+// without its house number. A "last seen" address is very often the owner's
+// own home. Staff get the exact values from the admin API.
+export function publicLFPlace(r) {
+  const round = v => v == null ? null : Math.round(v * 1000) / 1000;
+  return {
+    ...r,
+    lat: round(r.lat), lng: round(r.lng),
+    address: r.address ? r.address.replace(/^\s*\d+[A-Za-z]?(-\d+)?\s+/, '') : null,
+  };
+}

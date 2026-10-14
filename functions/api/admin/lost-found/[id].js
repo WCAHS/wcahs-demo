@@ -1,4 +1,4 @@
-import { json, error } from '../../_helpers.js';
+import { json, error, cleanLFPlace } from '../../_helpers.js';
 
 export async function onRequestPut(context) {
   const id = context.params.id;
@@ -27,6 +27,13 @@ export async function onRequestPut(context) {
     if (field === 'type' && body.type !== 'lost' && body.type !== 'found') continue;
     sets.push(`${field}=?`);
     vals.push(body[field] === '' ? null : body[field]);
+  }
+
+  // Date and place go through the same validation as the public form. Sent
+  // together by the editor, so they're written together.
+  if (body.seen_date !== undefined || body.lat !== undefined || body.address !== undefined) {
+    const place = cleanLFPlace(body);
+    for (const k of ['seen_date', 'address', 'lat', 'lng']) { sets.push(`${k}=?`); vals.push(place[k]); }
   }
 
   if (sets.length === 0) return error('Nothing to update');

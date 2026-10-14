@@ -24,6 +24,7 @@
   <title>Mascotas Perdidas y Encontradas - WCAHS</title>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/lf-map.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <script>
@@ -136,11 +137,23 @@
     </div>
   </section>
 
+  <section id="lfMapSection" class="max-w-6xl mx-auto px-4 pt-14 hidden">
+    <div class="flex items-end justify-between flex-wrap gap-2 mb-3">
+      <h2 class="font-display text-2xl font-bold text-gray-900">Perdidos y encontrados cerca de usted</h2>
+      <div class="flex items-center gap-4 text-sm text-gray-600">
+        <span class="flex items-center gap-1.5"><span style="width:12px;height:12px;border-radius:50%;background:#cc1f1f;display:inline-block"></span>Perdido</span>
+        <span class="flex items-center gap-1.5"><span style="width:12px;height:12px;border-radius:50%;background:#2d7a3a;display:inline-block"></span>Encontrado</span>
+      </div>
+    </div>
+    <div id="lfMap" class="rounded-2xl overflow-hidden shadow-md border border-gray-100" style="height:380px"></div>
+    <p class="text-xs text-gray-400 mt-2">Los marcadores muestran la zona aproximada, no la dirección exacta. Toque un marcador para ver detalles.</p>
+  </section>
+
   <!-- Tabs: Lost / Found -->
-  <section class="max-w-6xl mx-auto px-4 pt-14 pb-4">
+  <section class="max-w-6xl mx-auto px-4 pt-10 pb-4">
     <div class="flex gap-3 justify-center">
-      <button onclick="showTab('lost')" class="tab-btn active px-8 py-3 rounded-full border-2 border-sage-600 font-bold text-sm transition">Mascotas Perdidas</button>
-      <button onclick="showTab('found')" class="tab-btn px-8 py-3 rounded-full border-2 border-gray-300 text-gray-600 font-bold text-sm transition">Mascotas Encontradas</button>
+      <button id="tabLost" onclick="showTab('lost')" class="tab-btn active px-8 py-3 rounded-full border-2 border-sage-600 font-bold text-sm transition">Mascotas Perdidas</button>
+      <button id="tabFound" onclick="showTab('found')" class="tab-btn px-8 py-3 rounded-full border-2 border-gray-300 text-gray-600 font-bold text-sm transition">Mascotas Encontradas</button>
     </div>
   </section>
 
@@ -158,8 +171,21 @@
 
   <script>
     fetch('/api/lost-found').then(r=>r.json()).then(function(reports) {
+      var esc = WCAHSMap.esc;
       var lost = reports.filter(r=>r.type==='lost');
       var found = reports.filter(r=>r.type==='found');
+      document.getElementById('tabLost').textContent = 'Mascotas Perdidas (' + lost.length + ')';
+      document.getElementById('tabFound').textContent = 'Mascotas Encontradas (' + found.length + ')';
+      window._lfAll = reports;
+      if (reports.some(function(r){ return r.lat != null; })) {
+        document.getElementById('lfMapSection').classList.remove('hidden');
+        WCAHSMap.pins(document.getElementById('lfMap'), reports, { approximate: true, onClick: function(id){ openLFModal(id); } });
+      }
+      function seenLine(r) {
+        var d = r.seen_date ? new Date(r.seen_date + 'T12:00:00Z').toLocaleDateString('es-ES', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : '';
+        return [d, r.address || r.location_details || ''].filter(Boolean).join(' · ');
+      }
+      window._lfSeenLine = seenLine;
       // Store reports globally for modal access
       window._lfReports = [];
       function renderCards(items, containerId, emptyId) {
@@ -176,16 +202,16 @@
             '<div class="relative">' + photoHtml +
             '<span class="absolute top-3 left-3 '+typeColor+' text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">'+typeLabel+'</span>' +
             '</div>' +
-            '<div class="p-5"><h3 class="font-bold text-lg text-gray-900">'+(r.pet_name||'Mascota Desconocida')+'</h3>' +
-            '<p class="text-gray-500 text-sm mt-1">'+r.species+(r.breed?' &bull; '+r.breed:'')+'</p>' +
-            (r.location_details?'<p class="text-gray-500 text-sm mt-1.5"><svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>'+r.location_details+'</p>':'') +
+            '<div class="p-5"><h3 class="font-bold text-lg text-gray-900">'+esc(r.pet_name||'Mascota Desconocida')+'</h3>' +
+            '<p class="text-gray-500 text-sm mt-1">'+esc(r.species)+(r.breed?' &bull; '+esc(r.breed):'')+'</p>' +
+            (seenLine(r)?'<p class="text-gray-500 text-sm mt-1.5"><svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>'+esc(seenLine(r))+'</p>':'') +
             '<p class="text-gray-400 text-xs mt-3">Reportado el '+new Date(r.created_at).toLocaleDateString('es-ES')+'</p>' +
             '</div></div>';
         }).join('');
       }
 
       window.openLFModal = function(id) {
-        var r = window._lfReports.find(function(x) { return x.id === id; });
+        var r = (window._lfAll || window._lfReports).find(function(x) { return x.id === id; });
         if (!r) return;
         var photos = [];
         if (r.photo_url) { try { photos = JSON.parse(r.photo_url); } catch(e) { photos = [r.photo_url]; } }
@@ -201,27 +227,31 @@
 
         var overlay = document.createElement('div');
         overlay.id = 'lfModal';
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px;';
         overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
         overlay.innerHTML = '<div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" style="font-family:Nunito,sans-serif">' +
           '<div class="p-6">' +
             '<div class="flex items-center justify-between mb-4">' +
               '<div class="flex items-center gap-2">' +
                 '<span style="background:'+typeColor+'" class="text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">'+typeLabel+'</span>' +
-                '<h2 class="font-bold text-xl text-gray-900">'+(r.pet_name||'Mascota Desconocida')+'</h2>' +
+                '<h2 class="font-bold text-xl text-gray-900">'+esc(r.pet_name||'Mascota Desconocida')+'</h2>' +
               '</div>' +
               '<button onclick="document.getElementById(\'lfModal\').remove()" class="text-gray-400 hover:text-gray-600 p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>' +
             '</div>' +
             (mainPhoto ? '<div class="mb-4"><img id="lfModalMainPhoto" src="'+photos[0]+'" class="w-full max-h-80 object-cover rounded-xl" alt=""></div>' : '') +
             thumbsHtml +
             '<div class="grid grid-cols-2 gap-3 mt-4">' +
-              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Especie</p><p class="text-sm font-semibold text-gray-900">'+(r.species||'\u2014')+'</p></div>' +
-              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Raza</p><p class="text-sm font-semibold text-gray-900">'+(r.breed||'\u2014')+'</p></div>' +
-              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Color</p><p class="text-sm font-semibold text-gray-900">'+(r.color||'\u2014')+'</p></div>' +
-              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Sexo</p><p class="text-sm font-semibold text-gray-900">'+(r.gender||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Especie</p><p class="text-sm font-semibold text-gray-900">'+esc(r.species||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Raza</p><p class="text-sm font-semibold text-gray-900">'+esc(r.breed||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Color</p><p class="text-sm font-semibold text-gray-900">'+esc(r.color||'\u2014')+'</p></div>' +
+              '<div class="bg-gray-50 rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase font-bold">Sexo</p><p class="text-sm font-semibold text-gray-900">'+esc(r.gender||'\u2014')+'</p></div>' +
             '</div>' +
-            (r.location_details ? '<div class="mt-4 rounded-xl p-4 text-center" style="background:'+(isLost?'#fef9e7':'#eef8f0')+';border:1.5px solid '+(isLost?'#f5d67a':'#8cd4a0')+'"><p class="text-[10px] uppercase font-bold opacity-60" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+locLabel+'</p><p class="font-bold" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+r.location_details+'</p></div>' : '') +
-            (r.description ? '<div class="mt-4"><p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Descripci\u00f3n</p><p class="text-sm text-gray-600 leading-relaxed">'+r.description+'</p></div>' : '') +
+            (window._lfSeenLine(r) ? '<div class="mt-4 rounded-xl p-4 text-center" style="background:'+(isLost?'#fef9e7':'#eef8f0')+';border:1.5px solid '+(isLost?'#f5d67a':'#8cd4a0')+'"><p class="text-[10px] uppercase font-bold opacity-60" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+locLabel+'</p>' +
+              (r.seen_date ? '<p class="font-bold" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+esc(new Date(r.seen_date + 'T12:00:00Z').toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }))+'</p>' : '') +
+              (r.address ? '<p class="font-bold" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+esc(r.address)+'</p>' : '') +
+              (r.location_details ? '<p class="text-sm mt-1" style="color:'+(isLost?'#92660e':'#1e6a31')+'">'+esc(r.location_details)+'</p>' : '') +
+              '</div>' : '') +
+            (r.description ? '<div class="mt-4"><p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Descripci\u00f3n</p><p class="text-sm text-gray-600 leading-relaxed">'+esc(r.description)+'</p></div>' : '') +
             '<p class="text-gray-400 text-xs mt-4">Reportado el '+new Date(r.created_at).toLocaleDateString('es-ES',{month:'long',day:'numeric',year:'numeric'})+'</p>' +
             '<div class="mt-4 pt-4 border-t border-gray-100 text-center">' +
               '<p class="text-gray-500 text-sm">&iquest;Reconoce a esta mascota? <a href="tel:5072017287" class="text-sage-600 font-bold hover:underline">(507) 201-7287</a></p>' +
@@ -324,10 +354,59 @@
           </div>
         </div>
 
-        <div>
-          <label id="locationLabel" class="block text-sm font-semibold text-gray-700 mb-1">Fecha y Lugar Donde se Vio por &Uacute;ltima Vez</label>
-          <input id="locationInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Ej. 15 de junio cerca de 3rd Ave NE, Waseca">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div>
+            <label id="dateLabel" class="block text-sm font-semibold text-gray-700 mb-1">Fecha en que se Vio por Última Vez</label>
+            <input id="seenDate" type="date" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition bg-white">
+          </div>
+          <div class="md:col-span-2">
+            <label id="locationLabel" class="block text-sm font-semibold text-gray-700 mb-1">Dónde se Vio por Última Vez</label>
+            <input id="addressInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Escriba una dirección, calle o parque">
+          </div>
         </div>
+        <input type="hidden" id="seenLat"><input type="hidden" id="seenLng">
+        <div id="pickMap" class="rounded-xl overflow-hidden border border-gray-200" style="height:260px"></div>
+        <!-- Found-pet reports: lost pets already reported near the spot, so the
+             finder can spot a match before (or instead of) filing. -->
+        <div id="nearbyLost" class="hidden rounded-xl p-4" style="background:#fef9e7;border:1.5px solid #f5d67a"></div>
+        <div>
+          <label id="detailsLabel" class="block text-sm font-semibold text-gray-700 mb-1">Puntos de Referencia o Indicaciones <span class="font-normal text-gray-400">(opcional)</span></label>
+          <input id="locationInput" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition" placeholder="Ej. detrás de Walmart, cerca del parque infantil">
+        </div>
+        <script>
+          (function () {
+            var today = new Date().toLocaleDateString('en-CA');
+            var d = document.getElementById('seenDate');
+            d.max = today; d.value = today;
+            var lat = document.getElementById('seenLat'), lng = document.getElementById('seenLng');
+            function setPoint(a, b) { lat.value = Number(a).toFixed(6); lng.value = Number(b).toFixed(6); showNearby(); }
+            var picker = WCAHSMap.picker(document.getElementById('pickMap'), { onChange: setPoint });
+            WCAHSMap.addressInput(document.getElementById('addressInput'), {
+              onPick: function (it) { picker.setPoint(it.lat, it.lng); setPoint(it.lat, it.lng); }
+            });
+            function km(a, b, c, d2) {
+              var R = 6371, t = Math.PI / 180, x = (d2 - b) * t * Math.cos((a + c) / 2 * t), y = (c - a) * t;
+              return Math.sqrt(x * x + y * y) * R;
+            }
+            window.showNearby = function () {
+              var box = document.getElementById('nearbyLost');
+              var isFound = document.querySelector('input[name="type"][value="found"]').checked;
+              if (!isFound || !lat.value || !window._lfAll) { box.classList.add('hidden'); return; }
+              var a = Number(lat.value), b = Number(lng.value);
+              var near = window._lfAll.filter(function (r) { return r.type === 'lost' && r.lat != null && km(a, b, r.lat, r.lng) < 8; })
+                .sort(function (x, y) { return km(a, b, x.lat, x.lng) - km(a, b, y.lat, y.lng); });
+              if (!near.length) { box.classList.add('hidden'); return; }
+              box.innerHTML = '<p class="font-bold text-sm mb-2" style="color:#92660e">¿Es una de estas? Mascotas perdidas reportadas cerca:</p>' +
+                near.slice(0, 5).map(function (r) {
+                  var mi = (km(a, b, r.lat, r.lng) * 0.621).toFixed(1);
+                  return '<a href="#" onclick="event.preventDefault();openLFModal(' + r.id + ')" class="flex items-center justify-between gap-3 py-1.5 text-sm" style="color:#92660e">' +
+                    '<span><b>' + WCAHSMap.esc(r.pet_name || 'Desconocida') + '</b> · ' + WCAHSMap.esc(r.species || '') + (r.color ? ', ' + WCAHSMap.esc(r.color) : '') + '</span><span class="shrink-0">' + mi + ' mi &rarr;</span></a>';
+                }).join('') +
+                '<p class="text-xs mt-2" style="color:#92660e">Si coincide, llámenos al <a href="tel:5072017287" class="underline font-bold">(507) 201-7287</a>. Si no, continúe abajo.</p>';
+              box.classList.remove('hidden');
+            };
+          })();
+        </script>
 
         <!-- Lost-only: collar/microchip -->
         <div id="lostFields">
@@ -433,6 +512,10 @@
             color: e.target.querySelector('input[placeholder="Color/marcas"]').value,
             gender: e.target.querySelectorAll('select')[1].value,
             location_details: document.getElementById('locationInput').value,
+            seen_date: document.getElementById('seenDate').value,
+            address: document.getElementById('addressInput').value,
+            lat: document.getElementById('seenLat').value,
+            lng: document.getElementById('seenLng').value,
             description: document.getElementById('descInput').value,
             subscribe: document.getElementById('lfOptIn').checked,
             turnstile_token: turnstile ? turnstile.value : ''
@@ -662,10 +745,9 @@
       // Swap labels
       document.getElementById('nameLabel').textContent = isLost ? 'Nombre de la Mascota' : 'Nombre de la Mascota (si se conoce)';
       document.getElementById('nameInput').placeholder = isLost ? 'Nombre de la mascota' : 'Nombre de la mascota, si se conoce';
-      document.getElementById('locationLabel').textContent = isLost ? 'Fecha y Lugar Donde se Vio por \u00daltima Vez' : 'Fecha y Lugar Donde se Encontr\u00f3';
-      document.getElementById('locationInput').placeholder = isLost
-        ? 'Ej. 15 de junio cerca de 3rd Ave NE, Waseca'
-        : 'Ej. 18 de junio detr\u00e1s de Walmart en State St, Waseca';
+      document.getElementById('dateLabel').textContent = isLost ? 'Fecha en que se Vio por \u00daltima Vez' : 'Fecha en que se Encontr\u00f3';
+      document.getElementById('locationLabel').textContent = isLost ? 'D\u00f3nde se Vio por \u00daltima Vez' : 'D\u00f3nde se Encontr\u00f3';
+      if (window.showNearby) showNearby();
       document.getElementById('descLabel').textContent = isLost ? 'Descripci\u00f3n' : 'Detalles Adicionales';
       document.getElementById('descInput').placeholder = isLost
         ? 'Cualquier detalle identificativo \u2014 tama\u00f1o, marcas distintivas, hacia d\u00f3nde pudo haberse ido...'

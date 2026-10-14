@@ -1,15 +1,24 @@
 import { json } from '../_helpers.js';
 
-export async function onRequestGet(context) {
-  const url = new URL(context.request.url);
-  const type = url.searchParams.get('type');
-  let query = 'SELECT * FROM form_submissions';
-  const params = [];
-  if (type) { query += ' WHERE type = ?'; params.push(type); }
-  query += ' ORDER BY created_at DESC';
+// Read messages leave the Inbox on their own after this long. Archived, not
+// deleted: they stay under the Archive tab.
+const AUTO_ARCHIVE_DAYS = 30;
 
-  const { results } = params.length
-    ? await context.env.DB.prepare(query).bind(...params).all()
-    : await context.env.DB.prepare(query).all();
+export async function onRequestGet(context) {
+  const { env, request } = context;
+  const url = new URL(request.url);
+  const type = url.searchParams.get('type');
+  const archived = url.searchParams.get('archived') === '1';
+
+  await env.DB.prepare(
+    `UPDATE form_submissions SET archived_at = datetime('now')
+      WHERE archived_at IS NULL AND is_read = 1 AND created_at < datetime('now', ?)`
+  ).bind(`-${AUTO_ARCHIVE_DAYS} days`).run();
+
+  let query = `SELECT * FROM form_submissions WHERE archived_at IS ${archived ? 'NOT ' : ''}NULL`;
+  const params = [];
+  if (type) { query += ' AND type = ?'; params.push(type); }
+  query += ' ORDER BY created_at DESC';
+  const { results } = await env.DB.prepare(query).bind(...params).all();
   return json(results);
 }

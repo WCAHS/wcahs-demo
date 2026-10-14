@@ -1,4 +1,4 @@
-import { json, error } from '../_helpers.js';
+import { json, error, cleanLFPlace } from '../_helpers.js';
 
 export async function onRequestGet(context) {
   const { results } = await context.env.DB.prepare(
@@ -34,17 +34,19 @@ export async function onRequestPost(context) {
     ? JSON.stringify(body.photo_urls)
     : (body.photo_url || null);
 
+  const place = cleanLFPlace(body);
   const result = await env.DB.prepare(
     `INSERT INTO lost_found_reports (type, status, reporter_name, reporter_phone, reporter_email,
       pet_name, species, breed, color, gender, location_details, description, photo_url,
-      collar_details, temperament, current_location, collar_status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      collar_details, temperament, current_location, collar_status, seen_date, address, lat, lng)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     type, status, reporterName, body.reporter_phone || null, body.reporter_email || null,
     body.pet_name || null, body.species, body.breed || null, body.color || null,
     body.gender || null, body.location_details || null, body.description || null,
     photoUrl, body.collar_details || null, body.temperament || null,
-    body.current_location || null, body.collar_status || null
+    body.current_location || null, body.collar_status || null,
+    place.seen_date, place.address, place.lat, place.lng
   ).run();
 
   return json({ ok: true, id: result.meta?.last_row_id || null, status });

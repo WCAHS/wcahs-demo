@@ -101,6 +101,7 @@
       #sidebarOverlay { display: none !important; }
     }
   </style>
+  <script src="/lf-map.js"></script>
 </head>
 <body>
 
@@ -147,7 +148,10 @@
           }
         </script>
         <div id="loginError" class="hidden text-red-600 text-sm"></div>
-        <button type="submit" class="w-full bg-sage-700 hover:bg-sage-900 text-white font-bold py-3 rounded-2xl transition">Log In</button>
+        <!-- Disabled until the CAPTCHA hands over a token. Tapping it earlier
+             failed with "CAPTCHA required", which on a phone looked like the
+             page going round in circles. -->
+        <button id="loginBtn" type="submit" disabled class="w-full bg-sage-700 hover:bg-sage-900 text-white font-bold py-3 rounded-2xl transition disabled:opacity-50 disabled:cursor-wait">Checking you're human…</button>
       </form>
     </div>
   </div>
@@ -180,7 +184,10 @@
           <span id="inboxBadge" class="badge bg-amber-500 text-white hidden">0</span>
         </a>
         <a onclick="navigate('pets')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="pets">Pets</a>
-        <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="lost-found">Lost & Found</a>
+        <a onclick="navigate('lost-found')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer flex items-center justify-between" data-nav="lost-found">
+          <span>Lost & Found</span>
+          <span id="lfBadge" class="badge bg-amber-500 text-white hidden">0</span>
+        </a>
         <a onclick="navigate('events')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="events">Events</a>
         <a onclick="navigate('forms')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer" data-nav="forms">Forms</a>
         <a onclick="navigate('links')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="links">Short Links</a>
@@ -261,9 +268,15 @@ clog('page_load', {
 // once if no token has arrived after 10s — the spinner a person sees as the
 // page "circling".
 let _tsDone = false;
-function tsOk() { _tsDone = true; clog('turnstile', { state: 'token' }); }
-function tsErr(code) { clog('turnstile', { state: 'error', code: String(code || '') }); }
-function tsExpired() { clog('turnstile', { state: 'expired' }); }
+function loginReady(ready, label) {
+  const b = document.getElementById('loginBtn');
+  if (!b) return;
+  b.disabled = !ready;
+  b.textContent = label || (ready ? 'Log In' : 'Checking you\'re human…');
+}
+function tsOk() { _tsDone = true; loginReady(true); clog('turnstile', { state: 'token' }); }
+function tsErr(code) { loginReady(false, 'Security check failed — reload the page'); clog('turnstile', { state: 'error', code: String(code || '') }); }
+function tsExpired() { loginReady(false); clog('turnstile', { state: 'expired' }); }
 function tsTimeout() { clog('turnstile', { state: 'timeout' }); }
 setTimeout(() => {
   if (!_tsDone && !document.getElementById('loginScreen').classList.contains('hidden')) clog('turnstile', { state: 'slow', loaded: !!window.turnstile });
@@ -343,6 +356,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 // password re-submits the spent token and fails as "CAPTCHA verification failed"
 // no matter how correct the password is.
 function resetTurnstile() {
+  loginReady(false);
   try { if (window.turnstile && typeof window.turnstile.reset === 'function') window.turnstile.reset(); } catch (e) {}
 }
 
@@ -417,11 +431,14 @@ async function loadBadgeCounts() {
 
     const unreadSubs = Array.isArray(subs) ? subs.filter(s => !s.is_read).length : 0;
     const pendingLF = Array.isArray(reports) ? reports.filter(r => r.status === 'pending').length : 0;
-    const totalBadge = unreadSubs + pendingLF;
-
-    const badge = document.getElementById('inboxBadge');
-    if (totalBadge > 0) { badge.textContent = totalBadge; badge.classList.remove('hidden'); }
-    else { badge.classList.add('hidden'); }
+    // Lost & Found reports live in their own section now, with their own badge.
+    const setBadge = (id, n) => {
+      const b = document.getElementById(id);
+      if (!b) return;
+      if (n > 0) { b.textContent = n; b.classList.remove('hidden'); } else b.classList.add('hidden');
+    };
+    setBadge('inboxBadge', unreadSubs);
+    setBadge('lfBadge', pendingLF);
   } catch(e) {}
 }
 
@@ -540,185 +557,148 @@ function getQuillHtml(containerId) {
   return html === '<p><br></p>' ? '' : html;
 }
 
-// ── Submissions (Unified Inbox) ──
+// ── Inbox ──
+// Contact messages and foster applications. Lost & Found reports used to be
+// mixed in here too; they live under Lost & Found now, so the Inbox is just
+// messages people expect a reply to.
 let _inboxFilter = 'all';
 
 async function renderSubmissions(el) {
   el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Inbox</h1><p class="text-gray-400">Loading...</p>';
-
-  const [subs, reports] = await Promise.all([
+  const archive = _inboxFilter === 'archive';
+  const [subs, archived] = await Promise.all([
     api('/admin/submissions'),
-    api('/admin/lost-found')
+    api('/admin/submissions?archived=1'),
   ]);
-  if (subs.error) { el.innerHTML += '<p class="text-red-500">' + subs.error + '</p>'; return; }
+  if (subs.error) { el.innerHTML += '<p class="text-red-500">' + h(subs.error) + '</p>'; return; }
+  const live = Array.isArray(subs) ? subs : [];
+  const old = Array.isArray(archived) ? archived : [];
+  _subsData = live.concat(old);
 
-  _subsData = Array.isArray(subs) ? subs : [];
-  _lfData = Array.isArray(reports) ? reports : [];
-
-  // Build unified list
-  const allItems = [];
-
-  _subsData.forEach(s => {
+  const toItem = s => {
     let phone = '';
     let msg = s.message;
     const phoneMatch = msg.match(/^Phone: (.+?)\n\n/);
     if (phoneMatch) { phone = phoneMatch[1]; msg = msg.replace(phoneMatch[0], ''); }
-    allItems.push({
-      kind: 'submission',
-      itemType: s.type, // contact or foster
-      id: s.id,
-      name: s.name,
-      email: s.email,
-      phone: phone,
-      subject: s.subject,
-      message: msg,
-      rawMessage: s.message,
-      status: s.status || 'new',
-      is_read: s.is_read,
-      created_at: s.created_at,
-      _raw: s
-    });
-  });
-
-  // Only show pending L&F in inbox — approved/resolved go to Lost & Found management
-  _lfData.filter(r => r.status === 'pending' || r.status === 'rejected').forEach(r => {
-    allItems.push({
-      kind: 'lf',
-      itemType: r.type, // lost or found
-      id: r.id,
-      name: r.reporter_name,
-      email: r.reporter_email || '',
-      phone: r.reporter_phone || '',
-      petName: r.pet_name,
-      species: r.species,
-      breed: r.breed,
-      color: r.color,
-      gender: r.gender,
-      collar_details: r.collar_details,
-      temperament: r.temperament,
-      current_location: r.current_location,
-      collar_status: r.collar_status,
-      description: r.description,
-      location_details: r.location_details,
-      photo_url: r.photo_url,
-      status: r.status || 'pending',
-      is_read: r.status !== 'pending', // pending = unread
-      created_at: r.created_at,
-      _raw: r
-    });
-  });
-
-  // Sort by date descending
-  allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  // Counts
+    return { kind: 'submission', itemType: s.type, id: s.id, name: s.name, email: s.email, phone,
+      subject: s.subject, message: msg, rawMessage: s.message, status: s.status || 'new',
+      is_read: s.is_read, created_at: s.created_at, archived: !!s.archived_at, _raw: s };
+  };
   const counts = {
-    all: allItems.length,
-    contact: allItems.filter(i => i.itemType === 'contact').length,
-    foster: allItems.filter(i => i.itemType === 'foster').length,
-    lost: allItems.filter(i => i.itemType === 'lost').length,
-    found: allItems.filter(i => i.itemType === 'found').length
+    all: live.length,
+    contact: live.filter(i => i.type === 'contact').length,
+    foster: live.filter(i => i.type === 'foster').length,
+    archive: old.length,
   };
+  const shown = (archive ? old : live).map(toItem)
+    .filter(i => archive || _inboxFilter === 'all' || i.itemType === _inboxFilter)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  const tabBtn = (key, label) => {
-    const isActive = _inboxFilter === key;
-    return `<button onclick="filterInbox('${key}')" class="filter-tab ${isActive ? 'active' : ''}">${label} (${counts[key]})</button>`;
-  };
+  const tabBtn = (key, label) =>
+    `<button onclick="_inboxFilter='${key}';renderSubmissions(document.getElementById('content'))" class="filter-tab ${_inboxFilter === key ? 'active' : ''}">${label} (${counts[key]})</button>`;
 
   let html = `<h1 class="text-2xl font-display font-bold text-sage-800 mb-5">Inbox</h1>
-    <div class="filter-tabs-scroll mb-5">
+    <div class="filter-tabs-scroll mb-3">
       ${tabBtn('all', 'All')}
       ${tabBtn('contact', 'Contact')}
       ${tabBtn('foster', 'Foster')}
-      ${tabBtn('lost', 'Lost')}
-      ${tabBtn('found', 'Found')}
-    </div>`;
+      ${tabBtn('archive', 'Archive')}
+    </div>
+    <p class="text-xs text-gray-400 mb-4">${archive
+      ? 'Archived messages. Nothing here is deleted.'
+      : 'Read messages move to Archive by themselves after 30 days. Lost &amp; found reports are under <a onclick="navigate(\'lost-found\')" class="text-sage-600 underline cursor-pointer">Lost &amp; Found</a>.'}</p>`;
 
-  if (allItems.length === 0) {
+  if (shown.length === 0) {
     html += `<div class="card p-10 text-center">
       <svg class="w-16 h-16 mx-auto text-sage-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-2.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-      <p class="text-gray-400 font-semibold">Inbox is empty</p>
-      <p class="text-gray-300 text-sm mt-1">New submissions and reports will appear here</p>
+      <p class="text-gray-400 font-semibold">${archive ? 'Archive is empty' : 'Inbox is empty'}</p>
     </div>`;
-  } else {
-    html += '<div id="inboxList" class="space-y-1">';
-    allItems.forEach(item => {
-      const unread = !item.is_read;
-      const readClass = unread ? 'unread' : 'read';
-
-      // Type labels — subtle inline text, on-palette colors
-      const typeLabels = { contact: 'Contact', foster: 'Foster App', lost: 'Lost Pet', found: 'Found Pet' };
-      const typeLabelColors = { contact: '#93a27e', foster: '#d97706', lost: '#b45309', found: '#48543e' };
-      // Contact form: use subject line as label instead of generic "Contact"
-      let typeLabel = typeLabels[item.itemType] || item.itemType;
-      if (item.itemType === 'contact' && item.subject) typeLabel = item.subject;
-      const typeLabelColor = typeLabelColors[item.itemType] || '#6b7280';
-
-      // Thumbnail for L&F with photos
-      let thumbHtml = '';
-      if (item.kind === 'lf' && item.photo_url) {
-        let photos = [];
-        try { photos = JSON.parse(item.photo_url); } catch(e) { photos = [item.photo_url]; }
-        if (photos[0]) {
-          thumbHtml = `<img src="${photos[0]}" class="w-10 h-10 rounded-lg object-cover shrink-0 border border-sage-100">`;
-        }
-      }
-      if (!thumbHtml) {
-        // Two-letter initials with warm neutral background
-        const nameParts = (item.name || '?').split(' ');
-        const initials = nameParts.length > 1 ? nameParts[0].charAt(0) + nameParts[nameParts.length-1].charAt(0) : nameParts[0].charAt(0);
-        thumbHtml = `<div class="w-10 h-10 rounded-lg bg-sage-50 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-sage-400">${h(initials.toUpperCase())}</span></div>`;
-      }
-
-      // Preview snippet
-      let snippet = '';
-      if (item.kind === 'submission') {
-        snippet = item.message ? item.message.substring(0, 80) : (item.subject || '');
-        if (item.message && item.message.length > 80) snippet += '...';
-      } else {
-        const petLabel = item.petName || ('Unknown ' + (item.species || 'Pet'));
-        const parts = [petLabel];
-        if (item.breed) parts.push(item.breed);
-        if (item.location_details) parts.push(item.location_details);
-        snippet = parts.join(' \u2022 ');
-      }
-
-      const clickId = item.kind === 'submission' ? 'sub-' + item.id : 'lf-' + item.id;
-      const arrowId = item.kind === 'submission' ? 'sub-arrow-' + item.id : 'lf-arrow-' + item.id;
-      // Auto-mark read on click for both submissions and L&F
-      let markReadCall = '';
-      if (item.kind === 'submission' && unread) markReadCall = `markRead(${item.id}, true);`;
-
-      html += `<div class="inbox-item card type-${item.itemType} ${readClass} overflow-hidden" data-type="${item.itemType}">
-        <div class="flex items-center gap-3 p-3.5 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('${clickId}', '${arrowId}'); ${markReadCall}">
-          ${thumbHtml}
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1.5 mb-0.5">
-              <span class="inbox-name text-gray-900 text-sm ${unread ? '' : 'font-normal'}">${h(item.name)}</span>
-              <span class="text-[10px] text-gray-300">&middot;</span>
-              <span class="text-[10px] font-bold shrink-0" style="color:${typeLabelColor}">${typeLabel}</span>
-              <span class="text-[11px] text-gray-300 ml-auto shrink-0">${timeAgo(item.created_at)}</span>
-            </div>
-            <p class="inbox-snippet text-xs text-gray-400 truncate">${h(snippet)}</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-300 shrink-0 transition-transform ml-1" id="${arrowId}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </div>
-        <div id="${clickId}" class="hidden border-t border-sage-100">`;
-
-      // Expanded content
-      if (item.kind === 'submission') {
-        html += renderSubExpanded(item);
-      } else {
-        html += renderLFExpanded(item);
-      }
-
-      html += `</div></div>`;
-    });
-    html += '</div>';
+    el.innerHTML = html;
+    return;
   }
 
+  // Bulk bar: always visible so it's discoverable, buttons light up once
+  // something is ticked.
+  html += `<div id="bulkBar" class="card px-3.5 py-2.5 mb-2 flex items-center gap-3 flex-wrap sticky top-0 md:top-0 z-30">
+      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><input type="checkbox" id="bulkAll" onchange="bulkSelectAll(this.checked)" class="w-4 h-4 rounded border-gray-300"> <span id="bulkCount">Select</span></label>
+      <div class="flex items-center gap-2 ml-auto">
+        ${archive
+          ? `<button data-bulk onclick="bulkInbox('unarchive')" disabled class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-sage-50 text-sage-700 disabled:opacity-40">Move to Inbox</button>`
+          : `<button data-bulk onclick="bulkInbox('archive')" disabled class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-sage-600 text-white disabled:opacity-40">Archive</button>
+             <button data-bulk onclick="bulkInbox('read')" disabled class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-sage-50 text-sage-700 disabled:opacity-40">Mark read</button>`}
+        <button data-bulk onclick="bulkInbox('delete')" disabled class="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-500 disabled:opacity-40">Delete</button>
+      </div>
+    </div>`;
+
+  html += '<div id="inboxList" class="space-y-1">';
+  shown.forEach(item => {
+    const unread = !item.is_read;
+    const typeLabels = { contact: 'Contact', foster: 'Foster App' };
+    const typeLabelColors = { contact: '#93a27e', foster: '#d97706' };
+    let typeLabel = typeLabels[item.itemType] || item.itemType;
+    if (item.itemType === 'contact' && item.subject) typeLabel = item.subject;
+    const typeLabelColor = typeLabelColors[item.itemType] || '#6b7280';
+    const nameParts = (item.name || '?').split(' ');
+    const initials = nameParts.length > 1 ? nameParts[0].charAt(0) + nameParts[nameParts.length-1].charAt(0) : nameParts[0].charAt(0);
+    let snippet = item.message ? item.message.substring(0, 80) : (item.subject || '');
+    if (item.message && item.message.length > 80) snippet += '...';
+    const clickId = 'sub-' + item.id, arrowId = 'sub-arrow-' + item.id;
+    const markReadCall = unread ? `markRead(${item.id}, true);` : '';
+
+    html += `<div class="inbox-item card type-${item.itemType} ${unread ? 'unread' : 'read'} overflow-hidden" data-type="${item.itemType}">
+      <div class="flex items-center gap-3 p-3.5 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('${clickId}', '${arrowId}'); ${markReadCall}">
+        <input type="checkbox" class="inbox-check w-4 h-4 rounded border-gray-300 shrink-0" data-id="${item.id}" onclick="event.stopPropagation(); bulkChanged()">
+        <div class="w-10 h-10 rounded-lg bg-sage-50 flex items-center justify-center shrink-0"><span class="text-xs font-bold text-sage-400">${h(initials.toUpperCase())}</span></div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 mb-0.5">
+            <span class="inbox-name text-gray-900 text-sm ${unread ? '' : 'font-normal'}">${h(item.name)}</span>
+            <span class="text-[10px] text-gray-300">&middot;</span>
+            <span class="text-[10px] font-bold shrink-0 truncate" style="color:${typeLabelColor}">${h(typeLabel)}</span>
+            <span class="text-[11px] text-gray-300 ml-auto shrink-0">${timeAgo(item.created_at)}</span>
+          </div>
+          <p class="inbox-snippet text-xs text-gray-400 truncate">${h(snippet)}</p>
+        </div>
+        <svg class="w-4 h-4 text-gray-300 shrink-0 transition-transform ml-1" id="${arrowId}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+      <div id="${clickId}" class="hidden border-t border-sage-100">${renderSubExpanded(item)}</div>
+    </div>`;
+  });
+  html += '</div>';
   el.innerHTML = html;
 }
+
+function bulkSelected() {
+  return Array.from(document.querySelectorAll('.inbox-check:checked')).map(c => Number(c.dataset.id));
+}
+window.bulkChanged = function() {
+  const n = bulkSelected().length;
+  const total = document.querySelectorAll('.inbox-check').length;
+  document.querySelectorAll('[data-bulk]').forEach(b => b.disabled = n === 0);
+  const all = document.getElementById('bulkAll');
+  if (all) { all.checked = n > 0 && n === total; all.indeterminate = n > 0 && n < total; }
+  const c = document.getElementById('bulkCount');
+  if (c) c.textContent = n ? n + ' selected' : 'Select';
+};
+window.bulkSelectAll = function(on) {
+  document.querySelectorAll('.inbox-check').forEach(c => c.checked = on);
+  bulkChanged();
+};
+window.bulkOne = function(action, id) {
+  document.querySelectorAll('.inbox-check').forEach(c => c.checked = Number(c.dataset.id) === id);
+  return bulkInbox(action);
+};
+window.bulkInbox = async function(action) {
+  const ids = bulkSelected();
+  if (!ids.length) return;
+  if (action === 'delete' && !confirm(`Permanently delete ${ids.length} message${ids.length > 1 ? 's' : ''}? Archive keeps them instead.`)) return;
+  const res = await api('/admin/submissions/bulk', { method: 'POST', body: { action, ids } });
+  if (!res || res.error) { toast(res && res.error ? res.error : 'That didn’t work — try again.', 'error'); return; }
+  const n = ids.length, s = n > 1 ? 's' : '';
+  toast({ archive: `Archived ${n} message${s}.`, unarchive: `Moved ${n} message${s} back to the Inbox.`,
+    read: `Marked ${n} as read.`, delete: `Deleted ${n} message${s}.` }[action] || 'Done.');
+  loadBadgeCounts();
+  renderSubmissions(document.getElementById('content'));
+};
 
 function renderSubExpanded(item) {
   const statusLabels = { new: 'New', contacted: 'Contacted', followup: 'Follow-up', closed: 'Closed' };
@@ -762,8 +742,27 @@ function subActionBar(item, statusLabels, st) {
       ${Object.entries(statusLabels).map(([k,v]) => '<option value="'+k+'"'+(st===k?' selected':'')+'>'+v+'</option>').join('')}
     </select>
     ${unread ? `<button onclick="event.stopPropagation(); markRead(${item.id}, true)" class="text-xs text-sage-700 hover:underline">Mark read</button>` : `<button onclick="event.stopPropagation(); markRead(${item.id}, false)" class="text-xs text-gray-400 hover:underline">Mark unread</button>`}
-    <button onclick="event.stopPropagation(); if(confirm('Delete this submission?')) deleteSub(${item.id})" class="text-xs text-red-400 hover:underline ml-auto">Delete</button>
+    <button onclick="event.stopPropagation(); bulkOne('${item.archived ? 'unarchive' : 'archive'}', ${item.id})" class="text-xs text-sage-700 hover:underline ml-auto">${item.archived ? 'Move to Inbox' : 'Archive'}</button>
+    <button onclick="event.stopPropagation(); if(confirm('Delete this submission?')) deleteSub(${item.id})" class="text-xs text-red-400 hover:underline">Delete</button>
   </div>`;
+}
+
+// Date + place block for a report, exact (staff view). Older reports only
+// have the free-text box, which shows as "Details".
+function lfDateLabel(d) {
+  return d ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) : '';
+}
+function lfPlaceHtml(r) {
+  const seen = r.type === 'lost' ? 'Last seen' : 'Found';
+  const map = r.lat != null ? ` <a href="https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lng}#map=17/${r.lat}/${r.lng}" target="_blank" class="text-sage-600 underline text-xs">map</a>` : '';
+  let out = '';
+  if (r.seen_date || r.address || r.lat != null) {
+    out += `<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">${seen}</h4>
+      <p class="text-sm font-semibold">${h(lfDateLabel(r.seen_date) || 'Date not given')}</p>
+      <p class="text-sm">${r.address ? h(r.address) : (r.lat != null ? 'Pin on map' : '<span class="text-gray-300">No place given</span>')}${map}</p>`;
+  }
+  if (r.location_details) out += `<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">${r.seen_date || r.address ? 'Details' : 'Date &amp; location'}</h4><p class="text-sm font-semibold">${h(r.location_details)}</p>`;
+  return out;
 }
 
 function renderLFExpanded(item) {
@@ -793,7 +792,7 @@ function renderLFExpanded(item) {
           ${r.reporter_phone ? '<p><a href="tel:'+r.reporter_phone.replace(/\\D/g,'')+'" class="text-sage-700 hover:underline">'+h(fmtPhone(r.reporter_phone))+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
           ${r.reporter_email ? '<p><a href="#" onclick="event.preventDefault();zohoCompose(\''+r.reporter_email.replace(/'/g,"\\'")+'\')" class="text-sage-700 hover:underline">'+h(r.reporter_email)+'</a></p>' : '<p class="text-gray-300">&mdash;</p>'}
         </div>
-        ${r.location_details ? '<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">Location</h4><p class="text-sm font-semibold">'+h(r.location_details)+'</p>' : ''}
+        ${lfPlaceHtml(r)}
       </div>
     </div>
     ${r.description ? '<div class="mb-4"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</h4><p class="text-sm text-gray-700 bg-sage-50 rounded-xl p-4">'+h(r.description)+'</p></div>' : ''}
@@ -801,6 +800,9 @@ function renderLFExpanded(item) {
     <div class="flex items-center gap-3 flex-wrap pt-3 border-t border-sage-100">
       ${r.status==='pending' ? `<button onclick="updateReport(${r.id},'approved')" class="text-sm bg-sage-600 text-white px-4 py-2 rounded-xl hover:bg-sage-700 transition font-semibold">Approve</button><button onclick="updateReport(${r.id},'rejected')" class="text-sm bg-gray-100 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-200 transition font-semibold">Reject</button>` : ''}
       ${r.status==='approved' ? `<button onclick="resolveReport(${r.id})" class="text-sm bg-blue-100 text-blue-700 px-4 py-2 rounded-xl hover:bg-blue-200 transition font-semibold">Mark Resolved</button>` : ''}
+      ${r.status==='approved' && r.created_at < new Date(Date.now() - 30*24*60*60*1000).toISOString() ? `<button onclick="renewLFReport(${r.id})" class="text-sm bg-sage-600 text-white px-4 py-2 rounded-xl hover:bg-sage-700 transition font-semibold">Renew 30 Days</button>` : ''}
+      ${r.status==='resolved' ? `<button onclick="reactivateLFReport(${r.id})" class="text-sm bg-sage-100 text-sage-700 px-4 py-2 rounded-xl hover:bg-sage-200 transition font-semibold">Reactivate</button>` : ''}
+      ${r.status==='rejected' ? `<button onclick="updateReport(${r.id},'approved')" class="text-sm bg-sage-600 text-white px-4 py-2 rounded-xl hover:bg-sage-700 transition font-semibold">Approve after all</button>` : ''}
       <button onclick="editReport(${r.id})" class="text-sm bg-sage-50 text-sage-700 px-4 py-2 rounded-xl hover:bg-sage-100 transition font-semibold">Edit Details</button>
       <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-sm bg-purple-50 text-purple-700 px-4 py-2 rounded-xl hover:bg-purple-100 transition font-semibold">Generate Poster</button>
       <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id})" class="text-sm text-red-400 hover:text-red-600 ml-auto">Delete</button>
@@ -913,7 +915,17 @@ function lfEditorMarkup(r, isNew) {
       ${lfField('Collar status', 'lf-f-collar_status', r.collar_status || '', { options: LF_COLLAR })}
       ${lfField('Temperament', 'lf-f-temperament', r.temperament || '', { options: LF_TEMPERAMENT })}
       ${lfField('Currently', 'lf-f-current_location', r.current_location)}
-      ${lfField('Date & location last seen', 'lf-f-location_details', r.location_details, { wide: true, textarea: true })}
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Date seen / found</label>
+        <input id="lf-f-seen_date" type="date" value="${h(r.seen_date || '')}" max="${new Date().toLocaleDateString('en-CA')}" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Where</label>
+        <input id="lf-f-address" value="${h(r.address || '')}" placeholder="Start typing an address or place" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+        <input type="hidden" id="lf-f-lat" value="${r.lat ?? ''}"><input type="hidden" id="lf-f-lng" value="${r.lng ?? ''}">
+        <div id="lf-f-map" class="mt-2 rounded-xl overflow-hidden border border-gray-200" style="height:220px"></div>
+      </div>
+      ${lfField('Details / landmarks', 'lf-f-location_details', r.location_details, { wide: true, textarea: true })}
       ${lfField('Description', 'lf-f-description', r.description, { wide: true, textarea: true })}
     </div>
     <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-5 mb-2">Reporter</h4>
@@ -949,11 +961,28 @@ function lfReadEditor() {
     temperament: val('temperament'),
     current_location: val('current_location'),
     location_details: val('location_details'),
+    seen_date: val('seen_date'),
+    address: val('address'),
+    lat: val('lat'),
+    lng: val('lng'),
     description: val('description'),
     reporter_name: val('reporter_name'),
     reporter_phone: val('reporter_phone'),
     reporter_email: val('reporter_email'),
   };
+}
+
+// Wire the editor's address box and map together once the modal is on screen.
+function initLFPlace() {
+  if (!window.WCAHSMap) return;
+  const lat = document.getElementById('lf-f-lat'), lng = document.getElementById('lf-f-lng');
+  const picker = WCAHSMap.picker(document.getElementById('lf-f-map'), {
+    lat: lat.value === '' ? null : Number(lat.value), lng: lng.value === '' ? null : Number(lng.value),
+    onChange: (a, b) => { lat.value = a.toFixed(6); lng.value = b.toFixed(6); },
+  });
+  WCAHSMap.addressInput(document.getElementById('lf-f-address'), {
+    onPick: it => { lat.value = it.lat; lng.value = it.lng; picker.setPoint(it.lat, it.lng); },
+  });
 }
 
 function lfModal(title, innerHtml, onSave, saveLabel) {
@@ -983,15 +1012,14 @@ function lfModal(title, innerHtml, onSave, saveLabel) {
     else { saveBtn.disabled = false; saveBtn.textContent = original; }
   };
   document.body.appendChild(overlay);
+  if (document.getElementById('lf-f-map')) initLFPlace();
 }
 
 window.editReport = function(id) {
   // Both pages cache reports, and either cache can be left over from an earlier
   // visit. Trust the one belonging to the page actually on screen, or an edit
   // made here could be seeded from a stale copy and quietly undo itself.
-  const onManage = sessionStorage.getItem('wcahs_admin_page') === 'lost-found';
-  const first = onManage ? _lfManageData : _lfData;
-  const second = onManage ? _lfData : _lfManageData;
+  const first = _lfManageData, second = _lfData;
   const match = list => (list || []).find(x => String(x.id) === String(id));
   const r = match(first) || match(second);
   if (!r) { toast('Could not find that report — try reloading.', 'error'); return; }
@@ -1001,7 +1029,8 @@ window.editReport = function(id) {
     const res = await api('/admin/lost-found/' + id, { method: 'PUT', body: payload });
     if (!res || res.error) { toast(res && res.error ? res.error : 'Could not save those changes.', 'error'); return false; }
     toast('Changes saved.');
-    navigate(sessionStorage.getItem('wcahs_admin_page') === 'lost-found' ? 'lost-found' : 'submissions');
+    navigate('lost-found');
+    whenRendered('lf-card-' + id, () => openLFCard(id));
     return true;
   });
 };
@@ -1036,8 +1065,9 @@ window.addReport = function() {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     } else {
-      navigate('submissions');
-      toast('Added — it’s waiting in the inbox, not on the website yet.');
+      _lfManageFilter = 'review';
+      navigate('lost-found');
+      toast('Added — it’s under Needs review, not on the website yet.');
     }
     return true;
   }, 'Add Report');
@@ -1059,15 +1089,16 @@ window.updateReport = async function(id, status) {
     // report rather than dropping her back on an inbox it just disappeared from.
     _lfManageFilter = 'active';
     navigate('lost-found');
-    toast('Approved — it’s live on the public Lost & Found page now.');
+    toast('Approved — it’s live on the public Lost & Found page and map now.');
     whenRendered('lf-card-' + id, (el) => {
       el.classList.add('ring-2', 'ring-sage-400');
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     return;
   }
-  navigate('submissions');
-  toast(status === 'rejected' ? 'Rejected — it stays in the inbox, off the website.' : 'Saved.');
+  _lfManageFilter = status === 'rejected' ? 'rejected' : _lfManageFilter;
+  navigate('lost-found');
+  toast(status === 'rejected' ? 'Rejected — kept under the Rejected tab, off the website.' : 'Saved.');
 };
 
 window.resolveReport = async function(id) {
@@ -1086,57 +1117,83 @@ window.generatePoster = function(report) {
   window.open('/admin/poster.html', '_blank');
 };
 
-window.deleteReport = async function(id, returnTo) {
-  await api('/admin/lost-found/' + id, { method: 'DELETE' });
-  if (returnTo === 'lost-found') { navigate('lost-found'); }
-  else { navigate('submissions'); }
+window.deleteReport = async function(id) {
+  const res = await api('/admin/lost-found/' + id, { method: 'DELETE' });
+  if (!res || res.error) { toast(res && res.error ? res.error : 'Could not delete that.', 'error'); return; }
+  navigate('lost-found');
+  toast('Report deleted.');
   loadBadgeCounts();
 };
 
 // ── Lost & Found Management ──
-let _lfManageFilter = 'active';
+// Everything lost & found lives here now, including reports waiting for
+// review (they used to be in the Inbox). Tabs: Needs review, On website,
+// Expired, Resolved, Rejected. "Map" shows the tab's reports with exact pins.
+let _lfManageFilter = null;      // null = pick: Needs review if anything's waiting
 let _lfManageData = [];
+let _lfMapView = false;
+
+function lfBuckets(all) {
+  const monthAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+  return {
+    review: all.filter(r => r.status === 'pending'),
+    active: all.filter(r => r.status === 'approved' && r.created_at >= monthAgo),
+    expired: all.filter(r => r.status === 'approved' && r.created_at < monthAgo),
+    resolved: all.filter(r => r.status === 'resolved'),
+    rejected: all.filter(r => r.status === 'rejected'),
+  };
+}
 
 async function renderLostFoundManage(el) {
   el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Lost & Found</h1><p class="text-gray-400">Loading...</p>';
   const reports = await api('/admin/lost-found');
-  if (reports.error) { el.innerHTML += '<p class="text-red-500">' + reports.error + '</p>'; return; }
+  if (reports.error) { el.innerHTML += '<p class="text-red-500">' + h(reports.error) + '</p>'; return; }
 
   const all = Array.isArray(reports) ? reports : [];
-  // editReport() looks a report up by id, and on this page the inbox cache is
-  // either empty or stale, so keep the management list's rows too.
   _lfManageData = all;
-  const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString();
-  const active = all.filter(r => r.status === 'approved' && r.created_at >= thirtyDaysAgo);
-  const expired = all.filter(r => r.status === 'approved' && r.created_at < thirtyDaysAgo);
-  const resolved = all.filter(r => r.status === 'resolved');
+  _lfData = all;
+  const b = lfBuckets(all);
+  if (!_lfManageFilter || (_lfManageFilter === 'pending')) _lfManageFilter = b.review.length ? 'review' : 'active';
 
-  const tabBtn = (key, label, count) => {
-    const isActive = _lfManageFilter === key;
-    return `<button onclick="_lfManageFilter='${key}';renderLostFoundManage(document.getElementById('content'))" class="filter-tab ${isActive ? 'active' : ''}">${label} (${count})</button>`;
+  const tabBtn = (key, label) => {
+    const n = b[key].length;
+    if (!n && (key === 'expired' || key === 'rejected')) return '';
+    const warn = key === 'review' && n ? ' style="border-color:#f59e0b"' : '';
+    return `<button onclick="_lfManageFilter='${key}';renderLostFoundManage(document.getElementById('content'))" class="filter-tab ${_lfManageFilter === key ? 'active' : ''}"${warn}>${label} (${n})</button>`;
   };
 
   let html = `<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
     <h1 class="text-2xl font-display font-bold text-sage-800">Lost & Found</h1>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3 flex-wrap">
+      <button onclick="_lfMapView=!_lfMapView;renderLostFoundManage(document.getElementById('content'))" class="text-xs font-semibold px-4 py-2 rounded-xl border border-sage-200 ${_lfMapView ? 'bg-sage-100 text-sage-800' : 'bg-white text-sage-700'}">${_lfMapView ? 'Hide map' : 'Map'}</button>
       <button onclick="addReport()" class="bg-sage-700 hover:bg-sage-800 text-white font-semibold text-xs px-4 py-2 rounded-xl transition">+ Add Report</button>
       <a href="https://wcahs.org/lost-found.html" target="_blank" class="text-xs text-sage-600 hover:underline font-semibold">View Public Page &rarr;</a>
     </div>
   </div>
   <div class="filter-tabs-scroll mb-5">
-    ${tabBtn('active', 'Active', active.length)}
-    ${expired.length > 0 ? tabBtn('expired', 'Expired', expired.length) : ''}
-    ${tabBtn('resolved', 'Resolved', resolved.length)}
+    ${tabBtn('review', 'Needs review')}
+    ${tabBtn('active', 'On website')}
+    ${tabBtn('expired', 'Expired')}
+    ${tabBtn('resolved', 'Resolved')}
+    ${tabBtn('rejected', 'Rejected')}
   </div>`;
 
-  const items = _lfManageFilter === 'active' ? active : _lfManageFilter === 'expired' ? expired : resolved;
+  const items = b[_lfManageFilter] || [];
+  if (_lfMapView) {
+    const pinned = items.filter(r => r.lat != null).length;
+    html += `<div id="lfAdminMap" class="card overflow-hidden mb-2" style="height:380px"></div>
+      <p class="text-xs text-gray-400 mb-5">${pinned} of ${items.length} in this tab have a pin. Exact locations — the public map rounds them to about a block and hides house numbers.</p>`;
+  }
 
+  const emptyText = { review: 'Nothing waiting for review', active: 'No reports on the website right now',
+    expired: 'No expired reports', resolved: 'No resolved reports', rejected: 'No rejected reports' };
   if (items.length === 0) {
     html += `<div class="card p-10 text-center">
       <svg class="w-14 h-14 mx-auto text-sage-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-      <p class="text-gray-400 font-semibold">${_lfManageFilter === 'active' ? 'No active reports on the website' : 'No resolved reports'}</p>
+      <p class="text-gray-400 font-semibold">${emptyText[_lfManageFilter]}</p>
     </div>`;
   } else {
+    if (_lfManageFilter === 'review') html += '<p class="text-xs text-gray-400 mb-3">Tap a report to see everything and approve it. Approving puts it on the public Lost &amp; Found page and map.</p>';
     html += '<div class="space-y-3">';
     items.forEach(r => {
       let photos = [];
@@ -1144,57 +1201,57 @@ async function renderLostFoundManage(el) {
       const thumbHtml = photos[0]
         ? `<img src="${photos[0]}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-sage-100">`
         : `<div class="w-14 h-14 rounded-xl bg-sage-50 flex items-center justify-center shrink-0"><svg class="w-6 h-6 text-sage-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>`;
-
       const typeColor = r.type === 'lost' ? 'text-amber-700' : 'text-sage-700';
       const typeLabel = r.type === 'lost' ? 'LOST' : 'FOUND';
       const petLabel = r.pet_name || ('Unknown ' + (r.species || 'Pet'));
       const date = r.created_at ? new Date(r.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-      // Calculate days until expiry (30 days from created_at)
       let expiryHtml = '';
       if (r.status === 'approved') {
         const created = new Date(r.created_at.replace(' ', 'T') + 'Z');
-        const expiresAt = new Date(created.getTime() + 30*24*60*60*1000);
-        const daysLeft = Math.ceil((expiresAt - Date.now()) / (24*60*60*1000));
-        if (daysLeft > 0) {
-          const urgency = daysLeft <= 5 ? 'text-amber-600' : 'text-gray-400';
-          expiryHtml = `<span class="text-[10px] ${urgency} ml-2">Expires in ${daysLeft}d</span>`;
-        } else {
-          expiryHtml = '<span class="text-[10px] text-red-500 ml-2">Expired</span>';
-        }
+        const daysLeft = Math.ceil((created.getTime() + 30*24*60*60*1000 - Date.now()) / (24*60*60*1000));
+        expiryHtml = daysLeft > 0
+          ? `<span class="text-[10px] ${daysLeft <= 5 ? 'text-amber-600' : 'text-gray-400'} ml-2">Expires in ${daysLeft}d</span>`
+          : '<span class="text-[10px] text-red-500 ml-2">Expired</span>';
       }
-
-      html += `<div id="lf-card-${r.id}" class="card p-4 flex items-center gap-4">
-        ${thumbHtml}
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-0.5">
-            <span class="text-[10px] font-bold ${typeColor}">${typeLabel}</span>
-            <span class="font-bold text-gray-900 text-sm">${h(petLabel)}</span>
-            ${expiryHtml}
+      const where = r.address || r.location_details || '';
+      const when = r.seen_date ? lfDateLabel(r.seen_date) : '';
+      html += `<div id="lf-card-${r.id}" class="card overflow-hidden">
+        <div class="p-4 flex items-center gap-4 cursor-pointer hover:bg-warm-50 transition" onclick="toggleInboxItem('lf-${r.id}', 'lf-arrow-${r.id}')">
+          ${thumbHtml}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="text-[10px] font-bold ${typeColor}">${typeLabel}</span>
+              <span class="font-bold text-gray-900 text-sm truncate">${h(petLabel)}</span>
+              ${expiryHtml}
+            </div>
+            <p class="text-xs text-gray-500 truncate">${when ? h(when) + ' &bull; ' : ''}${h(where || (r.species || ''))}</p>
+            <p class="text-[11px] text-gray-300 mt-0.5">Reported ${date} by ${h(r.reporter_name || 'Unknown')}</p>
+            ${r.resolved_note ? '<p class="text-xs text-sage-600 mt-1"><strong>Resolution:</strong> ' + h(r.resolved_note) + '</p>' : ''}
           </div>
-          <p class="text-xs text-gray-400 truncate">${h(r.species || '')}${r.breed ? ' &bull; ' + h(r.breed) : ''}${r.location_details ? ' &bull; ' + h(r.location_details) : ''}</p>
-          <p class="text-[11px] text-gray-300 mt-0.5">Reported ${date} by ${h(r.reporter_name || 'Unknown')}</p>
-          ${r.resolved_note ? '<p class="text-xs text-sage-600 mt-1"><strong>Resolution:</strong> ' + h(r.resolved_note) + '</p>' : ''}
+          <svg class="w-4 h-4 text-gray-300 shrink-0 transition-transform" id="lf-arrow-${r.id}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <div class="flex gap-2 shrink-0">
-          <button onclick="editReport(${r.id})" class="text-xs bg-sage-50 text-sage-700 px-3 py-1.5 rounded-lg hover:bg-sage-100 transition font-semibold">Edit</button>
-          ${r.status === 'approved' ? `
-            <button onclick='generatePoster(${JSON.stringify(r).replace(/'/g,"&#39;")})' class="text-xs bg-sage-100 text-sage-700 px-3 py-1.5 rounded-lg hover:bg-sage-200 transition font-semibold">Poster</button>
-            <button onclick="resolveLFReport(${r.id})" class="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition font-semibold">Resolve</button>
-          ` : ''}
-          ${r.status === 'resolved' ? `
-            <button onclick="reactivateLFReport(${r.id})" class="text-xs bg-sage-100 text-sage-700 px-3 py-1.5 rounded-lg hover:bg-sage-200 transition font-semibold">Reactivate</button>
-          ` : ''}
-          ${_lfManageFilter === 'expired' ? `
-            <button onclick="renewLFReport(${r.id})" class="text-xs bg-sage-600 text-white px-3 py-1.5 rounded-lg hover:bg-sage-700 transition font-semibold">Renew 30 Days</button>
-          ` : ''}
-          <button onclick="if(confirm('Delete this report?')) deleteReport(${r.id}, 'lost-found')" class="text-xs text-red-400 hover:underline">Delete</button>
-        </div>
+        <div id="lf-${r.id}" class="hidden border-t border-sage-100">${renderLFExpanded({ _raw: r })}</div>
       </div>`;
     });
     html += '</div>';
   }
 
   el.innerHTML = html;
+  if (_lfMapView && window.WCAHSMap) {
+    WCAHSMap.pins(document.getElementById('lfAdminMap'), items, { onClick: id => openLFCard(id) });
+  }
+}
+
+// Expand a report card and bring it into view (map pins, deep links).
+function openLFCard(id) {
+  const body = document.getElementById('lf-' + id);
+  const card = document.getElementById('lf-card-' + id);
+  if (!body || !card) return;
+  body.classList.remove('hidden');
+  const arrow = document.getElementById('lf-arrow-' + id);
+  if (arrow) arrow.style.transform = 'rotate(180deg)';
+  card.classList.add('ring-2', 'ring-sage-400');
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 window.resolveLFReport = async function(id) {
@@ -4408,6 +4465,7 @@ function whenRendered(elementId, onFound, timeoutMs) {
 function deepLinkPage() {
   const hash = window.location.hash;
   if (hash.startsWith('#clinic-reg-')) return 'forms';
+  if (hash.startsWith('#inbox-lf-')) return 'lost-found';
   if (hash.startsWith('#inbox-')) return 'submissions';
   return null;
 }
@@ -4446,24 +4504,16 @@ async function openLinkedReport(id) {
   const rows = await api('/admin/lost-found');
   const r = Array.isArray(rows) ? rows.find(x => String(x.id) === String(id)) : null;
   clog('deep_link', { kind: 'lf', id, outcome: !r ? 'deleted' : r.status });
-  if (!r || r.status === 'pending' || r.status === 'rejected') {
-    navigate('submissions');
-    if (!r) { window.location.hash = ''; toast('That report has been deleted.', 'error'); return; }
-    if (r.status === 'rejected') toast('This report was rejected — it is not on the website.');
-    handleDeepLink();
-    return;
-  }
   window.location.hash = '';
+  if (!r) { _lfManageFilter = null; navigate('lost-found'); toast('That report has been deleted.', 'error'); return; }
   const monthAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString();
-  _lfManageFilter = r.status === 'resolved' ? 'resolved' : (r.created_at >= monthAgo ? 'active' : 'expired');
+  _lfManageFilter = r.status === 'pending' ? 'review' : r.status === 'rejected' ? 'rejected'
+    : r.status === 'resolved' ? 'resolved' : (r.created_at >= monthAgo ? 'active' : 'expired');
   navigate('lost-found');
-  toast(r.status === 'resolved'
-    ? 'This report has already been marked resolved.'
-    : 'Already approved — this report is live on the website’s Lost & Found page.');
-  whenRendered('lf-card-' + r.id, (el) => {
-    el.classList.add('ring-2', 'ring-sage-400');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+  if (r.status === 'approved') toast('Already approved — this report is live on the website’s Lost & Found page.');
+  else if (r.status === 'resolved') toast('This report has already been marked resolved.');
+  else if (r.status === 'rejected') toast('This report was rejected — it is not on the website.');
+  whenRendered('lf-card-' + r.id, () => openLFCard(r.id));
 }
 
 function handleDeepLink() {
