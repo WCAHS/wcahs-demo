@@ -24,6 +24,9 @@ export async function onRequestPost(context) {
   // account they actually have.
   const username = String(body.username).trim();
   if (!username) return error('Username required');
+  // Login tells anyone who types an '@' to use their username instead, so a
+  // username can't be an email address.
+  if (username.includes('@')) return error('Usernames can\'t contain @ — use a plain name like "jsmith"');
 
   const existing = await context.env.DB.prepare(
     'SELECT id FROM users WHERE username = ? COLLATE NOCASE'

@@ -57,6 +57,12 @@ export async function onRequestPost(context) {
   ).bind(typed.trim()).first();
   if (!user) {
     await record(env, request, typed, 'no_such_user');
+    // Staff accounts have no email address, yet typing one is the single most
+    // common lockout we've seen. Saying so leaks nothing — no account here is
+    // an email address, so it can't confirm or deny one exists.
+    if (typed.includes('@')) {
+      return error('Use your username here, not your email address. Ask Riley if you\'re not sure what it is.', 401);
+    }
     return error('Invalid credentials', 401);
   }
 

@@ -133,7 +133,7 @@
           <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
           <input id="loginPass" type="password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sage-600" required>
         </div>
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light"></div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADpVDd5Mx-hY1fTZ" data-theme="light" data-callback="tsOk" data-error-callback="tsErr" data-expired-callback="tsExpired" data-timeout-callback="tsTimeout"></div>
         <!-- The live sitekey is bound to wcahs.org, so on a local dev server the
              widget never issues a token and the login can't be tested at all.
              Swap in Cloudflare's documented always-passes test key when — and
@@ -190,6 +190,7 @@
         <a onclick="navigate('settings')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="settings">Site Settings</a>
         <a onclick="navigate('users')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="users">Users</a>
         <a onclick="navigate('analytics')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="analytics">Analytics</a>
+        <a onclick="navigate('activity')" class="sidebar-link block px-3 py-2.5 text-sm cursor-pointer admin-only" data-nav="activity">Activity</a>
         <div class="border-t border-sage-800 my-2 staff-visible"></div>
         <p class="px-3 text-[10px] uppercase tracking-wider text-sage-600 font-bold mb-1 staff-visible">Quick Links</p>
         <a href="https://mail.wcahs.org" target="_blank" class="sidebar-link block px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 text-sage-400 hover:text-white staff-visible">
@@ -232,6 +233,42 @@
   </div>
 
 <script>
+// ── Activity log ──
+// What the page did, reported to /api/log and readable in Admin > Activity.
+// Everything that went wrong in the October "it circles around" report
+// happened here in the browser, where the server sees nothing. Never send a
+// password, or anything typed into a form, through this.
+const _visit = Math.random().toString(36).slice(2, 10);
+const _t0 = Date.now();
+function clog(event, detail) {
+  try {
+    const payload = JSON.stringify({ event, visit: _visit, detail: Object.assign({ t: Date.now() - _t0 }, detail || {}) });
+    const blob = new Blob([payload], { type: 'application/json' });
+    if (!(navigator.sendBeacon && navigator.sendBeacon('/api/log', blob))) {
+      fetch('/api/log', { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true, credentials: 'same-origin' }).catch(() => {});
+    }
+  } catch (e) {}
+}
+window.addEventListener('error', e => clog('js_error', { msg: String(e.message).slice(0, 200), src: (e.filename || '').split('/').pop() + ':' + e.lineno }));
+window.addEventListener('unhandledrejection', e => clog('js_error', { msg: 'unhandled: ' + String(e.reason && e.reason.message || e.reason).slice(0, 200) }));
+clog('page_load', {
+  hash: location.hash.slice(0, 60),
+  standalone: !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)),
+  referrer: document.referrer ? new URL(document.referrer).host : '',
+  w: window.innerWidth,
+});
+// Turnstile callbacks, named by data-* attributes on the widget. "slow" fires
+// once if no token has arrived after 10s — the spinner a person sees as the
+// page "circling".
+let _tsDone = false;
+function tsOk() { _tsDone = true; clog('turnstile', { state: 'token' }); }
+function tsErr(code) { clog('turnstile', { state: 'error', code: String(code || '') }); }
+function tsExpired() { clog('turnstile', { state: 'expired' }); }
+function tsTimeout() { clog('turnstile', { state: 'timeout' }); }
+setTimeout(() => {
+  if (!_tsDone && !document.getElementById('loginScreen').classList.contains('hidden')) clog('turnstile', { state: 'slow', loaded: !!window.turnstile });
+}, 10000);
+
 // ── API helpers ──
 async function api(path, opts = {}) {
   const fetchOpts = {
@@ -242,6 +279,7 @@ async function api(path, opts = {}) {
   if (opts.body) fetchOpts.body = JSON.stringify(opts.body);
   const res = await fetch('/api' + path, fetchOpts);
   if (res.status === 401 && !path.includes('/auth/')) {
+    clog('session_expired', { path: path.split('?')[0] });
     document.getElementById('dashboard').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
     return { error: 'Session expired' };
@@ -253,11 +291,14 @@ async function api(path, opts = {}) {
 let isSetup = false;
 
 async function checkAuth() {
+  const started = Date.now();
   try {
     const res = await api('/auth/me');
-    if (res.username) { showDashboard(res); return; }
+    if (res.username) { clog('auth_check', { result: 'signed_in', ms: Date.now() - started }); showDashboard(res); return; }
+    clog('auth_check', { result: 'signed_out', ms: Date.now() - started });
   } catch(e) {
     console.error('Auth check failed:', e);
+    clog('auth_check', { result: 'error', msg: String(e && e.message).slice(0, 200), ms: Date.now() - started });
   }
   document.getElementById('authLoading').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
@@ -280,6 +321,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     await api('/auth/setup', { method: 'POST', body: { username: user, password: pass } }).catch(function(){});
 
     const loginRes = await api('/auth/login', { method: 'POST', body: { username: user, password: pass, turnstile_token: turnstileToken } });
+    clog('login', { ok: loginRes.ok ? 1 : 0, error: loginRes.error || '', had_token: !!turnstileToken });
     if (loginRes.ok) {
       showDashboard(loginRes);
     } else {
@@ -289,6 +331,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
       resetTurnstile();
     }
   } catch(loginErr) {
+    clog('login', { ok: 0, error: 'exception: ' + String(loginErr.message).slice(0, 200) });
     errEl.textContent = 'Login error: ' + loginErr.message;
     errEl.style.color = '#dc2626';
     errEl.classList.remove('hidden');
@@ -309,7 +352,7 @@ let currentUsername = '';
 // Pages a role may land on. The saved page has to be checked against this too —
 // restoring it blindly dropped fosters on the Inbox, which they can't read.
 const PAGES_BY_ROLE = {
-  admin:  ['submissions','pets','lost-found','events','forms','links','faq','settings','about','users','my-account','analytics','foster-pets'],
+  admin:  ['submissions','pets','lost-found','events','forms','links','faq','settings','about','users','my-account','analytics','activity','foster-pets'],
   staff:  ['submissions','pets','lost-found','events','forms','my-account'],
   foster: ['foster-pets','my-account']
 };
@@ -392,6 +435,7 @@ function navigate(page) {
   const content = document.getElementById('content');
   _quillInstances = {};
   try { sessionStorage.setItem('wcahs_admin_page', page); } catch(e) {}
+  clog('nav', { page });
   switch(page) {
     case 'submissions': renderSubmissions(content); break;
     case 'pets': renderPets(content); break;
@@ -408,6 +452,7 @@ function navigate(page) {
     case 'users': renderUsers(content); break;
     case 'my-account': renderMyAccount(content); break;
     case 'analytics': renderAnalytics(content); break;
+    case 'activity': renderActivity(content); break;
     case 'foster-pets': renderFosterPets(content); break;
     default: sessionStorage.removeItem('wcahs_admin_page'); renderSubmissions(content); break;
   }
@@ -429,6 +474,7 @@ function toast(message, tone) {
       'box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:center;transition:opacity .25s';
     document.body.appendChild(el);
   }
+  clog('toast', { message: String(message).slice(0, 160), tone: tone || '' });
   el.style.background = tone === 'error' ? '#dc2626' : '#48543e';
   el.style.color = '#fff';
   el.textContent = message;
@@ -999,6 +1045,7 @@ window.addReport = function() {
 
 window.updateReport = async function(id, status) {
   const res = await api('/admin/lost-found/' + id, { method: 'PUT', body: { status } });
+  clog('report_action', { id, status, ok: (res && !res.error) ? 1 : 0, error: (res && res.error) || '' });
   // The old version ignored the response entirely, so a failed save looked
   // exactly like a successful one: the inbox re-rendered either way.
   if (!res || res.error) {
@@ -2228,6 +2275,97 @@ window.saveAbout = async function() {
 
 // ── Analytics ──
 let analyticsRange = '7d';
+// ── Activity ──
+// Who did what, step by step, from their own browser plus the server's login
+// log. Built so "it's acting weird" can be looked up instead of guessed at.
+let _actUser = '';
+let _actProblems = false;
+
+function actDevice(ua) {
+  ua = ua || '';
+  const dev = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
+    : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '?';
+  const br = /Zoho/i.test(ua) ? 'Zoho app' : /FBAN|FBAV/.test(ua) ? 'Facebook app' : /CriOS|Chrome\//.test(ua) ? 'Chrome'
+    : /FxiOS|Firefox/.test(ua) ? 'Firefox' : /EdgiOS|Edg\//.test(ua) ? 'Edge'
+    : /Safari\//.test(ua) ? 'Safari' : /AppleWebKit/.test(ua) ? 'in-app browser' : '';
+  return dev + (br ? ' · ' + br : '');
+}
+
+function actDescribe(r) {
+  let d = {};
+  try { d = JSON.parse(r.detail || '{}') || {}; } catch (e) {}
+  const ms = d.ms != null ? ` (${(d.ms / 1000).toFixed(1)}s)` : '';
+  const bad = (text) => ({ text, bad: true });
+  const ok = (text) => ({ text, bad: false });
+  switch (r.event) {
+    case 'page_load': return ok('Opened the admin' + (d.hash ? ` from a link (${d.hash})` : '') + (d.standalone ? ' — home-screen app' : '') + (d.referrer ? ` — came from ${d.referrer}` : ''));
+    case 'auth_check': return d.result === 'signed_in' ? ok('Already signed in' + ms) : d.result === 'signed_out' ? ok('Not signed in — login form shown' + ms) : bad('Sign-in check failed: ' + (d.msg || '') + ms);
+    case 'turnstile': return d.state === 'token' ? ok('CAPTCHA passed') : d.state === 'slow' ? bad('CAPTCHA still spinning after 10 seconds' + (d.loaded ? '' : ' — Cloudflare script never loaded')) : bad('CAPTCHA ' + d.state + (d.code ? ' (code ' + d.code + ')' : ''));
+    case 'login': return d.ok ? ok('Logged in') : bad('Login failed: ' + (d.error || 'unknown') + (d.had_token === false ? ' — no CAPTCHA token yet' : ''));
+    case 'login_server': {
+      const map = { ok: 'Server: login accepted', no_such_user: 'Server: no such username', bad_password: 'Server: wrong password',
+        captcha_missing: 'Server: no CAPTCHA token sent', captcha_failed: 'Server: CAPTCHA rejected', malformed: 'Server: username or password empty' };
+      return d.outcome === 'ok' ? ok(map.ok) : bad(map[d.outcome] || ('Server: ' + d.outcome));
+    }
+    case 'nav': return ok('Went to ' + d.page);
+    case 'deep_link': {
+      if (d.outcome === 'timeout') return bad('Link target never appeared on the page (' + d.target + ')');
+      if (d.outcome === 'deleted') return bad('Email link: report #' + d.id + ' no longer exists');
+      if (d.outcome === 'not_permitted') return bad('Link points somewhere their role can\'t open (' + d.hash + ')');
+      return ok('Email link: report #' + d.id + ' is ' + d.outcome);
+    }
+    case 'report_action': return d.ok ? ok('Report #' + d.id + ' → ' + d.status) : bad('Report #' + d.id + ' → ' + d.status + ' FAILED: ' + d.error);
+    case 'toast': return { text: 'Was shown: “' + d.message + '”', bad: d.tone === 'error' };
+    case 'session_expired': return bad('Session expired while loading ' + d.path + ' — sent back to login');
+    case 'js_error': return bad('Page error: ' + d.msg + (d.src ? ' @ ' + d.src : ''));
+  }
+  return ok(r.event);
+}
+
+async function renderActivity(el) {
+  el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Activity</h1><p class="text-gray-400">Loading...</p>';
+  const q = new URLSearchParams();
+  if (_actUser) q.set('user', _actUser);
+  if (_actProblems) q.set('problems', '1');
+  const res = await api('/admin/activity?' + q);
+  if (res.error) { el.innerHTML += '<p class="text-red-500">' + h(res.error) + '</p>'; return; }
+
+  let html = `<div class="flex items-center justify-between mb-2 flex-wrap gap-3">
+    <h1 class="text-2xl font-display font-bold text-sage-800">Activity</h1>
+    <div class="flex items-center gap-3 flex-wrap">
+      <select onchange="_actUser=this.value;renderActivity(document.getElementById('content'))" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+        <option value="">Everyone</option>
+        ${res.users.map(u => `<option value="${h(u)}" ${u === _actUser ? 'selected' : ''}>${h(u)}</option>`).join('')}
+      </select>
+      <label class="text-sm flex items-center gap-1.5"><input type="checkbox" ${_actProblems ? 'checked' : ''} onchange="_actProblems=this.checked;renderActivity(document.getElementById('content'))"> Problems only</label>
+      <button onclick="renderActivity(document.getElementById('content'))" class="text-xs text-sage-600 font-semibold hover:underline">Refresh</button>
+    </div>
+  </div>
+  <p class="text-xs text-gray-400 mb-5">What the admin page did on each person's phone or computer, newest first. Kept 30 days. Picking a person also shows signed-out visits from the same internet connection.</p>`;
+
+  if (!res.rows.length) {
+    html += '<div class="card p-10 text-center text-gray-400 font-semibold">Nothing recorded yet.</div>';
+    el.innerHTML = html; return;
+  }
+  html += '<div class="card divide-y divide-gray-100">';
+  let lastVisit = null;
+  for (const r of res.rows) {
+    const { text, bad } = actDescribe(r);
+    const when = new Date(r.at.replace(' ', 'T') + 'Z');
+    const newVisit = r.visit && r.visit !== lastVisit;
+    if (r.visit) lastVisit = r.visit;
+    html += `<div class="px-4 py-2.5 flex gap-3 items-start text-sm ${bad ? 'bg-red-50' : ''} ${newVisit ? 'border-t-2 border-sage-100' : ''}">
+      <div class="w-24 md:w-32 shrink-0 text-xs text-gray-400 pt-0.5">${when.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</div>
+      <div class="flex-1 min-w-0">
+        <div class="${bad ? 'text-red-700 font-semibold' : 'text-gray-700'} break-words">${h(text)}</div>
+        <div class="text-[11px] text-gray-400">${h(r.username || 'signed out')} · ${h(actDevice(r.user_agent))}${r.source === 'server' ? ' · server log' : ''}</div>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 async function renderAnalytics(el) {
   el.innerHTML = '<h1 class="text-2xl font-display font-bold text-sage-800 mb-6">Analytics</h1><p class="text-gray-400">Loading...</p>';
   let data;
@@ -4249,11 +4387,15 @@ window.copyLink = function(slug, btn) {
 // So: poll for the element, and only consume the hash once we've actually used
 // it. If we time out the hash stays put and a reload is a real second chance.
 function whenRendered(elementId, onFound, timeoutMs) {
-  const deadline = Date.now() + (timeoutMs || 15000);
+  const started = Date.now();
+  const deadline = started + (timeoutMs || 15000);
   (function poll() {
     const el = document.getElementById(elementId);
     if (el) return onFound(el);
-    if (Date.now() > deadline) return;          // leave the hash alone
+    if (Date.now() > deadline) {                 // leave the hash alone
+      clog('deep_link', { outcome: 'timeout', target: elementId });
+      return;
+    }
     setTimeout(poll, 100);
   })();
 }
@@ -4274,7 +4416,11 @@ function deepLinkPage() {
 // so the caller can fall back to the saved page.
 function followDeepLink() {
   const page = deepLinkPage();
-  if (!page || !(PAGES_BY_ROLE[currentRole] || PAGES_BY_ROLE.staff).includes(page)) return false;
+  if (!page) return false;
+  if (!(PAGES_BY_ROLE[currentRole] || PAGES_BY_ROLE.staff).includes(page)) {
+    clog('deep_link', { outcome: 'not_permitted', hash: window.location.hash.slice(0, 60), role: currentRole });
+    return false;
+  }
   if (window.location.hash.startsWith('#inbox-lf-')) {
     // This one picks its own page: the report may have left the inbox.
     openLinkedReport(window.location.hash.replace('#inbox-lf-', ''));
@@ -4299,6 +4445,7 @@ async function openLinkedReport(id) {
   document.getElementById('content').innerHTML = '<p class="text-gray-400">Loading...</p>';
   const rows = await api('/admin/lost-found');
   const r = Array.isArray(rows) ? rows.find(x => String(x.id) === String(id)) : null;
+  clog('deep_link', { kind: 'lf', id, outcome: !r ? 'deleted' : r.status });
   if (!r || r.status === 'pending' || r.status === 'rejected') {
     navigate('submissions');
     if (!r) { window.location.hash = ''; toast('That report has been deleted.', 'error'); return; }
