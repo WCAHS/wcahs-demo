@@ -1,0 +1,12 @@
+# Receives the copy of every staff reply sent to log+...@reply.wcahs.org and
+# records it in D1. Wired up by Cloudflare Email Routing on the reply.wcahs.org
+# subdomain: catch-all -> "Send to a Worker" -> wcahs-reply-log.
+# Secret: REPLY_LOG_SECRET (same value as the Pages project's).
+name = "wcahs-reply-log"
+main = "worker.js"
+compatibility_date = "2026-06-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wcahs-db"
+database_id = "2d709989-259d-441d-8e2e-b7cf03637fc0"

@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, escHtml, notificationReplyTo } from './_helpers.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -30,13 +30,14 @@ export async function onRequestPost(context) {
   }
 
   await sendNotification(env, {
+    replyTo: await notificationReplyTo(env, 'sub', subId, body.email),
     type: 'foster',
-    subject: `New Foster Application — ${body.name}`,
+    subject: `New Foster Application — ${escHtml(body.name)}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Foster Application</h2>
       <table style="border-collapse:collapse;width:100%;max-width:500px">
-        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Name</td><td style="padding:8px 12px;font-weight:600">${body.name}</td></tr>
-        <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Email</td><td style="padding:8px 12px"><a href="mailto:${body.email}">${body.email}</a></td></tr>
-        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">About</td><td style="padding:8px 12px;white-space:pre-wrap">${body.message}</td></tr>
+        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Name</td><td style="padding:8px 12px;font-weight:600">${escHtml(body.name)}</td></tr>
+        <tr style="background:#f9f9f6"><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">Email</td><td style="padding:8px 12px"><a href="mailto:${escHtml(body.email)}">${escHtml(body.email)}</a></td></tr>
+        <tr><td style="padding:8px 12px;color:#888;font-size:13px;vertical-align:top">About</td><td style="padding:8px 12px;white-space:pre-wrap">${escHtml(body.message)}</td></tr>
       </table>
       <div style="margin-top:24px;text-align:center"><a href="https://wcahs.org/admin/#inbox-sub-${subId}" style="display:inline-block;background:#48543e;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">Open this application &rarr;</a></div>`,
   });

@@ -121,7 +121,59 @@ function emailsEndpoint(env) {
 
 // `to` lets a caller name its own recipients (an event form carries its own);
 // everything else resolves by form type from site settings.
-export async function sendNotification(env, { subject, html, type, to: explicitTo }) {
+// Escape text from a visitor's browser before it goes into an HTML email.
+export function escHtml(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── Reply tracking ──
+// Each notification's Reply-To carries a per-record log address, signed so a
+// stranger can't mark someone else's message as answered by mailing a guessed
+// address. The Worker in workers/reply-log/ checks the same signature — keep
+// the two in step.
+export const REPLY_LOG_DOMAIN = 'reply.wcahs.org';
+export async function replyLogAddress(env, kind, id) {
+  if (!env.REPLY_LOG_SECRET || !id) return null;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.REPLY_LOG_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${kind}-${id}`));
+  const sig = [...new Uint8Array(mac)].slice(0, 5).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `log+${kind}-${id}-${sig}@${REPLY_LOG_DOMAIN}`;
+}
+
+// Reply-To for a staff notification: the person who wrote in, plus the log
+// address. Without a person there's nothing to reply to, so no log either —
+// a Reply-To of only the log address would swallow staff replies.
+export async function notificationReplyTo(env, kind, id, personEmail) {
+  const person = typeof personEmail === 'string' && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(personEmail.trim()) ? personEmail.trim() : null;
+  if (!person) return [];
+  const log = await replyLogAddress(env, kind, id);
+  return log ? [person, `WCAHS reply log <${log}>`] : [person];
+}
+
+// Hang each row's logged replies on it (newest first), plus its log address
+// so the admin's own Reply button can copy the log too.
+export async function attachReplies(env, kind, rows) {
+  if (!Array.isArray(rows) || !rows.length) return rows;
+  let byId = {};
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT ref_id, at, from_email, from_name, subject, snippet FROM email_replies WHERE kind = ? ORDER BY at DESC'
+    ).bind(kind).all();
+    for (const r of results || []) (byId[r.ref_id] = byId[r.ref_id] || []).push(r);
+  } catch (e) {
+    console.error('email_replies read failed:', e && e.message);   // table missing before the migration
+  }
+  for (const row of rows) {
+    row.replies = byId[row.id] || [];
+    row.reply_log = await replyLogAddress(env, kind, row.id);
+  }
+  return rows;
+}
+
+export async function sendNotification(env, { subject, html, type, to: explicitTo, replyTo }) {
   if (!env.RESEND_API_KEY) return;
   const to = (Array.isArray(explicitTo) && explicitTo.length)
     ? explicitTo.filter(a => typeof a === 'string' && a.includes('@')).slice(0, 10)
@@ -139,6 +191,8 @@ export async function sendNotification(env, { subject, html, type, to: explicitT
         to,
         subject,
         html,
+        // Hitting Reply used to answer noreply@wcahs.org, not the person.
+        ...(Array.isArray(replyTo) && replyTo.length ? { reply_to: replyTo } : {}),
       }),
     });
   } catch (e) {

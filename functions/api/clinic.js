@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_FORM_STATES, CLINIC_NO_EVENT } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_FORM_STATES, CLINIC_NO_EVENT, notificationReplyTo } from './_helpers.js';
 
 // Residents of these four communities are what WCAHS sponsored the clinic for.
 // Anything else still submits — staff decide case by case — but it is sorted
@@ -257,6 +257,7 @@ export async function onRequestPost(context) {
   await sendNotification(env, {
     type: 'clinic',
     to: clinicRecipients,
+    replyTo: await notificationReplyTo(env, 'clinic', regId, body.email),
     subject: `Clinic ${status === 'ineligible' ? 'Registration (NEEDS REVIEW)' : waitlisted ? 'Registration (WAITLIST)' : 'Registration'}: ${ownerName} — ${pets.length} pet${pets.length === 1 ? '' : 's'}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New Spay/Neuter Clinic Registration</h2>
       <p style="background:${statusBanner.bg};border:1px solid ${statusBanner.border};color:${statusBanner.fg};padding:10px 14px;border-radius:8px;font-size:13px;margin:0 0 16px">

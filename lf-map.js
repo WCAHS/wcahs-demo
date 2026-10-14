@@ -63,9 +63,13 @@
     return fetch(url).then(function (r) { return r.json(); }).then(function (d) {
       return (d.features || []).map(function (f) {
         var p = f.properties || {};
-        var line1 = p.name && p.name !== p.street ? p.name : [p.housenumber, p.street].filter(Boolean).join(' ');
-        var label = [line1 || p.street, p.city || p.county].filter(Boolean).join(', ');
-        return { label: label, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] };
+        var addr = [p.housenumber, p.street].filter(Boolean).join(' ');
+        // A business or park gets its street too, so two Kwik Trips in one
+        // town can be told apart.
+        var label = p.name && p.name !== p.street
+          ? [p.name + (addr ? ' — ' + addr : ''), p.city || p.county].filter(Boolean).join(', ')
+          : [addr || p.street, p.city || p.county].filter(Boolean).join(', ');
+        return { label: label, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], kind: 'osm' };
       }).filter(function (x) { return x.label; });
     }).catch(function () { return []; });
   }
@@ -102,14 +106,25 @@
         fetch('/api/addresses?q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).catch(function () { return []; })
           .then(function (local) {
             local = Array.isArray(local) ? local : [];
-            return local.length >= 3 ? local : photon(q).then(function (more) { return local.concat(more).slice(0, 8); });
+            // A query that starts with a house number is an address: our own
+            // data is best, OSM only fills in. Anything else ("walmart",
+            // "clear lake park") is a name: shelter places, then OSM, then
+            // whatever street addresses happened to match.
+            var isAddress = /^\s*\d/.test(q);
+            if (isAddress && local.length >= 3) return local;
+            return photon(q).then(function (osm) {
+              var places = local.filter(function (x) { return x.kind === 'place'; });
+              var addrs = local.filter(function (x) { return x.kind !== 'place'; });
+              return (isAddress ? addrs.concat(osm) : places.concat(osm, addrs)).slice(0, 8);
+            });
           })
           .then(function (res) {
             if (mine !== seq) return;
             items = res;
             if (!res.length) { show('<div style="padding:10px 14px;color:#9ca3af;font-size:13px">' + T.none + '</div>'); return; }
             show(res.map(function (r, i) {
-              return '<div data-i="' + i + '" style="padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f3f4f6">' + esc(r.label) + '</div>';
+              return '<div data-i="' + i + '" style="padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f3f4f6">' + esc(r.label) +
+                (r.kind === 'place' ? ' <span style="font-size:11px;color:#5c6b4e;background:#e8ebe3;border-radius:6px;padding:1px 6px">' + (es ? 'lugar conocido' : 'local landmark') + '</span>' : '') + '</div>';
             }).join(''));
           });
       }, 250);

@@ -1,4 +1,4 @@
-import { json } from '../_helpers.js';
+import { json, attachReplies } from '../_helpers.js';
 
 // Read messages leave the Inbox on their own after this long. Archived, not
 // deleted: they stay under the Archive tab.
@@ -20,5 +20,5 @@ export async function onRequestGet(context) {
   if (type) { query += ' AND type = ?'; params.push(type); }
   query += ' ORDER BY created_at DESC';
   const { results } = await env.DB.prepare(query).bind(...params).all();
-  return json(results);
+  return json(await attachReplies(env, 'sub', results));
 }

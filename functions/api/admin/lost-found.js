@@ -1,10 +1,10 @@
-import { json, error, cleanLFPlace } from '../_helpers.js';
+import { json, error, cleanLFPlace, attachReplies } from '../_helpers.js';
 
 export async function onRequestGet(context) {
   const { results } = await context.env.DB.prepare(
     'SELECT * FROM lost_found_reports ORDER BY created_at DESC'
   ).all();
-  return json(results);
+  return json(await attachReplies(context.env, 'lf', results));
 }
 
 // Staff entering a report themselves — someone rings the shelter to say they've

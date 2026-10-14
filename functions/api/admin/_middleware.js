@@ -9,6 +9,7 @@ const STAFF_ALLOWED = [
   '/api/admin/pets',
   '/api/admin/bonded',
   '/api/admin/change-password',
+  '/api/admin/places',
 ];
 
 // Foster-allowed paths

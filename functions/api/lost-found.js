@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, cleanLFPlace, publicLFPlace } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, cleanLFPlace, publicLFPlace, notificationReplyTo } from './_helpers.js';
 
 // Reporter-supplied text goes into an HTML email. There's no DOM out here, so
 // escape it by hand rather than trusting a name field not to contain a tag.
@@ -74,6 +74,7 @@ export async function onRequestPost(context) {
     ? ` <a href="https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=17/${place.lat}/${place.lng}" style="color:#48543e">map</a>` : '';
   await sendNotification(env, {
     type: 'lost_found',
+    replyTo: await notificationReplyTo(env, 'lf', reportId, body.reporter_email),
     subject: `New ${typeLabel} Report — ${body.pet_name || body.species}`,
     html: `<h2 style="color:#5c6b4e;margin:0 0 16px">New ${typeLabel} Report</h2>
       <table style="border-collapse:collapse;width:100%;max-width:500px">

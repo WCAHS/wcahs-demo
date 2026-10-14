@@ -20,10 +20,19 @@ export async function onRequestGet(context) {
     `SELECT num, street, city, lat, lng FROM addresses WHERE ${conds.join(' AND ')}
       ORDER BY CASE WHEN city = 'Waseca' THEN 0 ELSE 1 END, length(search) LIMIT 8`
   ).bind(...binds).all();
-  const out = (results || []).map(r => ({
-    label: `${r.num} ${r.street}${r.city ? ', ' + r.city : ''}`, lat: r.lat, lng: r.lng,
-  }));
+  // Shelter-added landmarks first: they're the places people actually name.
+  let places = [];
+  try {
+    const pc = words.map(() => 'lower(name) LIKE ?');
+    places = (await context.env.DB.prepare(
+      `SELECT name, lat, lng, note FROM places WHERE ${pc.join(' AND ')} LIMIT 5`
+    ).bind(...words.map(w => '%' + w.replace(/[%_]/g, '') + '%')).all()).results || [];
+  } catch (e) { /* table not there yet */ }
+  const out = places.map(p => ({ label: p.name, lat: p.lat, lng: p.lng, kind: 'place', note: p.note || '' }))
+    .concat((results || []).map(r => ({
+      label: `${r.num} ${r.street}${r.city ? ', ' + r.city : ''}`, lat: r.lat, lng: r.lng,
+    }))).slice(0, 8);
   return new Response(JSON.stringify(out), {
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
   });
 }
