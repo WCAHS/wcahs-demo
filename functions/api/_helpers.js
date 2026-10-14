@@ -153,6 +153,28 @@ export async function notificationReplyTo(env, kind, id, personEmail) {
   return log ? [person, `WCAHS reply log <${log}>`] : [person];
 }
 
+// Pull what a staff member actually wrote out of a reply: stop at the quoted
+// original, the "On ... wrote:" line, or the signature.
+export function replySnippet(text) {
+  const out = [];
+  for (const l of String(text || '').split(/\r?\n/)) {
+    if (/^\s*>/.test(l)) break;
+    if (/^\s*On .{1,300}wrote:\s*$/i.test(l) || /^-{2,}\s*(Original Message|On .* wrote)/i.test(l)) break;
+    if (/^\s*(From|Sent|To|Subject):\s/.test(l) && out.length) break;
+    if (/^-- ?$/.test(l)) break;
+    out.push(l);
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 300);
+}
+export function htmlToText(html) {
+  return String(html || '').replace(/<(style|script)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<div[^>]*class="[^"]*(gmail_quote|zmail_extra|yahoo_quoted)[\s\S]*$/i, '')
+    .replace(/<blockquote[\s\S]*$/i, '')
+    .replace(/<br\s*\/?>|<\/p>|<\/div>/gi, '\n').replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"');
+}
+
 // Hang each row's logged replies on it (newest first), plus its log address
 // so the admin's own Reply button can copy the log too.
 export async function attachReplies(env, kind, rows) {
