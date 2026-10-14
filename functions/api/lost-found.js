@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, cleanLFPlace, publicLFPlace, notificationReplyTo } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, cleanLFPlace, publicLFPlace, notificationReplyTo, safeRun } from './_helpers.js';
 
 // Reporter-supplied text goes into an HTML email. There's no DOM out here, so
 // escape it by hand rather than trusting a name field not to contain a tag.
@@ -37,7 +37,7 @@ export async function onRequestPost(context) {
   const photoUrl = body.photo_urls ? JSON.stringify(body.photo_urls) : (body.photo_url || null);
 
   const place = cleanLFPlace(body);
-  const result = await env.DB.prepare(
+  const result = await safeRun(env.DB.prepare(
     `INSERT INTO lost_found_reports (type, reporter_name, reporter_phone, reporter_email,
       pet_name, species, breed, color, gender, location_details, description, photo_url,
       collar_details, temperament, current_location, collar_status, seen_date, address, lat, lng)
@@ -49,7 +49,7 @@ export async function onRequestPost(context) {
     photoUrl, body.collar_details || null, body.temperament || null,
     body.current_location || null, body.collar_status || null,
     place.seen_date, place.address, place.lat, place.lng
-  ).run();
+  ));
 
   const reportId = result.meta?.last_row_id || '';
 
@@ -73,6 +73,7 @@ export async function onRequestPost(context) {
   const mapLink = place.lat != null
     ? ` <a href="https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=17/${place.lat}/${place.lng}" style="color:#48543e">map</a>` : '';
   await sendNotification(env, {
+    unsaved: !!result.unsaved,
     type: 'lost_found',
     replyTo: await notificationReplyTo(env, 'lf', reportId, body.reporter_email),
     subject: `New ${typeLabel} Report — ${body.pet_name || body.species}`,

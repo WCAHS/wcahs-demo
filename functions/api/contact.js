@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, escHtml, notificationReplyTo } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, escHtml, notificationReplyTo, safeRun } from './_helpers.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -14,9 +14,9 @@ export async function onRequestPost(context) {
   }
 
   const message = body.phone ? `Phone: ${body.phone}\n\n${body.message}` : body.message;
-  const result = await env.DB.prepare(
+  const result = await safeRun(env.DB.prepare(
     'INSERT INTO form_submissions (type, name, email, subject, message) VALUES (?, ?, ?, ?, ?)'
-  ).bind('contact', body.name, body.email, body.subject || 'General Inquiry', message).run();
+  ).bind('contact', body.name, body.email, body.subject || 'General Inquiry', message));
 
   const subId = result.meta?.last_row_id || '';
 
@@ -31,6 +31,7 @@ export async function onRequestPost(context) {
   }
 
   await sendNotification(env, {
+    unsaved: !!result.unsaved,
     replyTo: await notificationReplyTo(env, 'sub', subId, body.email),
     type: 'contact',
     subject: `New Contact: ${body.subject || 'General Inquiry'} — ${escHtml(body.name)}`,

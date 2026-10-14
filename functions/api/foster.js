@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, escHtml, notificationReplyTo } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, escHtml, notificationReplyTo, safeRun } from './_helpers.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -13,9 +13,9 @@ export async function onRequestPost(context) {
     return error('Name, email, and message are required');
   }
 
-  const result = await env.DB.prepare(
+  const result = await safeRun(env.DB.prepare(
     'INSERT INTO form_submissions (type, name, email, subject, message) VALUES (?, ?, ?, ?, ?)'
-  ).bind('foster', body.name, body.email, 'Foster Application', body.message).run();
+  ).bind('foster', body.name, body.email, 'Foster Application', body.message));
 
   const subId = result.meta?.last_row_id || '';
 
@@ -30,6 +30,7 @@ export async function onRequestPost(context) {
   }
 
   await sendNotification(env, {
+    unsaved: !!result.unsaved,
     replyTo: await notificationReplyTo(env, 'sub', subId, body.email),
     type: 'foster',
     subject: `New Foster Application — ${escHtml(body.name)}`,

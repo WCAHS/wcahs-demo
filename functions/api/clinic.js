@@ -1,4 +1,4 @@
-import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_FORM_STATES, CLINIC_NO_EVENT, notificationReplyTo } from './_helpers.js';
+import { json, error, verifyTurnstile, sendNotification, sendAutoReply, addToAudience, CLINIC_FORM_STATES, CLINIC_NO_EVENT, notificationReplyTo, safeRun } from './_helpers.js';
 
 // Residents of these four communities are what WCAHS sponsored the clinic for.
 // Anything else still submits — staff decide case by case — but it is sorted
@@ -185,7 +185,7 @@ export async function onRequestPost(context) {
 
   const autoReason = reasons.length ? reasons.join('; ') : null;
 
-  const result = await env.DB.prepare(
+  const result = await safeRun(env.DB.prepare(
     `INSERT INTO clinic_registrations
        (event_id, owner_first, owner_last, owner_name, email, phone_cell, phone_home,
         address, city, state, zip,
@@ -215,7 +215,7 @@ export async function onRequestPost(context) {
     status,
     waitlisted,
     autoReason
-  ).run();
+  ));
 
   const regId = result.meta?.last_row_id || '';
 
@@ -255,6 +255,7 @@ export async function onRequestPost(context) {
   }
 
   await sendNotification(env, {
+    unsaved: !!result.unsaved,
     type: 'clinic',
     to: clinicRecipients,
     replyTo: await notificationReplyTo(env, 'clinic', regId, body.email),

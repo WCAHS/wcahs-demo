@@ -128,6 +128,21 @@ export function escHtml(v) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Save a public submission without letting a database failure lose it. On
+// 2026-10-14 the account hit D1's free daily write limit and every form 500'd
+// — the visitor saw an error and nothing reached the shelter. Now the insert
+// failing is logged, the notification email still goes out (marked as the
+// only copy), and the visitor is told it was sent.
+export async function safeRun(stmt) {
+  try {
+    return await stmt.run();
+  } catch (e) {
+    console.error('submission NOT saved to D1:', e && e.message);
+    return { meta: {}, unsaved: true, error: String(e && e.message || e) };
+  }
+}
+export const UNSAVED_BANNER = `<p style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin:0 0 16px"><strong>Not saved in the admin.</strong> The website's database was unavailable, so this email is the only copy. Reply to the person directly — the "Open" button below won't find it.</p>`;
+
 // ── Reply tracking ──
 // Each notification's Reply-To carries a per-record log address, signed so a
 // stranger can't mark someone else's message as answered by mailing a guessed
@@ -195,7 +210,8 @@ export async function attachReplies(env, kind, rows) {
   return rows;
 }
 
-export async function sendNotification(env, { subject, html, type, to: explicitTo, replyTo }) {
+export async function sendNotification(env, { subject, html, type, to: explicitTo, replyTo, unsaved }) {
+  if (unsaved) { subject = '[NOT SAVED] ' + subject; html = UNSAVED_BANNER + html; }
   if (!env.RESEND_API_KEY) return;
   const to = (Array.isArray(explicitTo) && explicitTo.length)
     ? explicitTo.filter(a => typeof a === 'string' && a.includes('@')).slice(0, 10)
