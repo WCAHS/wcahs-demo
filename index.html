@@ -109,7 +109,7 @@
       <a href="index.html" class="flex items-center gap-3">
         <img src="images/logo.png" alt="WCAHS Logo" class="h-12">
       </a>
-      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+      <div class="hidden lg:flex items-center gap-7 font-semibold text-sm whitespace-nowrap">
         <a href="index.html" class="text-sage-700 border-b-2 border-sage-500 pb-0.5">Home</a>
         <a href="pets.html" class="text-gray-600 hover:text-sage-700 transition">Adopt</a>
         <a href="events.html" class="text-gray-600 hover:text-sage-700 transition">Events</a>
@@ -117,14 +117,15 @@
         <a href="happy-tails.html" class="text-gray-600 hover:text-sage-700 transition">Happy Tails</a>
         <a href="about.html" class="text-gray-600 hover:text-sage-700 transition">About</a>
         <a href="contact.html" class="text-gray-600 hover:text-sage-700 transition">Contact</a>
+        <a href="forms.html" class="text-gray-600 hover:text-sage-700 transition">Forms</a>
         <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donate</a>
         <a href="/es/" class="text-gray-400 hover:text-sage-700 transition text-xs font-semibold">ES</a>
       </div>
-      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2">
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="lg:hidden p-2">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
-    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+    <div id="mobileMenu" class="hidden lg:hidden px-4 pb-4 space-y-2">
       <a href="index.html" class="block py-2 font-semibold text-sage-700">Home</a>
       <a href="pets.html" class="block py-2 text-gray-600">Adopt</a>
       <a href="events.html" class="block py-2 text-gray-600">Events</a>
@@ -132,6 +133,7 @@
       <a href="happy-tails.html" class="block py-2 text-gray-600">Happy Tails</a>
       <a href="about.html" class="block py-2 text-gray-600">About</a>
       <a href="contact.html" class="block py-2 text-gray-600">Contact</a>
+      <a href="forms.html" class="block py-2 text-gray-600">Forms</a>
       <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donate</a>
       <div class="text-right mt-2 pt-2 border-t border-gray-100"><a href="/es/" class="text-gray-400 text-xs hover:text-sage-600 transition">Español</a></div>
     </div>
@@ -190,6 +192,19 @@
         <div class="text-3xl font-bold text-sage-700">Community</div>
         <div class="text-gray-500 mt-1">Funded & Operated</div>
       </div>
+    </div>
+  </section>
+
+  <!-- Quick links: every form one tap from the homepage -->
+  <section class="max-w-5xl mx-auto px-4 pt-10">
+    <p class="text-center text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Quick links</p>
+    <div class="flex flex-wrap justify-center gap-2">
+      <a href="pets.html" class="bg-white border border-sage-200 hover:border-sage-400 hover:bg-sage-50 text-sage-800 font-semibold text-sm px-4 py-2 rounded-full transition">Adopt</a>
+      <a href="forms.html?f=foster-cat" class="bg-white border border-sage-200 hover:border-sage-400 hover:bg-sage-50 text-sage-800 font-semibold text-sm px-4 py-2 rounded-full transition">Foster</a>
+      <a href="forms.html?f=volunteer" class="bg-white border border-sage-200 hover:border-sage-400 hover:bg-sage-50 text-sage-800 font-semibold text-sm px-4 py-2 rounded-full transition">Volunteer</a>
+      <a href="forms.html#rehome" class="bg-white border border-sage-200 hover:border-sage-400 hover:bg-sage-50 text-sage-800 font-semibold text-sm px-4 py-2 rounded-full transition">Rehome a pet</a>
+      <a href="lost-found.html" class="bg-white border border-sage-200 hover:border-sage-400 hover:bg-sage-50 text-sage-800 font-semibold text-sm px-4 py-2 rounded-full transition">Lost or found pet</a>
+      <a href="forms.html" class="bg-white border border-sage-200 hover:border-sage-400 hover:bg-sage-50 text-sage-800 font-semibold text-sm px-4 py-2 rounded-full transition">All forms</a>
     </div>
   </section>
 

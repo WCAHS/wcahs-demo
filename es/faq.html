@@ -76,7 +76,7 @@
       <a href="/es/" class="flex items-center gap-3">
         <img src="/images/logo.png" alt="WCAHS Logo" class="h-12">
       </a>
-      <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+      <div class="hidden lg:flex items-center gap-7 font-semibold text-sm whitespace-nowrap">
         <a href="/es/" class="text-gray-600 hover:text-sage-700 transition">Inicio</a>
         <a href="/es/pets" class="text-gray-600 hover:text-sage-700 transition">Adoptar</a>
         <a href="/es/events" class="text-gray-600 hover:text-sage-700 transition">Eventos</a>
@@ -84,15 +84,16 @@
         <a href="/es/happy-tails" class="text-gray-600 hover:text-sage-700 transition">Happy Tails</a>
         <a href="/es/about" class="text-gray-600 hover:text-sage-700 transition">Nosotros</a>
         <a href="/es/contact" class="text-gray-600 hover:text-sage-700 transition">Contacto</a>
+        <a href="/es/forms" class="text-gray-600 hover:text-sage-700 transition">Formularios</a>
         <a href="contact.html#donate" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-full transition shadow-md">Donar</a>
         <a href="/faq" class="text-gray-400 hover:text-sage-700 transition text-xs font-semibold">EN</a>
         <a href="/faq" class="text-gray-600 hover:text-sage-700 transition" title="English">English</a>
       </div>
-      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden p-2">
+      <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="lg:hidden p-2">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
-    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+    <div id="mobileMenu" class="hidden lg:hidden px-4 pb-4 space-y-2">
       <a href="/es/" class="block py-2 text-gray-600">Inicio</a>
       <a href="/es/pets" class="block py-2 text-gray-600">Adoptar</a>
       <a href="/es/events" class="block py-2 text-gray-600">Eventos</a>
@@ -100,6 +101,7 @@
       <a href="/es/happy-tails" class="block py-2 text-gray-600">Happy Tails</a>
       <a href="/es/about" class="block py-2 text-gray-600">Nosotros</a>
       <a href="/es/contact" class="block py-2 text-gray-600">Contacto</a>
+      <a href="/es/forms" class="block py-2 text-gray-600">Formularios</a>
       <a href="contact.html#donate" class="block py-2 text-amber-600 font-semibold">Donar</a>
       <div class="text-right mt-2 pt-2 border-t border-gray-100"><a href="/faq" class="text-gray-400 text-xs hover:text-sage-600 transition">English</a></div>
     </div>
@@ -177,6 +179,17 @@
       <a href="/es/contact" class="inline-block bg-sage-600 hover:bg-sage-700 text-white font-semibold px-6 py-3 rounded-full transition text-sm">Contactanos</a>
     </div>
 
+      <!-- Reubicar: los formularios de entrega solo estaban en la página de Formularios. -->
+    <div class="mt-8 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-5" style="background:#fffbeb;border:1.5px solid #fde68a">
+      <div class="flex-1">
+        <h3 class="font-display text-xl font-bold text-gray-900 mb-1">¿No puede quedarse con su mascota?</h3>
+        <p class="text-gray-600 text-sm leading-relaxed">Sabemos que es una decisión difícil. Cuéntenos su situación y buscaremos opciones con usted — a veces eso significa poder quedarse con su mascota.</p>
+      </div>
+      <div class="flex gap-3 shrink-0">
+        <a href="/es/forms?f=surrender-cat" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm px-5 py-3 rounded-xl transition">Reubicar un Gato</a>
+        <a href="/es/forms?f=surrender-dog" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm px-5 py-3 rounded-xl transition">Reubicar un Perro</a>
+      </div>
+    </div>
   </section>
 
   <!-- Resources -->
