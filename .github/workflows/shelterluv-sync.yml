@@ -1,9 +1,10 @@
 name: ShelterLuv Sync
 # WCAHS org repo
 
+# No schedule: trigger on purpose. GitHub auto-disables scheduled workflows after
+# 60 days without commits, which also blocks dispatches (outage 2026-11-20).
+# The CF Worker wcahs-sync-dispatch is the cron (every 15 min).
 on:
-  schedule:
-    - cron: '0 */6 * * *'  # Backup only — main cron is CF Worker dispatching every 15 min
   workflow_dispatch: {}      # Manual trigger from GitHub UI
   repository_dispatch:       # Triggered by CF Worker cron backup
     types: [sync]
